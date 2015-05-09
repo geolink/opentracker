@@ -35,7 +35,11 @@
 
 
   unsigned long last_time_gps, last_date_gps;      
-  
+
+  int engineRunning = -1;
+  unsigned long engineRunningTime = 0;
+  unsigned long engine_start, engine_stop;
+
   TinyGPS gps;  
   DueFlashStorage dueFlashStorage;
   
@@ -160,7 +164,24 @@ void loop() {
   IGNT_STAT = digitalRead(PIN_S_DETECT);
   debug_print(F("Ignition status:"));
   debug_print(IGNT_STAT);
- 
+
+  if (IGNT_STAT == 0) {
+    if (engineRunning != 0) {
+      // engine started
+      engine_start = millis();
+      engineRunning = 0;
+    }
+  } else {
+    if (engineRunning != 1) {
+      // engine stopped
+      if (engineRunning == 0) {
+        engine_stop = millis();
+        engineRunningTime += (engine_stop - engine_start);
+      }
+      engineRunning = 1;
+    }
+  }
+
  /*if(IGNT_STAT == 0)
  {
  debug_print(F("Ignition is ON!"));

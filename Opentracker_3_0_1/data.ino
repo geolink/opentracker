@@ -44,6 +44,21 @@
       data_current[data_index++] = '0';
     }
 
+    // engine running time
+    unsigned long currentRunningTime = engineRunningTime;
+    char runningTimeString[32];
+
+    if (engineRunning == 0) {
+      currentRunningTime += (millis() - engine_start);
+    }
+
+    snprintf(runningTimeString,32,"%ld",(unsigned long) currentRunningTime / 1000);
+
+    data_current[data_index++] = ',';
+    for (int i=0; i<strlen(runningTimeString); i++) {
+      data_current[data_index++] = runningTimeString[i];
+    }
+
     //end of data packet   
     data_current[data_index] = '\n';
     data_index++;
