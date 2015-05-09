@@ -26,37 +26,47 @@
     data_current[data_index] = ']'; 
     data_index++; 
 
-    // append battery level to data packet
-    float sensorValue = analogRead(AIN_S_INLEVEL);
-    float outputValue = sensorValue * (242.0f / 22.0f * ANALOG_VREF / 1024.0f);
-    char batteryLevel[20];
-    snprintf(batteryLevel,20,"%.2f",outputValue);
+    if (DATA_INCLUDE_BATTERY_LEVEL) {
+        // append battery level to data packet
+        float sensorValue = analogRead(AIN_S_INLEVEL);
+        float outputValue = sensorValue * (242.0f / 22.0f * ANALOG_VREF / 1024.0f);
+        char batteryLevel[20];
+        snprintf(batteryLevel,20,"%.2f",outputValue);
 
-    for (int i=0; i<strlen(batteryLevel); i++) {
-      data_current[data_index++] = batteryLevel[i];
-    }  
+        for (int i=0; i<strlen(batteryLevel); i++) {
+          data_current[data_index++] = batteryLevel[i];
+        }  
+    }
 
     // ignition state
-    data_current[data_index++] = ',';
-    if (ignitionState == 0) {
-      data_current[data_index++] = '1';
-    } else {
-      data_current[data_index++] = '0';
+    if (DATA_INCLUDE_IGNITION_STATE) {
+        if (DATA_INCLUDE_BATTERY_LEVEL) {
+            data_current[data_index++] = ',';
+        }
+        if (ignitionState == 0) {
+          data_current[data_index++] = '1';
+        } else {
+          data_current[data_index++] = '0';
+        }
     }
 
     // engine running time
-    unsigned long currentRunningTime = engineRunningTime;
-    char runningTimeString[32];
+    if (DATA_INCLUDE_ENGINE_RUNNING_TIME) {
+        unsigned long currentRunningTime = engineRunningTime;
+        char runningTimeString[32];
 
-    if (engineRunning == 0) {
-      currentRunningTime += (millis() - engine_start);
-    }
+        if (engineRunning == 0) {
+          currentRunningTime += (millis() - engine_start);
+        }
 
-    snprintf(runningTimeString,32,"%ld",(unsigned long) currentRunningTime / 1000);
+        snprintf(runningTimeString,32,"%ld",(unsigned long) currentRunningTime / 1000);
 
-    data_current[data_index++] = ',';
-    for (int i=0; i<strlen(runningTimeString); i++) {
-      data_current[data_index++] = runningTimeString[i];
+        if (DATA_INCLUDE_IGNITION_STATE || DATA_INCLUDE_BATTERY_LEVEL) {
+            data_current[data_index++] = ',';
+        }
+        for (int i=0; i<strlen(runningTimeString); i++) {
+          data_current[data_index++] = runningTimeString[i];
+        }
     }
 
     //end of data packet   

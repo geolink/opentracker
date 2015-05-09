@@ -18,6 +18,10 @@
 
   #define GSM_SEND_FAILURES_REBOOT 0  // 0 == disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
 
+  #define DATA_INCLUDE_BATTERY_LEVEL = 0  // enable to include the battery level in the POST string
+  #define DATA_INCLUDE_IGNITION_STATE = 0 // enable to include the ignition state in the POST string
+  #define DATA_INCLUDE_ENGINE_RUNNING_TIME = 0 // enable to include the engine running time (in seconds) in the POST string
+
   #define HOSTNAME "updates.geolink.io"
   #define PROTO "TCP"
   #define HTTP_PORT "80"  
