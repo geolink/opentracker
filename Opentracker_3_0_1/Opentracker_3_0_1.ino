@@ -40,7 +40,7 @@
 
   int engineRunning = -1;
   unsigned long engineRunningTime = 0;
-  unsigned long engine_start, engine_stop;
+  unsigned long engine_start;
 
   TinyGPS gps;  
   DueFlashStorage dueFlashStorage;
@@ -177,8 +177,7 @@ void loop() {
     if (engineRunning != 1) {
       // engine stopped
       if (engineRunning == 0) {
-        engine_stop = millis();
-        engineRunningTime += (engine_stop - engine_start);
+        engineRunningTime += (millis() - engine_start);
       }
       engineRunning = 1;
     }
