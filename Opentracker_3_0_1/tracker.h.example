@@ -12,6 +12,8 @@
   #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
   #define SMS_KEY "pass"       //default password for SMS auth
 
+  #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
+
   #define GSM_SEND_FAILURES_REBOOT 5
 
   #define HOSTNAME "updates.geolink.io"
