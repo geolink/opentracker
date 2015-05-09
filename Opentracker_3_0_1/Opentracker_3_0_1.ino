@@ -184,11 +184,12 @@ void loop() {
     }
   }
 
- /*if(IGNT_STAT == 0)
+ if(ALWAYS_ON || IGNT_STAT == 0)
  {
- debug_print(F("Ignition is ON!"));
- */
- // Insert here only code that should be processed when Ignition is ON
+     if (IGNT_STAT == 0) {
+         debug_print(F("Ignition is ON!"));
+         // Insert here only code that should be processed when Ignition is ON
+     }
 
    //collecting GPS data
    collect_all_data(IGNT_STAT);
@@ -231,13 +232,12 @@ void loop() {
     //reset current data and counter
     data_index = 0;  
 
-/*}
+}
 else {
   debug_print(F("Ignition is OFF!"));
  // Insert here only code that should be processed when Ignition is OFF 
 
-
-}*/
+}
 
     if(save_config == 1)
        {

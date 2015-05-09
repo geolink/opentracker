@@ -2,6 +2,8 @@
   //OpenTracker config
   #define DEBUG 1          //enable debug msg, sent to serial port  
 
+  #define ALWAYS_ON 0      //set to 1 to make the tracker log even with the ignition off
+
   long led_interval = 1000;    // interval at which to blink status led (milliseconds) 
    
   //default settings (can be overwritten and stored in EEPRom)
