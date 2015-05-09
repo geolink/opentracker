@@ -12,6 +12,8 @@
   #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
   #define SMS_KEY "pass"       //default password for SMS auth
 
+  #define GSM_SEND_FAILURES_REBOOT 5
+
   #define HOSTNAME "updates.geolink.io"
   #define PROTO "TCP"
   #define HTTP_PORT "80"  
