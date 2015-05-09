@@ -168,7 +168,7 @@ void loop() {
  // Insert here only code that should be processed when Ignition is ON
 
    //collecting GPS data
-   collect_all_data();
+   collect_all_data(IGNT_STAT);
    debug_print(F("Current:")); 
    debug_print(data_current); 
    

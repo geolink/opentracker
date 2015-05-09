@@ -1,6 +1,6 @@
  //collect GPS data for sending 
  
-   void  collect_all_data() {
+   void  collect_all_data(int ignitionState) {
    
     debug_print(F("collect_all_data() started"));       
    
@@ -35,6 +35,14 @@
     for (int i=0; i<strlen(batteryLevel); i++) {
       data_current[data_index++] = batteryLevel[i];
     }  
+
+    // ignition state
+    data_current[data_index++] = ',';
+    if (ignitionState == 0) {
+      data_current[data_index++] = '1';
+    } else {
+      data_current[data_index++] = '0';
+    }
 
     //end of data packet   
     data_current[data_index] = '\n';
