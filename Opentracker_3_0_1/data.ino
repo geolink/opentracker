@@ -25,7 +25,16 @@
     //indicate stop of GPS data packet
     data_current[data_index] = ']'; 
     data_index++; 
-    
+
+    // append battery level to data packet
+    float sensorValue = analogRead(AIN_S_INLEVEL);
+    float outputValue = sensorValue * (242.0f / 22.0f * ANALOG_VREF / 1024.0f);
+    char batteryLevel[20];
+    snprintf(batteryLevel,20,"%.2f",outputValue);
+
+    for (int i=0; i<strlen(batteryLevel); i++) {
+      data_current[data_index++] = batteryLevel[i];
+    }  
 
     //end of data packet   
     data_current[data_index] = '\n';
