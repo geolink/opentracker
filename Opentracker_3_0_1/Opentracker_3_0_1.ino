@@ -33,6 +33,8 @@
   byte save_config = 0;      //flag to save config to flash
   byte power_reboot = 0;           //flag to reboot everything (used after new settings have been saved)
 
+  char lat_current[32];
+  char lon_current[32];
 
   unsigned long last_time_gps, last_date_gps;      
 

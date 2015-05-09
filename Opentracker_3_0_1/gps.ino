@@ -228,6 +228,7 @@
              
             //lat            
             dtostrf(flat,1,6,tmp);                          
+            dtostrf(flat,1,6,lat_current);                          
             for(int i=0;i<strlen(tmp);i++)
               {
                data_current[data_index] = tmp[i]; 
@@ -240,6 +241,7 @@
             data_index++;   
            
             dtostrf(flon,1,6,tmp);                          
+            dtostrf(flon,1,6,lon_current);                          
             for(int i=0;i<strlen(tmp);i++)
               {
                data_current[data_index] = tmp[i]; 
