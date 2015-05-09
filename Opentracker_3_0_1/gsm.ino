@@ -642,7 +642,7 @@
 
           gsm_send_failures++;
 
-          if (gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
+          if (GSM_SEND_FAILURES_REBOOT > 0 && gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
               power_reboot = 1;
           }
         }

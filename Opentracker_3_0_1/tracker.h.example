@@ -16,7 +16,7 @@
 
   #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
 
-  #define GSM_SEND_FAILURES_REBOOT 5
+  #define GSM_SEND_FAILURES_REBOOT 0  // 0 == disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
 
   #define HOSTNAME "updates.geolink.io"
   #define PROTO "TCP"
