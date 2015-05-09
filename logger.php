@@ -7,6 +7,14 @@ require('curl.php');
 
     by m4rkw - github.com/m4rkw
 
+    note: for this to work you must set:
+
+    DATA_INCLUDE_BATTERY_LEVEL = 1
+    DATA_INCLUDE_IGNITION_STATE = 1
+    DATA_INCLUDE_ENGINE_RUNNING_TIME = 1
+
+    in tracker.h, and also change HOSTNAME and HTTP_HEADER1 appropriately
+
 initialise the database with:
 
 create database tracker;
