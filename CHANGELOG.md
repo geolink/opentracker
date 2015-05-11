@@ -28,3 +28,15 @@ v3.0.3
 + added SEND_RAW mode to send the data packet over a raw TCP connection in order to minimise bandwidth
 + added example daemon.rb ruby tcp server to accept and log the raw data packets
 + added boolean flags for all elements in the data packet so they can be turned on and off individually
+
+Raw mode drastically reduces the bandwidth used by the OpenTracker.
+
+Example old data transmission using HTTP:
+
+POST /index.php HTTP/1.0\r\nHost: some.server.com \r\nContent-type: application/x-www-form-urlencoded\r\nContent-length: 42\r\nConnection: close\r\n\r\nimei=8634241016201447&key=xxxxxxxxx&d=15/05/10,09:40:40 0[100515,9404700,12.394991,-4.132110,0.02,18.70,346.90,67,15]12.24,0,2520#eof
+
+New data packet using raw mode and only a few select data items:
+
+xxxxxxxxx,12.345968,-1.234517,0.04,12.42,0,2880
+
+273 bytes down to 47 bytes
