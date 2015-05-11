@@ -21,3 +21,10 @@ v3.0.2
 + Added tracker.php - a basic PHP script that will log POSTed data to a MySQL database and forward the data on to Geolink.
 + Added a "locate" SMS command that responds to the sender with a google maps link. By default this is in the comgooglemaps:// format which will open in the google maps iOS app, but it can be changed to normal https://maps.google links by setting LOCATE_COMMAND_FORMAT_IOS = 0 in tracker.h.
 + Added GSM_SEND_FAILURES_REBOOT options, if set to >0 this determines the number of consecutive GSM send failures that will trigger a reboot of the device.
+
+v3.0.3
+======
+
++ added SEND_RAW mode to send the data packet over a raw TCP connection in order to minimise bandwidth
++ added example daemon.rb ruby tcp server to accept and log the raw data packets
++ added boolean flags for all elements in the data packet so they can be turned on and off individually
