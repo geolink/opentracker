@@ -204,107 +204,102 @@
               gsm_set_time();             
             }
      
-            //converting date to data packet                    
-            ltoa(date_gps, tmp, 10);
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-              
-            data_current[data_index] = ',';  
-            data_index++;
-            
-            //time
-            ltoa(time_gps, tmp, 10);
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-      
-            data_current[data_index] = ',';  
-            data_index++;           
-             
-            //lat            
-            dtostrf(flat,1,6,tmp);                          
-            dtostrf(flat,1,6,lat_current);                          
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-    
-              
-            //lon 
-            data_current[data_index] = ',';  
-            data_index++;   
-           
-            dtostrf(flon,1,6,tmp);                          
-            dtostrf(flon,1,6,lon_current);                          
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
- 
-            //kmph
-            data_current[data_index] = ',';  
-            data_index++;  
-            
-            dtostrf(fkmph,1,2,tmp);  
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-            
-            //alt
-            data_current[data_index] = ',';  
-            data_index++; 
+            int first_gps_item = 0;
 
-            dtostrf(falt,1,2,tmp);             
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-            
-            //fc (course)
-            data_current[data_index] = ',';  
-            data_index++; 
-            
-            dtostrf(fc,1,2,tmp);  
-            for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
+            if (DATA_INCLUDE_GPS_DATE) {
+                data_current[data_index++] = ',';
+
+                //converting date to data packet                    
+                ltoa(date_gps, tmp, 10);
+                for(int i=0;i<strlen(tmp);i++)
+                  {
+                   data_current[data_index] = tmp[i]; 
+                   data_index++;
+                  }
+            }
+
+            if (DATA_INCLUDE_GPS_TIME) {
+                data_current[data_index++] = ',';  
+
+                //time
+                ltoa(time_gps, tmp, 10);
+                for(int i=0;i<strlen(tmp);i++)
+                  {
+                   data_current[data_index] = tmp[i]; 
+                   data_index++;
+                  }
+            }
+             
+            if (DATA_INCLUDE_LATITUDE) {
+                data_current[data_index++] = ',';  
+
+                dtostrf(flat,1,6,tmp);                          
+                dtostrf(flat,1,6,lat_current);                          
+                for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+                }
+            }
+    
+            if (DATA_INCLUDE_LONGITUDE) {
+                data_current[data_index++] = ',';  
+
+                dtostrf(flon,1,6,tmp);                          
+                dtostrf(flon,1,6,lon_current);                          
+                for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+                }
+            }
+ 
+            if (DATA_INCLUDE_SPEED) {
+                data_current[data_index++] = ',';  
+
+                dtostrf(fkmph,1,2,tmp);  
+                for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+                }
+            }
+
+            if (DATA_INCLUDE_ALTITUDE) {
+                data_current[data_index++] = ',';  
+
+                dtostrf(falt,1,2,tmp);             
+                for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+                }
+            }
+
+            if (DATA_INCLUDE_HEADING) {
+                data_current[data_index++] = ',';  
+
+                dtostrf(fc,1,2,tmp);  
+                for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+                }
+            }
            
-           //hdop, satelites
-           long hdop = gps.hdop(); //hdop
-           long sats = gps.satellites(); //satellites          
-           
-           data_current[data_index] = ',';  
-           data_index++; 
-            
-           ltoa(hdop, tmp, 10);
-           for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-              
-           data_current[data_index] = ',';  
-           data_index++;     
+
+           if (DATA_INCLUDE_HDOP) {
+               data_current[data_index++] = ',';  
+                
+               long hdop = gps.hdop(); //hdop
+
+               ltoa(hdop, tmp, 10);
+               for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+               }
+           }
+
+           if (DATA_INCLUDE_SATELLITES) {
+               data_current[data_index++] = ',';  
       
-           ltoa(sats, tmp, 10);
-           for(int i=0;i<strlen(tmp);i++)
-              {
-               data_current[data_index] = tmp[i]; 
-               data_index++;
-              }
-           
+               long sats = gps.satellites(); //satellites          
+
+               ltoa(sats, tmp, 10);
+               for(int i=0;i<strlen(tmp);i++) {
+                    data_current[data_index++] = tmp[i]; 
+               }
+           }
+
             //save last gps data date/time
             last_time_gps = time_gps;
             last_date_gps = date_gps;

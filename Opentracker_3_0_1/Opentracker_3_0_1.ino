@@ -192,7 +192,12 @@ void loop() {
      }
 
    //collecting GPS data
-   collect_all_data(IGNT_STAT);
+
+   if (SEND_RAW) {
+       collect_all_data_raw(IGNT_STAT);
+   } else {
+       collect_all_data(IGNT_STAT);
+   }
    debug_print(F("Current:")); 
    debug_print(data_current); 
    
