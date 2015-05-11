@@ -403,7 +403,22 @@
               }             
         }
         
-     
+     tmp = strstr(cmd, "locate");
+     if(tmp!=NULL)
+        {
+          debug_print(F("sms_cmd_run(): Locate command detected"));
+
+          char msg[255];
+
+          if (LOCATE_COMMAND_FORMAT_IOS) {
+              snprintf(msg,255,"comgooglemaps://?q=%s,%s",lat_current,lon_current);
+          } else {
+              snprintf(msg,255,"https://maps.google.co.uk/maps/place/%s,%s",lat_current,lon_current);
+          }
+
+          sms_send_msg(msg, phone);
+        }
+
      debug_print(F("sms_cmd_run() completed"));   
     }
     

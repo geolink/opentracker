@@ -630,6 +630,7 @@
           //get reply and parse
           ret_tmp = parse_receive_reply();           
           
+          gsm_send_failures = 0;
         }
         else
         {
@@ -638,6 +639,12 @@
           
           delay(1000);
           gsm_get_reply();          
+
+          gsm_send_failures++;
+
+          if (GSM_SEND_FAILURES_REBOOT > 0 && gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
+              power_reboot = 1;
+          }
         }
       
       return ret_tmp;

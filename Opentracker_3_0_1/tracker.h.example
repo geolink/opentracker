@@ -2,6 +2,8 @@
   //OpenTracker config
   #define DEBUG 1          //enable debug msg, sent to serial port  
 
+  #define ALWAYS_ON 0      //set to 1 to make the tracker log even with the ignition off
+
   long led_interval = 1000;    // interval at which to blink status led (milliseconds) 
    
   //default settings (can be overwritten and stored in EEPRom)
@@ -11,6 +13,14 @@
   #define KEY "cSQ88qShwC3V"     //key for connection, will be sent with every data transmission
   #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
   #define SMS_KEY "pass"       //default password for SMS auth
+
+  #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
+
+  #define GSM_SEND_FAILURES_REBOOT 0  // 0 == disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
+
+  #define DATA_INCLUDE_BATTERY_LEVEL 0  // enable to include the battery level in the POST string
+  #define DATA_INCLUDE_IGNITION_STATE 0 // enable to include the ignition state in the POST string
+  #define DATA_INCLUDE_ENGINE_RUNNING_TIME 0 // enable to include the engine running time (in seconds) in the POST string
 
   #define HOSTNAME "updates.geolink.io"
   #define PROTO "TCP"

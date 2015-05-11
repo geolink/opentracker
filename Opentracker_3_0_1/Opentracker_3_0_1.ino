@@ -33,12 +33,19 @@
   byte save_config = 0;      //flag to save config to flash
   byte power_reboot = 0;           //flag to reboot everything (used after new settings have been saved)
 
+  char lat_current[32];
+  char lon_current[32];
 
   unsigned long last_time_gps, last_date_gps;      
-  
+
+  int engineRunning = -1;
+  unsigned long engineRunningTime = 0;
+  unsigned long engine_start;
+
   TinyGPS gps;  
   DueFlashStorage dueFlashStorage;
   
+  int gsm_send_failures = 0;
 
   //settings structure  
   struct settings {
@@ -160,14 +167,32 @@ void loop() {
   IGNT_STAT = digitalRead(PIN_S_DETECT);
   debug_print(F("Ignition status:"));
   debug_print(IGNT_STAT);
- 
- if(IGNT_STAT == 0)
+
+  if (IGNT_STAT == 0) {
+    if (engineRunning != 0) {
+      // engine started
+      engine_start = millis();
+      engineRunning = 0;
+    }
+  } else {
+    if (engineRunning != 1) {
+      // engine stopped
+      if (engineRunning == 0) {
+        engineRunningTime += (millis() - engine_start);
+      }
+      engineRunning = 1;
+    }
+  }
+
+ if(ALWAYS_ON || IGNT_STAT == 0)
  {
- debug_print(F("Ignition is ON!"));
- // Insert here only code that should be processed when Ignition is ON
+     if (IGNT_STAT == 0) {
+         debug_print(F("Ignition is ON!"));
+         // Insert here only code that should be processed when Ignition is ON
+     }
 
    //collecting GPS data
-   collect_all_data();
+   collect_all_data(IGNT_STAT);
    debug_print(F("Current:")); 
    debug_print(data_current); 
    
@@ -211,7 +236,6 @@ void loop() {
 else {
   debug_print(F("Ignition is OFF!"));
  // Insert here only code that should be processed when Ignition is OFF 
-
 
 }
 
