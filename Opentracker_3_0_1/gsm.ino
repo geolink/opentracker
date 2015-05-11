@@ -600,7 +600,87 @@
     
     }  
  
+  void gsm_send_raw_current()
+    {
+      //send raw TCP request, after connection if fully opened
+      //this will send Current data
+
+       debug_print(F("gsm_send_raw(): sending data."));
+       debug_print(data_current);
+
+       int tmp_len = strlen(data_current);
+       int chunk_len;
+       int chunk_pos = 0;
+       int chunk_check = 0;
+
+       if(tmp_len > PACKET_SIZE)
+         {
+           chunk_len = PACKET_SIZE;
+         }
+         else
+         {
+           chunk_len = tmp_len;
+         }
+
+       debug_print(F("gsm_send_raw(): Body packet size:"));
+       debug_print(chunk_len);
+
+       int k=0;
+       for(int i=0;i<tmp_len;i++)
+         {
+
+             if((i == 0) || (chunk_pos >= PACKET_SIZE))
+              {
+
+                debug_print(F("gsm_send_raw(): Sending data chunk:"));
+                debug_print(chunk_pos);
+
+                if(chunk_pos >= PACKET_SIZE)
+                  {
+                     delay(1000);
+                     gsm_get_reply();
+
+                     //validate previous transmission
+                     gsm_validate_tcp();
+
+                     //next chunk, get chunk length, check if not the last one
+                     chunk_check = tmp_len-i;
     
+                    if(chunk_check > PACKET_SIZE)
+                      {
+                        chunk_len = PACKET_SIZE;
+                      }
+                      else
+                      {
+                        //last packet
+                        chunk_len = chunk_check;
+                      }
+
+                    chunk_pos = 0;
+                  }
+
+                    debug_print(F("gsm_send_raw(): chunk length:"));
+                    debug_print(chunk_len);
+
+                    //sending chunk
+                    gsm_port.print("AT+QISEND=");
+                    gsm_port.print(chunk_len);
+                    gsm_port.print("\r");
+
+                    delay(1000);
+
+              }
+
+            //sending data
+            gsm_port.print(data_current[i]);
+            chunk_pos++;
+            k++;
+
+         }
+
+     debug_print(F("gsm_send_raw(): data sent."));
+    }
+
   int gsm_send_data()  
     {     
       int ret_tmp = 0;     
@@ -624,7 +704,11 @@
       if(ret_tmp == 1)
         {
           //connection opened, just send data 
-          gsm_send_http_current();  //send all current data
+          if (SEND_RAW) {
+              gsm_send_raw_current();
+          } else {
+              gsm_send_http_current();  //send all current data
+          }
           delay(4000);
           
           //get reply and parse
