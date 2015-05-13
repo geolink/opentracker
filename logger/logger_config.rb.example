@@ -1,0 +1,28 @@
+
+# OpenTracker credentials
+$imei = '1234567890'
+$key = 'xxxxxxxxx'
+
+# MySQL database to log to
+$mysql_server = 'localhost'
+$mysql_user = 'tracker'
+$mysql_password = 'tracker'
+$mysql_db = 'tracker'
+
+# Send alerts to iPhone using Prowl
+$send_prowl_alerts = true
+$prowl_apikey = '111111111111111111111111111111111111111'
+
+# Detect engine-off movement (not currently reliable)
+$detect_engineoff_movement = true
+$engineoff_movement_threshold = 10
+
+# Detect engine start when at home
+# For this to work, to "/home/user/.at_home" to contain "1" when you are at home, and "0" when not
+$detect_enginestart_athome = true
+$at_home_file = "/home/user/.at_home"
+
+# Detect engine start overnight
+$detect_enginestart_overnight = true
+$engine_start_overnight_alert_from = '00:00'
+$engine_start_overnight_alert_to = '07:00'
