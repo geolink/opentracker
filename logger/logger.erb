@@ -1,0 +1,160 @@
+<%
+require 'cgi'
+require 'mysql'
+require 'net/http'
+require '/path/to/logger_config.rb'
+
+class OpenTracker
+    def handlePost
+        line = $stdin.readlines[0]
+
+        m = line.match(/^imei=([0-9]+)&key=([a-zA-Z0-9]+)&d=(.*)$/)
+
+        if m.length == 0
+            exit
+        end
+
+        return {
+            imei: m[1],
+            key: m[2],
+            d: CGI.unescape(m[3])
+        }
+    end
+
+    def handleRequest
+        p = handlePost
+
+        if p[:key] != $key or p[:imei] != $imei
+            exit
+        end
+
+        m = p[:d].match(/^([0-9]{2}\/[0-9]{2}\/[0-9]{2}),([0-9]{2}:[0-9]{2}:[0-9]{2}) [0-9]+\[[0-9]+,[0-9]+,([0-9\.\-]+),([0-9\.\-]+),([0-9\.\-]+),([0-9\.\-]+),([0-9\.\-]+),([0-9\.\-]+),([0-9]+)\]([0-9\.]+),([0-9]),([0-9]+)/)
+
+        data = {
+            :timestamp => Time.new.strftime("%Y-%m-%d %H:%M:%S"),
+            :lat => m[3],
+            :lon => m[4],
+            :speed => m[5],
+            :altitude => m[6],
+            :heading => m[7],
+            :hdop => m[8],
+            :satellites => m[9],
+            :vehicleBat => m[10],
+            :engineStatus => m[11],
+            :runningTime  => m[12],
+            :ip => ENV["REMOTE_ADDR"]
+        }
+
+        @con = Mysql.new $mysql_server, $mysql_user, $mysql_pass, $mysql_db
+
+        log(data)
+        forward(p[:d])
+    end
+
+    def query(sql)
+        res = @con.query(sql)
+
+        row = {}
+
+        if res
+            rowdata = res.fetch_row
+            fields = res.fetch_fields
+
+
+            for i in 0...fields.length
+                row[fields[i].name] = rowdata[i]
+            end
+        end
+
+        row
+    end
+
+    def log(data)
+        row = query("SELECT * from `log` order by id desc limit 1")
+
+        distance = sprintf("%.2f",get_distance(row['lat'], row['lon'], data[:lat], data[:lon]))
+
+        if $detect_engineoff_movement and row['engineStatus'] == 0 and data[:engineStatus] == 0
+            if distance >= $engineoff_movement_threshold
+                alert('Movement',"Moved $distance metres with engine off!")
+
+                distance = sprintf("%.2f",distance)
+
+                last_event = query("select * from `event` order by id desc limit 1")
+
+                total_distance = sprintf("%.2f",last_event.total_distance + distance)
+
+                query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{data[:timestamp]}','engine-off-moved','#{distance}','#{total_distance}');")
+            end
+        end
+
+        if row['engineStatus'] == 0 and data[:engineStatus] == 1
+            time = new Time(data[:timestamp]).strftime("%H:%M")
+
+            if $detect_enginestart_athome and File.exists?($at_home_file) and File.open($at_home_file,"r").read.strip == 1
+                alert('Engine','Engine started while at home!')
+            end
+
+            if $detect_enginestart_overnight and time >= $engine_start_overnight_alert_from and time <= $engine_start_overnight_alert_to
+                alert('Engine','Engine started overnight!')
+            end
+
+            query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{data[:timestamp]}','engine-started','#{distance}','#{distance}');")
+        end
+
+        if row['engineStatus'] == 1 and data[:engineStatus] == 1
+            last_event = query("select * from `event` order by id desc limit 1")
+            total_distance = sprintf("%.2f",last_event.moved_total + distance)
+            
+            query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{data[:timestamp]}','moved','#{distance}','#{total_distance}');")
+        end
+
+        if row['engineStatus'] == 1 and engineStatus == 0
+            last_event = query("select * from `event` order by id desc limit 1")
+            total_distance = sprintf("%.2f",last_event.moved_total + distance)
+
+            query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{data[:timestamp]}','engine-stopped','#{distance}','#{total_distance}');")
+        end
+
+        query("INSERT into `log` (timestamp,lat,lon,speed,altitude,heading,hdop,satellites,vehicleBat,engineStatus,runningTime,ip) values ('#{data[:timestamp]}','#{data[:lat]}','#{data[:lon]}','#{data[:speed]}','#{data[:altitude]}','#{data[:heading]}','#{data[:hdop]}','#{data[:satellites]}','#{data[:vehicleBat]}','#{data[:engineStatus]}','#{data[:runningTime]}','#{data[:ip]}');")
+    end
+
+    def alert(type, msg)
+        if $send_prowl_alerts
+            msg = CGI.escape(msg)
+            Net::HTTP.get_response(URI("https://prowl.weks.net/publicapi/add?apikey=#{$apikey}&application=Tracker&event=#{type}&description=#{msg}&priority=2"))
+        end
+    end
+
+    def forward(data)
+        res = Net::HTTP.post_form(URI('http://tigalupdates.opengps.net/update.php'),
+            'imei' => $imei,
+            'key' => $key,
+            'd' => data.gsub(/\].*$/,'')
+        )
+
+        puts res.body
+    end
+
+    def get_distance(latitudeFrom, longitudeFrom, latitudeTo, longitudeTo, earthRadius = 6371000)
+        # convert from degrees to radians
+        latFrom = deg2rad(latitudeFrom)
+        lonFrom = deg2rad(longitudeFrom)
+        latTo = deg2rad(latitudeTo)
+        lonTo = deg2rad(longitudeTo)
+
+        latDelta = latTo - latFrom
+        lonDelta = lonTo - lonFrom
+
+        angle = 2 * Math::asin(Math::sqrt(Math::sin(latDelta / 2) ** 2) + Math::cos(latFrom) * Math::cos(latTo) * (Math::sin(lonDelta / 2) ** 2))
+
+        angle * earthRadius
+    end
+
+    def deg2rad(deg)
+        deg.to_f * Math::PI / 180
+    end
+end
+
+ot = OpenTracker.new.handleRequest
+%>
