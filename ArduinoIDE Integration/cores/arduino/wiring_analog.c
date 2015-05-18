@@ -54,11 +54,11 @@ uint32_t analogRead(uint32_t ulPin)
   uint32_t ulValue = 0;
   uint32_t ulChannel;
 
-#if ! ( defined __SAM3A8C__ )
+#if ! ( defined __SAM3A8C__ || defined __SAM3A4C__ )
   if (ulPin < A0)
     ulPin += A0;
 #endif
-  
+
   ulChannel = g_APinDescription[ulPin].ulADCChannelNumber ;
 
 #if defined __SAM3U4E__
@@ -131,8 +131,8 @@ uint32_t analogRead(uint32_t ulPin)
 	}
 #endif
 
-#if defined __SAM3X8E__ || defined __SAM3X8H__ || defined __SAM3A8C__
-	static uint32_t latestSelectedChannel = -1;
+#if defined __SAM3X8E__ || defined __SAM3X8H__ || defined __SAM3A8C__ || defined __SAM3A4C__
+	static uint32_t latestSelectedChannel = (uint32_t)-1;
 	switch ( g_APinDescription[ulPin].ulAnalogChannel )
 	{
 		// Handling ADC 12 bits channels
@@ -152,7 +152,7 @@ uint32_t analogRead(uint32_t ulPin)
 			// Enable the corresponding channel
 			if (ulChannel != latestSelectedChannel) {
 				adc_enable_channel( ADC, ulChannel );
-				if ( latestSelectedChannel != -1 )
+				if ( latestSelectedChannel != (uint32_t)-1 )
 					adc_disable_channel( ADC, latestSelectedChannel );
 				latestSelectedChannel = ulChannel;
 			}
@@ -323,7 +323,7 @@ void analogWrite(uint32_t ulPin, uint32_t ulValue) {
 		};
 		if (channel >= (sizeof(channelToTC) / sizeof(*channelToTC)))
 			return;
-		
+
 		uint32_t chNo = channelToChNo[channel];
 		uint32_t chA  = channelToAB[channel];
 		Tc *chTC = channelToTC[channel];

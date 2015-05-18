@@ -233,8 +233,9 @@ extern const PinDescription g_APinDescription[]=
  * UART objects
  */
 RingBuffer rx_buffer1;
+RingBuffer tx_buffer1;
 
-UARTClass Serial(UART, UART_IRQn, ID_UART, &rx_buffer1);
+UARTClass Serial(UART, UART_IRQn, ID_UART, &rx_buffer1, &tx_buffer1);
 void serialEvent() __attribute__((weak));
 void serialEvent() { }
 
@@ -251,14 +252,17 @@ void UART_Handler(void)
 RingBuffer rx_buffer2;
 RingBuffer rx_buffer3;
 RingBuffer rx_buffer4;
+RingBuffer tx_buffer2;
+RingBuffer tx_buffer3;
+RingBuffer tx_buffer4;
 
-USARTClass Serial1(USART0, USART0_IRQn, ID_USART0, &rx_buffer2);
+USARTClass Serial1(USART0, USART0_IRQn, ID_USART0, &rx_buffer2, &tx_buffer2);
 void serialEvent1() __attribute__((weak));
 void serialEvent1() { }
-USARTClass Serial2(USART1, USART1_IRQn, ID_USART1, &rx_buffer3);
+USARTClass Serial2(USART1, USART1_IRQn, ID_USART1, &rx_buffer3, &tx_buffer3);
 void serialEvent2() __attribute__((weak));
 void serialEvent2() { }
-USARTClass Serial3(USART2, USART2_IRQn, ID_USART2, &rx_buffer4);
+USARTClass Serial3(USART2, USART2_IRQn, ID_USART2, &rx_buffer4, &tx_buffer4);
 void serialEvent3() __attribute__((weak));
 void serialEvent3() { }
 
@@ -314,7 +318,7 @@ void init( void )
   __libc_init_array();
 
   // Disable pull-up on every pin
-  for (int i = 0; i < PINS_COUNT; i++)
+  for (unsigned i = 0; i < PINS_COUNT; i++)
 	  digitalWrite(i, LOW);
 
   // Enable parallel access on PIO output data registers

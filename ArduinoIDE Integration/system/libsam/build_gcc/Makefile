@@ -26,7 +26,7 @@ SUBMAKE_OPTIONS=--no-builtin-rules --no-builtin-variables --no-print-directory
 
 # libsam_sam3s4c_gcc_rel.a libsam_sam3u4e_gcc_rel.a libsam_sam3x8e_gcc_rel.a libsam_sam3x8h_gcc_rel.a
 #all: libsam_sam3s4c_gcc_dbg.a libsam_sam3u4e_gcc_dbg.a libsam_sam3x8e_gcc_dbg.a libsam_sam3x8h_gcc_dbg.a arduino_due_x
-all: libsam_sam3a8c_gcc_rel.a arduino_due_opentracker
+all: libsam_sam3a4c_gcc_rel.a arduino_due_opentracker
 
 .PHONY: arduino_due_u
 arduino_due_u:
@@ -49,7 +49,7 @@ arduino_due_opentracker:
 	@echo ------------------------------------------------------------------------------------
 	@echo --- Making $@
 	@echo ---
-	@$(MAKE) CHIP=__SAM3A8C__ $(SUBMAKE_OPTIONS) OUTPUT_BIN=../../../variants/arduino_due_opentracker -f sam3.mk
+	@$(MAKE) CHIP=__SAM3A4C__ $(SUBMAKE_OPTIONS) OUTPUT_BIN=../../../variants/arduino_due_opentracker -f sam3.mk
 	@echo ------------------------------------------------------------------------------------
 
 .PHONY: libsam_sam3s4c_gcc_dbg.a
@@ -116,12 +116,12 @@ libsam_sam3x8h_gcc_rel.a:
 	@$(MAKE) CHIP=__SAM3X8H__ $(SUBMAKE_OPTIONS) -f sam3.mk
 	@echo ------------------------------------------------------------------------------------
 
-.PHONY: libsam_sam3a8c_gcc_rel.a
-libsam_sam3a8c_gcc_rel.a:
+.PHONY: libsam_sam3a4c_gcc_rel.a
+libsam_sam3a4c_gcc_rel.a:
 	@echo ------------------------------------------------------------------------------------
 	@echo --- Making $@
 	@echo ---
-	@$(MAKE) CHIP=__SAM3A8C__ $(SUBMAKE_OPTIONS) -f sam3.mk
+	@$(MAKE) CHIP=__SAM3A4C__ $(SUBMAKE_OPTIONS) -f sam3.mk
 	@echo ------------------------------------------------------------------------------------
 
 .PHONY: clean
