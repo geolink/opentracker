@@ -75,6 +75,7 @@ extern "C"{
 #define PIN_LED_13           (13u)
 #define PIN_LED              PIN_LED_13
 #define PIN_POWER_LED          13
+#define LED_BUILTIN          13
 
 /*
  * SPI Interfaces

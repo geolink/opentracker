@@ -34,11 +34,11 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
-	rom (rx)    : ORIGIN = 0x00080000, LENGTH = 0x00040000 /* Flash, 256K */
-	eeprom (rx) : ORIGIN = 0x000C0000, LENGTH = 0x00040000 /* Flash, 256K */
-	sram0 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00010000 /* sram0, 64K */
+	rom (rx)    : ORIGIN = 0x00080000, LENGTH = 0x00020000 /* Flash, 128K */
+	eeprom (rx) : ORIGIN = 0x000A0000, LENGTH = 0x00020000 /* Flash, 128K */
+	sram0 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00008000 /* sram0, 32K */
 	sram1 (rwx) : ORIGIN = 0x20080000, LENGTH = 0x00008000 /* sram1, 32K */
-	ram (rwx)   : ORIGIN = 0x20070000, LENGTH = 0x00018000 /* sram, 96K */
+	ram (rwx)   : ORIGIN = 0x20078000, LENGTH = 0x00010000 /* sram, 64K contiguous */
 }
 
 /* Section Definitions */
