@@ -1,0 +1,9 @@
+$key = "password"
+$server = "127.0.0.1"
+$port = 80
+$mysql_host = "127.0.0.1"
+$mysql_user = "root"
+$mysql_pass = ""
+$mysql_db = "tracker"
+$user = 65534
+$group = 65534
