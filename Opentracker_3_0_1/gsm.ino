@@ -712,10 +712,7 @@
       
       return ret_tmp;
     }
-    
-   
-   
-    
+
    void gsm_get_reply()
     {
       //get reply from the modem
@@ -763,9 +760,29 @@
             delay(50);
         }
     }
+    
+    void gsm_wait_at()
+    {
+        unsigned long timeout = millis();
+
+        modem_reply[0] = '\0';
+
+        while (!strncmp(modem_reply,"AT+",3) == 0) {
+            if ( (millis() - timeout) >= (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
+                debug_print(F("Warning: timed out waiting for last modem reply"));
+                break;
+            }
+            gsm_get_reply();
+
+            delay(50);
+        }
+    }
 
     int gsm_is_final_result(int allowOK)
     {
+        if (allowOK && strcmp(&modem_reply[strlen(modem_reply)-6],"\r\nOK\r\n") == 0) {
+            return true;
+        }
         #define STARTS_WITH(a, b) ( strncmp((a), (b), strlen(b)) == 0)
         switch (modem_reply[0]) {
         case '+':

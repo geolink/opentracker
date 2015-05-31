@@ -9,14 +9,13 @@
       
       debug_print(F("sms_check() started"));
       
-      gsm_get_reply();
       modem_reply[0] = '\0';  
       
       gsm_port.print("AT+CMGL=\"REC UNREAD\"");
 //      gsm_port.print("AT+CMGL=\"ALL\"");
       gsm_port.print("\r");   
       
-      gsm_wait_for_reply(1);
+      gsm_wait_at();
 
     for(int i=0;i<30;i++)
     {
@@ -433,7 +432,7 @@
        gsm_port.print(phone);
        gsm_port.print("\"\r"); 
 
-       gsm_wait_for_reply(1);
+       gsm_wait_for_reply(0);
 
        char *tmp = strstr(modem_reply, ">");      
        if(tmp!=NULL)
