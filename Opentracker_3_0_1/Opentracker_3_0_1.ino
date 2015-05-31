@@ -8,13 +8,11 @@
   
   #include <DueFlashStorage.h>
 
-  
   #ifdef DEBUG
     #define debug_print(x)  debug_port.println(x)
   #else
     #define debug_print(x)
   #endif
-  
   
   // Variables will change:
   int ledState = LOW;             // ledState used to set the LED
@@ -93,9 +91,6 @@ void setup() {
     //blink software start
     blink_start();   
   
-    //debug remove
-    delay(5000);   
-
     settings_load();
     
     //GPS setup 
@@ -110,9 +105,7 @@ void setup() {
     
     //send AT
     gsm_send_at();
-    delay(1000);
     gsm_send_at();
-    delay(1000);
     
     //supply PIN code is needed 
     gsm_set_pin();
@@ -299,7 +292,4 @@ else {
             delay(1000); 
            }
      }
-    
-    
-
 }

@@ -98,7 +98,7 @@ void storage_save_current()
           gsm_send_at(); 
           
           //disconnect GSM
-          ret_tmp = gsm_disconnect();
+          ret_tmp = gsm_disconnect(1);
           ret_tmp = gsm_connect();
           if(ret_tmp == 1)
            {        
@@ -275,7 +275,7 @@ void storage_save_current()
            }          
            
           //disconnecting 
-          ret_tmp = gsm_disconnect();     
+          ret_tmp = gsm_disconnect(1);     
       
          
           if(sent == 1)

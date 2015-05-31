@@ -85,8 +85,7 @@
       gsm_port.print(time_char);
       gsm_port.print("\"\r"); 
       
-      delay(1000);       
-      gsm_get_reply();
+      gsm_wait_for_reply(1);
    
       debug_print(F("gsm_set_time() completed"));     
    
@@ -101,9 +100,9 @@
       gsm_port.print("AT+CPIN?");
       gsm_port.print("\r"); 
       
-      delay(1000);       
+      delay(1000);
       gsm_get_reply();
-      
+
       char *tmp = strstr(modem_reply, "SIM PIN");
        if(tmp!=NULL)
         {
@@ -124,9 +123,8 @@
                    gsm_port.print(config.sim_pin);                       
                    gsm_port.print("\r"); 
                    
-                   delay(1000);       
-                   gsm_get_reply();
-                   
+                   gsm_wait_for_reply(1);
+
                    tmp = strstr(modem_reply, "OK"); 
                    if(tmp!=NULL)
                      {
@@ -170,11 +168,7 @@
       gsm_port.print("AT+CCLK?");
       gsm_port.print("\r"); 
       
-      delay(1000);       
-
-
-
-      gsm_get_reply();
+      gsm_wait_for_reply(1);
 
       char *tmp = strstr(modem_reply, "+CCLK: \"");
       tmp += strlen("+CCLK: \"");
@@ -209,23 +203,20 @@
        gsm_port.print("AT+QISDE=0");
        gsm_port.print("\r");   
       
-       delay(1000);      
-       gsm_get_reply();  
-       
+       gsm_wait_for_reply(1);
+
       //set receiving TCP data by command
       gsm_port.print("AT+QINDI=1");
       gsm_port.print("\r");   
       
-      delay(1000);      
-      gsm_get_reply();  
-      
+      gsm_wait_for_reply(1);
+
       //set SMS as text format
       gsm_port.print("AT+CMGF=1");
       gsm_port.print("\r");   
       
-      delay(1000);      
-      gsm_get_reply();  
-      
+      gsm_wait_for_reply(1);
+
       debug_print(F("gsm_startup_cmd() completed"));      
      
     } 
@@ -241,9 +232,8 @@
       gsm_port.print("AT+GSN");
       gsm_port.print("\r");    
       
-      delay(1000);      
-      gsm_get_reply();     
-      
+      gsm_wait_for_reply(1);
+
       //reply data stored to modem_reply[200]
       char *tmp = strstr(modem_reply, "AT+GSN\r\r\n");
       tmp += strlen("AT+GSN\r\r\n");
@@ -280,19 +270,16 @@
     
       gsm_port.print("AT");
       gsm_port.print("\r");
-      delay(1000);
+
       gsm_port.print("AT");
       gsm_port.print("\r");      
-      delay(1000);
-  
-      gsm_get_reply();
 
     debug_print(F("gsm_send_at() completed")); 
       
     }
   
  
-  int gsm_disconnect()
+  int gsm_disconnect(int waitForReply)
     {
       int ret = 0;          
       debug_print(F("gsm_disconnect() started")); 
@@ -300,9 +287,11 @@
       //disconnect GSM 
       gsm_port.print("AT+QIDEACT");
       gsm_port.print("\r");  
-      delay(4000);
-      gsm_get_reply();
       
+      if (waitForReply) {
+        gsm_wait_for_reply(0);
+      }
+
       //check if result contains DEACT OK
       char *tmp = strstr(modem_reply, "DEACT OK");
       
@@ -335,21 +324,18 @@
       gsm_port.print("\"");
       gsm_port.print("\r"); 
       
-      delay(1500);       
-      gsm_get_reply();
-      
+      gsm_wait_for_reply(1);
+
       gsm_port.print("AT+QIDNSCFG=\"8.8.8.8\"");
       gsm_port.print("\r");       
       
-      delay(1500);       
-      gsm_get_reply();
-      
+      gsm_wait_for_reply(1);
+
       gsm_port.print("AT+QIDNSIP=1");
       gsm_port.print("\r"); 
       
-      delay(1500); 
-      gsm_get_reply();
-             
+      gsm_wait_for_reply(1);
+
       debug_print(F("gsm_set_apn() completed")); 
       
       return 1; 
@@ -379,9 +365,8 @@
           gsm_port.print("\"");      
           gsm_port.print("\r"); 
           
-          delay(4000);  //might take sometime to open socket
-          gsm_get_reply();
-          
+          gsm_wait_for_reply(0);
+
           char *tmp = strstr(modem_reply, "CONNECT OK");      
           if(tmp!=NULL)
             {           
@@ -424,9 +409,8 @@
             gsm_port.print("AT+QISACK");
             gsm_port.print("\r");
             
-            delay(500);      
-            gsm_get_reply();
-            
+            gsm_wait_for_reply(1);
+
             //todo check if everything is delivered
             tmp = strstr(modem_reply, "+QISACK: ");
             tmp += strlen("+QISACK: ");
@@ -452,7 +436,6 @@
               else
               {
                  debug_print(F("gsm_validate_tcp() data not yet delivered."));  
-                 delay(3000);
               }
             
             
@@ -492,9 +475,8 @@
        gsm_port.print(tmp_len); 
        gsm_port.print("\r");
        
-       delay(500);
-       gsm_get_reply();
-       
+       gsm_wait_for_reply(1);
+
        //sending header                     
        gsm_port.print(HTTP_HEADER1); 
        gsm_port.print(http_len); 
@@ -510,19 +492,16 @@
        gsm_port.print(13+strlen(config.imei)+strlen(config.key)); 
        gsm_port.print("\r");
      
-       delay(500);
-       gsm_get_reply();  
-       
- 
+       gsm_wait_for_reply(1);
+
        gsm_port.print("imei=");
        gsm_port.print(config.imei);
        gsm_port.print("&key=");
        gsm_port.print(config.key);
        gsm_port.print("&d=");
                         
-       delay(500);
-       gsm_get_reply(); 
-               
+       gsm_wait_for_reply(1);
+
        debug_print(F("gsm_send_http(): Sending body"));
                
        tmp_len = strlen(data_current);
@@ -555,9 +534,8 @@
                                 
                 if(chunk_pos >= PACKET_SIZE)
                   {               
-                     delay(1000);     
-                     gsm_get_reply();        
-                    
+                     gsm_wait_for_reply(1);
+
                      //validate previous transmission  
                      gsm_validate_tcp();
                     
@@ -585,8 +563,7 @@
                     gsm_port.print(chunk_len); 
                     gsm_port.print("\r");  
                     
-                    delay(1000);  
-                   
+                    gsm_wait_for_reply(1);
               }
 
             //sending data 
@@ -637,8 +614,7 @@
 
                 if(chunk_pos >= PACKET_SIZE)
                   {
-                     delay(1000);
-                     gsm_get_reply();
+                     gsm_wait_for_reply(1);
 
                      //validate previous transmission
                      gsm_validate_tcp();
@@ -667,8 +643,7 @@
                     gsm_port.print(chunk_len);
                     gsm_port.print("\r");
 
-                    delay(1000);
-
+                    gsm_wait_for_reply(1);
               }
 
             //sending data
@@ -686,10 +661,12 @@
       int ret_tmp = 0;     
       
       //send 2 ATs
-      gsm_send_at(); 
+      gsm_send_at();
+      
+      gsm_wait_for_reply(1);
       
       //disconnect GSM
-      ret_tmp = gsm_disconnect();
+      ret_tmp = gsm_disconnect(1);
       if(ret_tmp == 1)
        {
         debug_print(F("GPRS deactivated."));
@@ -709,23 +686,23 @@
           } else {
               gsm_send_http_current();  //send all current data
           }
-          delay(4000);
+
+          gsm_wait_for_reply(1);
           
           if (!SEND_RAW) {
               //get reply and parse
               ret_tmp = parse_receive_reply();           
           }
           
+          gsm_disconnect(0);
+          
           gsm_send_failures = 0;
         }
         else
         {
           debug_print(F("Error, can not send data, no connection."));          
-          gsm_disconnect();
+          gsm_disconnect(0);
           
-          delay(1000);
-          gsm_get_reply();          
-
           gsm_send_failures++;
 
           if (GSM_SEND_FAILURES_REBOOT > 0 && gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
@@ -754,7 +731,7 @@
               modem_reply[index] = inChar; // Store it
               index++; // Increment where to write next
              
-              if(index == 200)   //some data still available, keep it in serial buffer
+              if(index == 200 || inChar == '\n')  //some data still available, keep it in serial buffer
                 {
                   break; 
                 }
@@ -763,14 +740,96 @@
         }
      
        modem_reply[index] = '\0'; // Null terminate the string
-      
-       //debug  
-       debug_print(F("Modem Reply:"));
-       debug_print(modem_reply);     
-      
+       
+       if (strlen(modem_reply) >0) {
+         debug_print(F("Modem Reply:"));
+         debug_print(modem_reply);
+       }
     }  
     
-     
+    void gsm_wait_for_reply(int allowOK)
+    {
+        unsigned long timeout = millis();
+
+        modem_reply[0] = '\0';
+
+        while (!gsm_is_final_result(allowOK)) {
+            if ( (millis() - timeout) >= (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
+                debug_print(F("Warning: timed out waiting for last modem reply"));
+                break;
+            }
+            gsm_get_reply();
+
+            delay(50);
+        }
+    }
+
+    int gsm_is_final_result(int allowOK)
+    {
+        #define STARTS_WITH(a, b) ( strncmp((a), (b), strlen(b)) == 0)
+        switch (modem_reply[0]) {
+        case '+':
+            if (STARTS_WITH(&modem_reply[1], "CME ERROR:")) {
+                return true;
+            }
+            if (STARTS_WITH(&modem_reply[1], "CMS ERROR:")) {
+                return true;
+            }
+            return false;
+        case '>':
+            if (strcmp(&modem_reply[1], " ") == 0) {
+                return true;
+            }
+            return false;
+        case 'B':
+            if (strcmp(&modem_reply[1], "USY\r\n") == 0) {
+                return true;
+            }
+            return false;
+        case 'C':
+            if (strcmp(&modem_reply[1], "ONNECT OK\r\n") == 0) {
+                return true;
+            }
+            if (strcmp(&modem_reply[1], "ONNECT FAIL\r\n") == 0) {
+                return true;
+            }
+            return false;
+        case 'D':
+            if (strcmp(&modem_reply[1], "EACT OK\r\n") == 0) {
+                return true;
+            }
+            return false;
+        case 'E':
+            if (strcmp(&modem_reply[1], "RROR\r\n") == 0) {
+                return true;
+            }
+            return false;
+        case 'N':
+            if (strcmp(&modem_reply[1], "O ANSWER\r\n") == 0) {
+                return true;
+            }
+            if (strcmp(&modem_reply[1], "O CARRIER\r\n") == 0) {
+                return true;
+            }
+            if (strcmp(&modem_reply[1], "O DIALTONE\r\n") == 0) {
+                return true;
+            }
+            return false;
+        case 'O':
+            if (allowOK && strcmp(&modem_reply[1], "K\r\n") == 0) {
+                return true;
+            }
+            return false;
+        case 'S':
+            if (STARTS_WITH(&modem_reply[1], "END ")) {
+                return true;
+            }
+            /* no break */
+        default:
+            return false;
+        }
+    }
+
   void gsm_debug()
     {
    
