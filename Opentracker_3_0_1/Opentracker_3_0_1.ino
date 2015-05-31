@@ -160,7 +160,10 @@ void loop() {
        }        
     
     status_led();
-    sms_check();   
+
+    if (!SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
+        sms_check();
+    }
 
 
   // Check if ignition is turned on
@@ -181,6 +184,10 @@ void loop() {
         engineRunningTime += (millis() - engine_start);
       }
       engineRunning = 1;
+    }
+
+    if (SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
+        sms_check();
     }
   }
 
@@ -259,37 +266,39 @@ else {
        }  
      
     
-     time_stop = millis();  
-     if(time_stop > time_start)
-       {
-         //check how many  
-         time_diff = time_stop-time_start;
-         time_diff = config.interval-time_diff;         
-         
-         debug_print(F("Sleeping for:"));
-         debug_print(time_diff);
-         debug_print(F("ms"));
-         
-         //debug - no sleep
-         //debug_print(F("DEBUG: disable sleep."));
-         //time_diff = 1000; 
-         
-         if(time_diff > 0)
+     if (!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0) {
+         time_stop = millis();  
+         if(time_stop > time_start)
            {
-             delay(time_diff);
+             //check how many  
+             time_diff = time_stop-time_start;
+             time_diff = config.interval-time_diff;         
+             
+             debug_print(F("Sleeping for:"));
+             debug_print(time_diff);
+             debug_print(F("ms"));
+             
+             //debug - no sleep
+             //debug_print(F("DEBUG: disable sleep."));
+             //time_diff = 1000; 
+             
+             if(time_diff > 0)
+               {
+                 delay(time_diff);
+               }
+               else 
+               {
+                 debug_print(F("Error: negative sleep time."));
+                 delay(500); 
+               }
            }
-           else 
+           else
            {
-             debug_print(F("Error: negative sleep time."));
-             delay(500); 
+             //probably counter reset, 50 days passed
+            debug_print(F("Time counter reset")); 
+            delay(1000); 
            }
-       }
-       else
-       {
-         //probably counter reset, 50 days passed
-        debug_print(F("Time counter reset")); 
-        delay(1000); 
-       }
+     }
     
     
 
