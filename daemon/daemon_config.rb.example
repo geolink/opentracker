@@ -7,3 +7,20 @@ $mysql_pass = ""
 $mysql_db = "tracker"
 $user = 65534
 $group = 65534
+
+$include_key = true
+$include_timestamp = false
+$include_gps_date = false
+$include_gps_time = false
+$include_latitude = true
+$include_longitude = true
+$include_speed = true
+$include_altitude = true
+$include_heading = true
+$include_hdop = true
+$include_satellites = true
+$include_battery_level = true
+$include_ignition_state = true
+$include_engine_running_time = true
+
+$timestamp_use = 'server'  # server, gsm or gps
