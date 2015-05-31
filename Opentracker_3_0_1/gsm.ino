@@ -711,8 +711,10 @@
           }
           delay(4000);
           
-          //get reply and parse
-          ret_tmp = parse_receive_reply();           
+          if (!SEND_RAW) {
+              //get reply and parse
+              ret_tmp = parse_receive_reply();           
+          }
           
           gsm_send_failures = 0;
         }
