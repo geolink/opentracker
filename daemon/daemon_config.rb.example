@@ -24,3 +24,20 @@ $include_ignition_state = true
 $include_engine_running_time = true
 
 $timestamp_use = 'server'  # server, gsm or gps
+
+$show_received = true
+$debug = false
+
+$detect_engineoff_movement = true
+$engineoff_movement_threshold = 10
+
+$detect_enginestart_athome = true
+$athome_file = "/home/user/.at_home" # set to 1 when at home
+
+$detect_enginestart_overnight = true
+$enginestart_overnight_from = '00:00'
+$enginestart_overnight_to = '07:00'
+
+$prowl_api_key = ''
+
+$log_journeys = true
