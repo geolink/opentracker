@@ -8,13 +8,11 @@
   
   #include <DueFlashStorage.h>
 
-  
   #ifdef DEBUG
     #define debug_print(x)  debug_port.println(x)
   #else
     #define debug_print(x)
   #endif
-  
   
   // Variables will change:
   int ledState = LOW;             // ledState used to set the LED
@@ -93,9 +91,6 @@ void setup() {
     //blink software start
     blink_start();   
   
-    //debug remove
-    delay(5000);   
-
     settings_load();
     
     //GPS setup 
@@ -110,9 +105,7 @@ void setup() {
     
     //send AT
     gsm_send_at();
-    delay(1000);
     gsm_send_at();
-    delay(1000);
     
     //supply PIN code is needed 
     gsm_set_pin();
@@ -160,7 +153,10 @@ void loop() {
        }        
     
     status_led();
-    sms_check();   
+
+    if (!SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
+        sms_check();
+    }
 
 
   // Check if ignition is turned on
@@ -182,6 +178,10 @@ void loop() {
       }
       engineRunning = 1;
     }
+
+    if (SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
+        sms_check();
+    }
   }
 
  if(ALWAYS_ON || IGNT_STAT == 0)
@@ -192,7 +192,12 @@ void loop() {
      }
 
    //collecting GPS data
-   collect_all_data(IGNT_STAT);
+
+   if (SEND_RAW) {
+       collect_all_data_raw(IGNT_STAT);
+   } else {
+       collect_all_data(IGNT_STAT);
+   }
    debug_print(F("Current:")); 
    debug_print(data_current); 
    
@@ -254,38 +259,37 @@ else {
        }  
      
     
-     time_stop = millis();  
-     if(time_stop > time_start)
-       {
-         //check how many  
-         time_diff = time_stop-time_start;
-         time_diff = config.interval-time_diff;         
-         
-         debug_print(F("Sleeping for:"));
-         debug_print(time_diff);
-         debug_print(F("ms"));
-         
-         //debug - no sleep
-         //debug_print(F("DEBUG: disable sleep."));
-         //time_diff = 1000; 
-         
-         if(time_diff > 0)
+     if (!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0) {
+         time_stop = millis();  
+         if(time_stop > time_start)
            {
-             delay(time_diff);
+             //check how many  
+             time_diff = time_stop-time_start;
+             time_diff = config.interval-time_diff;         
+             
+             debug_print(F("Sleeping for:"));
+             debug_print(time_diff);
+             debug_print(F("ms"));
+             
+             //debug - no sleep
+             //debug_print(F("DEBUG: disable sleep."));
+             //time_diff = 1000; 
+             
+             if(time_diff > 0)
+               {
+                 delay(time_diff);
+               }
+               else 
+               {
+                 debug_print(F("Error: negative sleep time."));
+                 delay(500); 
+               }
            }
-           else 
+           else
            {
-             debug_print(F("Error: negative sleep time."));
-             delay(500); 
+             //probably counter reset, 50 days passed
+            debug_print(F("Time counter reset")); 
+            delay(1000); 
            }
-       }
-       else
-       {
-         //probably counter reset, 50 days passed
-        debug_print(F("Time counter reset")); 
-        delay(1000); 
-       }
-    
-    
-
+     }
 }

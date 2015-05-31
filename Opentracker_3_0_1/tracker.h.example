@@ -14,10 +14,28 @@
   #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
   #define SMS_KEY "pass"       //default password for SMS auth
 
+  #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 1 // don't check for sms commands when the engine is running
+
   #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
 
+  #define GSM_MODEM_COMMAND_TIMEOUT 10
   #define GSM_SEND_FAILURES_REBOOT 0  // 0 == disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
 
+  #define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 1 // when the engine is running, log position as fast as possible
+
+  #define SEND_RAW 0 // enable to use the new raw tcp send method to minimise data use
+  #define SEND_RAW_INCLUDE_KEY 1
+  #define SEND_RAW_INCLUDE_TIMESTAMP 0
+
+  #define DATA_INCLUDE_GPS_DATE 1 // enable to include the GPS date in the POST string
+  #define DATA_INCLUDE_GPS_TIME 1 // enable to include the GPS time in the POST string
+  #define DATA_INCLUDE_LATITUDE 1 // enable to include latitude
+  #define DATA_INCLUDE_LONGITUDE 1 // enable to include longitude
+  #define DATA_INCLUDE_SPEED 1 // enable to include speed (km/h)
+  #define DATA_INCLUDE_ALTITUDE 1 // enable to include altitude
+  #define DATA_INCLUDE_HEADING 1 // enable to include heading
+  #define DATA_INCLUDE_HDOP 1 // enable to include hdop
+  #define DATA_INCLUDE_SATELLITES 1 // enable to include satellites
   #define DATA_INCLUDE_BATTERY_LEVEL 0  // enable to include the battery level in the POST string
   #define DATA_INCLUDE_IGNITION_STATE 0 // enable to include the ignition state in the POST string
   #define DATA_INCLUDE_ENGINE_RUNNING_TIME 0 // enable to include the engine running time (in seconds) in the POST string

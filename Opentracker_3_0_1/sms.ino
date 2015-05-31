@@ -9,15 +9,14 @@
       
       debug_print(F("sms_check() started"));
       
-      gsm_get_reply();
       modem_reply[0] = '\0';  
       
       gsm_port.print("AT+CMGL=\"REC UNREAD\"");
 //      gsm_port.print("AT+CMGL=\"ALL\"");
       gsm_port.print("\r");   
       
-      delay(3000);   
-   
+      gsm_wait_at();
+
     for(int i=0;i<30;i++)
     {
      if(gsm_port.available())
@@ -121,16 +120,12 @@
       gsm_port.print("AT+QMGDA=\"DEL READ\"");
       gsm_port.print("\r");   
       
-      delay(1000);  
-      gsm_get_reply();  
+      gsm_wait_for_reply(1);
 
       gsm_port.print("AT+QMGDA=\"DEL SENT\"");
       gsm_port.print("\r");   
       
-      delay(1000);  
-      gsm_get_reply();       
-      
-   
+      gsm_wait_for_reply(1);
 
       debug_print(F("sms_check() completed"));      
     }
@@ -436,9 +431,9 @@
        gsm_port.print("+");
        gsm_port.print(phone);
        gsm_port.print("\"\r"); 
-       delay(500);
-       
-       gsm_get_reply();  
+
+       gsm_wait_for_reply(0);
+
        char *tmp = strstr(modem_reply, ">");      
        if(tmp!=NULL)
          {  
@@ -447,14 +442,8 @@
           
           //sending ctrl+z
           gsm_port.print("\x1A"); 
-          delay(2000);
           
-          gsm_get_reply();
-          
-          delay(2000);
-          gsm_get_reply();
-          
-           
+          gsm_wait_for_reply(1);
          }      
       
        debug_print(F("sms_send_msg() completed"));   

@@ -22,9 +22,8 @@
         {
           gsm_port.print("AT+QIRD=0,1,0,100");
           gsm_port.print("\r");
-          delay(1000);  
-  
-          gsm_get_reply();   
+
+          gsm_wait_for_reply(1);
           
           //check if no more data
           tmp = strstr(modem_reply, "ERROR");  
@@ -83,18 +82,22 @@
             
         }
       
-      tmp = strstr((cmd), "eof");  
-      if(tmp!=NULL) 
-          {                  
-            //all data was received by server
-            debug_print(F("Data was fully received by the server."));              
-            ret = 1;              
-          }
-          else
-          {
-            debug_print(F("Data was not received by the server."));              
-          }
-                
+      if (SEND_RAW) {
+          debug_print(F("RAW data mode enabled, not checking whether the packet was received or not."));
+          ret = 1;
+      } else {
+          tmp = strstr((cmd), "eof");  
+          if(tmp!=NULL) 
+              {                  
+                //all data was received by server
+                debug_print(F("Data was fully received by the server."));              
+                ret = 1;              
+              }
+              else
+              {
+                debug_print(F("Data was not received by the server."));              
+              }
+      }
         
      parse_cmd(cmd);        
      debug_print(F("parse_receive_reply() completed"));  
