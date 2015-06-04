@@ -198,10 +198,10 @@ class OpenTrackerDaemon
     def alert(type, msg)
         if $prowl_api_key
             msg = URI::escape(msg)
-            url = URI.parse("https://prowl.weks.net/publicapi/add?apikey=#{$prowl_api_key}&application=Tracker&event=#{type}&description=#{msg}&priority=2")
+            url = URI.parse("https://prowl.weks.net/publicapi/add")
             http = Net::HTTP.new(url.host, url.port)
             http.use_ssl = true
-            request = Net::HTTP::Get.new(url.path)
+            request = Net::HTTP::Get.new(url.path + "?apikey=#{$prowl_api_key}&application=Tracker&event=#{type}&description=#{msg}&priority=2")
             response = http.start {|http| http.request(request) }
         end
     end
