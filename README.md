@@ -4,5 +4,5 @@ The first commercial grade, fully open source and 100% Arduino compatible GPS/GL
 Official website: [https://www.geolink.io](https://www.geolink.io)
 
 
-
+The new IDE integration files are available at: <https://github.com/geolink/opentracker-arduino-board>
 
