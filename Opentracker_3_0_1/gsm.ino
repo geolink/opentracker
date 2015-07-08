@@ -232,7 +232,8 @@
       gsm_port.print("AT+GSN");
       gsm_port.print("\r");    
       
-      gsm_wait_for_reply(1);
+      delay(1000);
+      gsm_get_reply();
 
       //reply data stored to modem_reply[200]
       char *tmp = strstr(modem_reply, "AT+GSN\r\r\n");
