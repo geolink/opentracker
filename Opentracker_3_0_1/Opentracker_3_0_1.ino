@@ -48,7 +48,7 @@
   //settings structure  
   struct settings {
   
-    char apn[20];
+    char apn[64];
     char user[20];
     char pwd[20];
     long interval;          //how often to collect data (milli sec, 600000 - 10 mins)
