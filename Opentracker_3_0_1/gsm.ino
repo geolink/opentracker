@@ -101,7 +101,7 @@
       gsm_port.print("\r"); 
       
       delay(1000);
-      gsm_get_reply();
+      gsm_get_reply(0);
 
       char *tmp = strstr(modem_reply, "SIM PIN");
        if(tmp!=NULL)
@@ -162,7 +162,7 @@
    
       //clean any serial data       
       
-      gsm_get_reply();       
+      gsm_get_reply(0);       
 
       //get time from modem
       gsm_port.print("AT+CCLK?");
@@ -233,7 +233,7 @@
       gsm_port.print("\r");    
       
       delay(1000);
-      gsm_get_reply();
+      gsm_get_reply(1);
 
       //reply data stored to modem_reply[200]
       char *tmp = strstr(modem_reply, "AT+GSN\r\r\n");
@@ -714,7 +714,7 @@
       return ret_tmp;
     }
 
-   void gsm_get_reply()
+   void gsm_get_reply(int fullBuffer)
     {
       //get reply from the modem
       byte index = 0;      
@@ -729,7 +729,7 @@
               modem_reply[index] = inChar; // Store it
               index++; // Increment where to write next
              
-              if(index == 200 || inChar == '\n')  //some data still available, keep it in serial buffer
+              if(index == 200 || (!fullBuffer && inChar == '\n'))  //some data still available, keep it in serial buffer
                 {
                   break; 
                 }
@@ -756,7 +756,7 @@
                 debug_print(F("Warning: timed out waiting for last modem reply"));
                 break;
             }
-            gsm_get_reply();
+            gsm_get_reply(0);
 
             delay(50);
         }
@@ -773,7 +773,7 @@
                 debug_print(F("Warning: timed out waiting for last modem reply"));
                 break;
             }
-            gsm_get_reply();
+            gsm_get_reply(0);
 
             delay(50);
         }
@@ -854,58 +854,58 @@
    gsm_port.print("AT+QLOCKF=?");
    gsm_port.print("\r");     
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
 
    gsm_port.print("AT+QBAND?");
    gsm_port.print("\r");     
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
    
    gsm_port.print("AT+CGMR");
    gsm_port.print("\r");     
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
 
    gsm_port.print("AT+CGMM");
    gsm_port.print("\r");     
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
 
    gsm_port.print("AT+CGSN");
    gsm_port.print("\r");     
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
    
    
    gsm_port.print("AT+CREG?");
    gsm_port.print("\r");   
    
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
    
    gsm_port.print("AT+CSQ");
    gsm_port.print("\r");   
    
    delay(2000);   
-   gsm_get_reply();     
+   gsm_get_reply(0);     
    
    gsm_port.print("AT+QENG?");
    gsm_port.print("\r");   
    
    delay(2000);   
-   gsm_get_reply();   
+   gsm_get_reply(0);   
 
    gsm_port.print("AT+COPS?");
    gsm_port.print("\r");   
    
    delay(2000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
    
    gsm_port.print("AT+COPS=?");
    gsm_port.print("\r");   
    
    delay(6000);   
-   gsm_get_reply();
+   gsm_get_reply(0);
     
     }  
   

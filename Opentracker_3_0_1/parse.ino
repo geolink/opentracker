@@ -16,7 +16,7 @@
       debug_print(F("parse_receive_reply() started"));  
       
       //clean modem buffer
-      gsm_get_reply();  
+      gsm_get_reply(0);  
       
       for(int i=0;i<30;i++)
         {

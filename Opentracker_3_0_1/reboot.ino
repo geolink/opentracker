@@ -8,7 +8,7 @@
       gsm_on_off();
       delay(1000);
       
-      gsm_get_reply();
+      gsm_get_reply(0);
       
       //turn off GPS
       digitalWrite(PIN_STANDBY_GPS, HIGH);     

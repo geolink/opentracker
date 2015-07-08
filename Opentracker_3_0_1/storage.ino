@@ -131,14 +131,14 @@ void storage_save_current()
              gsm_port.print("\r");            
                           
              delay(500);
-             gsm_get_reply();
+             gsm_get_reply(0);
              
              //sending header                     
              gsm_port.print(HTTP_HEADER1); 
              gsm_port.print(http_len); 
              gsm_port.print(HTTP_HEADER2);           
             
-             gsm_get_reply();
+             gsm_get_reply(0);
              
              //validate header delivery
              delivered = gsm_validate_tcp();
@@ -152,7 +152,7 @@ void storage_save_current()
                        gsm_port.print("\r");
                      
                        delay(500);
-                       gsm_get_reply(); 
+                       gsm_get_reply(0); 
                        
                        gsm_port.print("imei=");
                        gsm_port.print(config.imei);
@@ -161,7 +161,7 @@ void storage_save_current()
                        gsm_port.print("&d=");
                                         
                        delay(500);
-                       gsm_get_reply();   
+                       gsm_get_reply(0);   
                        
                        //sending the actual log by packets (PACKET_SIZE)
                        tmp_len = logindex-sent_position-1; 
@@ -189,7 +189,7 @@ void storage_save_current()
                                  
                                   if(chunk_pos >= PACKET_SIZE)
                                   {                                                  
-                                     gsm_get_reply();        
+                                     gsm_get_reply(0);        
                                     
                                      //validate previous transmission  
                                      delivered = gsm_validate_tcp();
@@ -268,7 +268,7 @@ void storage_save_current()
                   debug_print(F("sd_send_logs() Can not deliver HTTP header")); 
                }
                  
-                gsm_get_reply();    
+                gsm_get_reply(0);    
                  
               
    
