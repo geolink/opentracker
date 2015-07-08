@@ -123,34 +123,79 @@
               debug_print(F("Warning: possible stale data!"));
             else {            
               debug_print(F("Data is current."));
-
-              //update current time var - format 04/12/98,00:35:45+00
-             // Add 1000000 to ensure the position of the digits
-             ltoa(date_gps+1000000, tmp, 10);  //1ddmmyy                    
-             time_char[0] = tmp[1]; 
-             time_char[1] = tmp[2]; 
-             time_char[2] = '/'; 
-             time_char[3] = tmp[3]; 
-             time_char[4] = tmp[4]; 
-             time_char[5] = '/'; 
-             time_char[6] = tmp[5]; 
-             time_char[7] = tmp[6]; 
-             time_char[8] = ',';                    
-
-             // Add 1000000 to ensure the position of the digits
-             ltoa(time_gps + 100000000, tmp, 10);  //1hhmmssms
-             time_char[9] = tmp[1]; 
-             time_char[10] = tmp[2]; 
+              
+              
+             //update current time var - format 04/12/98,00:15:45+00
+             ltoa(date_gps, tmp, 10);  //ddmmyy                    
+             
+             
+              if(strlen(tmp) == 5)
+                {
+                  //add zero to day 
+                   time_char[0] = '0';   
+                   time_char[1] = tmp[0]; 
+                   time_char[2] = '/'; 
+                   time_char[3] = tmp[1]; 
+                   time_char[4] = tmp[2]; 
+                   time_char[5] = '/'; 
+                   time_char[6] = tmp[3]; 
+                   time_char[7] = tmp[4]; 
+                   time_char[8] = ',';                                     
+                }
+                else
+                {                
+                   time_char[0] = tmp[0]; 
+                   time_char[1] = tmp[1]; 
+                   time_char[2] = '/'; 
+                   time_char[3] = tmp[2]; 
+                   time_char[4] = tmp[3]; 
+                   time_char[5] = '/'; 
+                   time_char[6] = tmp[4]; 
+                   time_char[7] = tmp[5]; 
+                   time_char[8] = ',';                    
+                }
+          
+             
+             ltoa(time_gps, tmp, 10);  //hhmmssms - 13245000
+             
+//             debug_port.println(time_gps);             
+//             debug_port.println(tmp);       
+             
+             if(strlen(tmp) == 7)
+                {
+                  
+             time_char[9] = '0'; 
+             time_char[10] = tmp[0]; 
              time_char[11] = ':';              
-             time_char[12] = tmp[3]; 
-             time_char[13] = tmp[4]; 
+             time_char[12] = tmp[1]; 
+             time_char[13] = tmp[2]; 
              time_char[14] = ':';              
-             time_char[15] = tmp[5]; 
-             time_char[16] = tmp[6]; 
+             time_char[15] = tmp[3]; 
+             time_char[16] = tmp[4]; 
              time_char[17] = '+';              
              time_char[18] = '0';
              time_char[19] = '0';
-             time_char[20] = '\0';             
+             time_char[20] = '\0';                  
+                  
+                }
+                else
+                {
+                  
+             time_char[9] = tmp[0]; 
+             time_char[10] = tmp[1]; 
+             time_char[11] = ':';              
+             time_char[12] = tmp[2]; 
+             time_char[13] = tmp[3]; 
+             time_char[14] = ':';              
+             time_char[15] = tmp[4]; 
+             time_char[16] = tmp[5]; 
+             time_char[17] = '+';              
+             time_char[18] = '0';
+             time_char[19] = '0';
+             time_char[20] = '\0';
+             
+                }
+ 
 
              debug_print(F("Current time set from GPS time:"));
              debug_print(time_char);
