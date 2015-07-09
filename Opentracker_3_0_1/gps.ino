@@ -163,8 +163,9 @@
             int first_gps_item = 0;
 
             if (DATA_INCLUDE_GPS_DATE) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -178,8 +179,9 @@
             }
 
             if (DATA_INCLUDE_GPS_TIME) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';  
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -193,8 +195,9 @@
             }
              
             if (DATA_INCLUDE_LATITUDE) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';  
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -206,8 +209,9 @@
             }
     
             if (DATA_INCLUDE_LONGITUDE) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';  
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -219,8 +223,9 @@
             }
  
             if (DATA_INCLUDE_SPEED) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';  
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -231,8 +236,9 @@
             }
 
             if (DATA_INCLUDE_ALTITUDE) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';  
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -243,8 +249,9 @@
             }
 
             if (DATA_INCLUDE_HEADING) {
-                if (!first_gps_item) {
+                if (first_gps_item) {
                     data_current[data_index++] = ',';  
+                } else {
                     first_gps_item = 1;
                 }
 
@@ -256,8 +263,9 @@
            
 
            if (DATA_INCLUDE_HDOP) {
-               if (!first_gps_item) {
+               if (first_gps_item) {
                    data_current[data_index++] = ',';  
+               } else {
                    first_gps_item = 1;
                }
                 
@@ -270,8 +278,9 @@
            }
 
            if (DATA_INCLUDE_SATELLITES) {
-               if (!first_gps_item) {
+               if (first_gps_item) {
                    data_current[data_index++] = ',';  
+               } else {
                    first_gps_item = 1;
                }
       
