@@ -124,78 +124,34 @@
             else {            
               debug_print(F("Data is current."));
               
-              
-             //update current time var - format 04/12/98,00:15:45+00
-             ltoa(date_gps, tmp, 10);  //ddmmyy                    
-             
-             
-              if(strlen(tmp) == 5)
-                {
-                  //add zero to day 
-                   time_char[0] = '0';   
-                   time_char[1] = tmp[0]; 
-                   time_char[2] = '/'; 
-                   time_char[3] = tmp[1]; 
-                   time_char[4] = tmp[2]; 
-                   time_char[5] = '/'; 
-                   time_char[6] = tmp[3]; 
-                   time_char[7] = tmp[4]; 
-                   time_char[8] = ',';                                     
-                }
-                else
-                {                
-                   time_char[0] = tmp[0]; 
-                   time_char[1] = tmp[1]; 
-                   time_char[2] = '/'; 
-                   time_char[3] = tmp[2]; 
-                   time_char[4] = tmp[3]; 
-                   time_char[5] = '/'; 
-                   time_char[6] = tmp[4]; 
-                   time_char[7] = tmp[5]; 
-                   time_char[8] = ',';                    
-                }
-          
-             
-             ltoa(time_gps, tmp, 10);  //hhmmssms - 13245000
-             
-//             debug_port.println(time_gps);             
-//             debug_port.println(tmp);       
-             
-             if(strlen(tmp) == 7)
-                {
-                  
-             time_char[9] = '0'; 
-             time_char[10] = tmp[0]; 
+             //update current time var - format 04/12/98,00:35:45+00
+             // Add 1000000 to ensure the position of the digits
+             ltoa(date_gps+1000000, tmp, 10);  //1ddmmyy                    
+             time_char[0] = tmp[1]; 
+             time_char[1] = tmp[2]; 
+             time_char[2] = '/'; 
+             time_char[3] = tmp[3]; 
+             time_char[4] = tmp[4]; 
+             time_char[5] = '/'; 
+             time_char[6] = tmp[5]; 
+             time_char[7] = tmp[6]; 
+             time_char[8] = ',';                    
+
+
+             // Add 1000000 to ensure the position of the digits
+             ltoa(time_gps + 100000000, tmp, 10);  //1hhmmssms
+             time_char[9] = tmp[1]; 
+             time_char[10] = tmp[2]; 
              time_char[11] = ':';              
-             time_char[12] = tmp[1]; 
-             time_char[13] = tmp[2]; 
+             time_char[12] = tmp[3]; 
+             time_char[13] = tmp[4]; 
              time_char[14] = ':';              
-             time_char[15] = tmp[3]; 
-             time_char[16] = tmp[4]; 
-             time_char[17] = '+';              
-             time_char[18] = '0';
-             time_char[19] = '0';
-             time_char[20] = '\0';                  
-                  
-                }
-                else
-                {
-                  
-             time_char[9] = tmp[0]; 
-             time_char[10] = tmp[1]; 
-             time_char[11] = ':';              
-             time_char[12] = tmp[2]; 
-             time_char[13] = tmp[3]; 
-             time_char[14] = ':';              
-             time_char[15] = tmp[4]; 
-             time_char[16] = tmp[5]; 
+             time_char[15] = tmp[5]; 
+             time_char[16] = tmp[6]; 
              time_char[17] = '+';              
              time_char[18] = '0';
              time_char[19] = '0';
              time_char[20] = '\0';
-             
-                }
- 
 
              debug_print(F("Current time set from GPS time:"));
              debug_print(time_char);
@@ -207,7 +163,10 @@
             int first_gps_item = 0;
 
             if (DATA_INCLUDE_GPS_DATE) {
-                data_current[data_index++] = ',';
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';
+                    first_gps_item = 1;
+                }
 
                 //converting date to data packet                    
                 ltoa(date_gps, tmp, 10);
@@ -219,7 +178,10 @@
             }
 
             if (DATA_INCLUDE_GPS_TIME) {
-                data_current[data_index++] = ',';  
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';  
+                    first_gps_item = 1;
+                }
 
                 //time
                 ltoa(time_gps, tmp, 10);
@@ -231,7 +193,10 @@
             }
              
             if (DATA_INCLUDE_LATITUDE) {
-                data_current[data_index++] = ',';  
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';  
+                    first_gps_item = 1;
+                }
 
                 dtostrf(flat,1,6,tmp);                          
                 dtostrf(flat,1,6,lat_current);                          
@@ -241,7 +206,10 @@
             }
     
             if (DATA_INCLUDE_LONGITUDE) {
-                data_current[data_index++] = ',';  
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';  
+                    first_gps_item = 1;
+                }
 
                 dtostrf(flon,1,6,tmp);                          
                 dtostrf(flon,1,6,lon_current);                          
@@ -251,7 +219,10 @@
             }
  
             if (DATA_INCLUDE_SPEED) {
-                data_current[data_index++] = ',';  
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';  
+                    first_gps_item = 1;
+                }
 
                 dtostrf(fkmph,1,2,tmp);  
                 for(int i=0;i<strlen(tmp);i++) {
@@ -260,7 +231,10 @@
             }
 
             if (DATA_INCLUDE_ALTITUDE) {
-                data_current[data_index++] = ',';  
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';  
+                    first_gps_item = 1;
+                }
 
                 dtostrf(falt,1,2,tmp);             
                 for(int i=0;i<strlen(tmp);i++) {
@@ -269,7 +243,10 @@
             }
 
             if (DATA_INCLUDE_HEADING) {
-                data_current[data_index++] = ',';  
+                if (!first_gps_item) {
+                    data_current[data_index++] = ',';  
+                    first_gps_item = 1;
+                }
 
                 dtostrf(fc,1,2,tmp);  
                 for(int i=0;i<strlen(tmp);i++) {
@@ -279,7 +256,10 @@
            
 
            if (DATA_INCLUDE_HDOP) {
-               data_current[data_index++] = ',';  
+               if (!first_gps_item) {
+                   data_current[data_index++] = ',';  
+                   first_gps_item = 1;
+               }
                 
                long hdop = gps.hdop(); //hdop
 
@@ -290,7 +270,10 @@
            }
 
            if (DATA_INCLUDE_SATELLITES) {
-               data_current[data_index++] = ',';  
+               if (!first_gps_item) {
+                   data_current[data_index++] = ',';  
+                   first_gps_item = 1;
+               }
       
                long sats = gps.satellites(); //satellites          
 
