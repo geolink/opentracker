@@ -23,7 +23,7 @@
           gsm_port.print("AT+QIRD=0,1,0,100");
           gsm_port.print("\r");
 
-          gsm_wait_for_reply(1,0);
+          gsm_wait_for_reply(1,1);
           
           //check if no more data
           tmp = strstr(modem_reply, "ERROR");  
