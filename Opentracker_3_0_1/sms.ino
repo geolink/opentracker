@@ -120,12 +120,12 @@
       gsm_port.print("AT+QMGDA=\"DEL READ\"");
       gsm_port.print("\r");   
       
-      gsm_wait_for_reply(1);
+      gsm_wait_for_reply(1,0);
 
       gsm_port.print("AT+QMGDA=\"DEL SENT\"");
       gsm_port.print("\r");   
       
-      gsm_wait_for_reply(1);
+      gsm_wait_for_reply(1,0);
 
       debug_print(F("sms_check() completed"));      
     }
@@ -432,7 +432,7 @@
        gsm_port.print(phone);
        gsm_port.print("\"\r"); 
 
-       gsm_wait_for_reply(0);
+       gsm_wait_for_reply(0,0);
 
        char *tmp = strstr(modem_reply, ">");      
        if(tmp!=NULL)
@@ -443,7 +443,7 @@
           //sending ctrl+z
           gsm_port.print("\x1A"); 
           
-          gsm_wait_for_reply(1);
+          gsm_wait_for_reply(1,0);
          }      
       
        debug_print(F("sms_send_msg() completed"));   
