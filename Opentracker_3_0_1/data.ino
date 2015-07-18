@@ -103,6 +103,10 @@
         }
     }
 
+    if (SEND_RAW_INCLUDE_KEY || SEND_RAW_INCLUDE_TIMESTAMP) {
+      data_current[data_index++] = ',';
+    }
+    
     collect_gps_data();
 
     if (DATA_INCLUDE_BATTERY_LEVEL) {
