@@ -414,6 +414,22 @@
           sms_send_msg(msg, phone);
         }
 
+     tmp = strstr(cmd, "dataoff");
+     if (tmp!=NULL)
+         {
+           debug_print(F("sms_cmd_run(): Data off command detected"));
+           sms_send_msg("Data OFF", phone);
+           SEND_DATA = 0;
+         }
+     
+     tmp = strstr(cmd, "dataon");
+     if (tmp!=NULL)
+         {
+           debug_print(F("sms_cmd_run(): Data on command detected"));
+           sms_send_msg("Data ON", phone);
+           SEND_DATA = 1;
+         }
+         
      debug_print(F("sms_cmd_run() completed"));   
     }
     

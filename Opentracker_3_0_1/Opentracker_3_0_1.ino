@@ -193,19 +193,21 @@ void loop() {
 
    //collecting GPS data
 
-   if (SEND_RAW) {
-       collect_all_data_raw(IGNT_STAT);
-   } else {
-       collect_all_data(IGNT_STAT);
-   }
-   debug_print(F("Current:")); 
-   debug_print(data_current); 
+   if (SEND_DATA) {
+       if (SEND_RAW) {
+           collect_all_data_raw(IGNT_STAT);
+       } else {
+           collect_all_data(IGNT_STAT);
+       }
    
-   int i = gsm_send_data();         
-   if(i != 1)
-    {
+       debug_print(F("Current:")); 
+       debug_print(data_current); 
+   
+       int i = gsm_send_data();         
+       if(i != 1)
+        {
       //current data not sent, save to sd card  
-      debug_print(F("Can not send data, saving to flash memory"));
+          debug_print(F("Can not send data, saving to flash memory"));
 /*
        #ifdef STORAGE
           storage_save_current();   //in case this fails - data is lost
@@ -214,12 +216,12 @@ void loop() {
 */
 
  
-    }
-    else
-    {
-      debug_print(F("Data sent successfully."));
-    }
-   
+         }
+        else
+        {
+          debug_print(F("Data sent successfully."));
+        }
+   }
   
    
    /*
@@ -258,8 +260,7 @@ else {
          power_reboot = 0;        
        }  
      
-    
-     if (!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0) {
+     if (!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
          time_stop = millis();  
          if(time_stop > time_start)
            {

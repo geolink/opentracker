@@ -6,6 +6,8 @@
 
   long led_interval = 1000;    // interval at which to blink status led (milliseconds) 
    
+  int SEND_DATA = 1;
+
   //default settings (can be overwritten and stored in EEPRom)
   #define INTERVAL 10000       //how often to collect data (milli sec, 600000 - 10 mins)
   #define INTERVAL_SEND 1      //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
