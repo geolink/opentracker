@@ -688,7 +688,7 @@
               gsm_send_http_current();  //send all current data
           }
 
-          gsm_wait_for_reply(1,0);
+          gsm_wait_for_reply(1,1);
           
           if (!SEND_RAW) {
               //get reply and parse
