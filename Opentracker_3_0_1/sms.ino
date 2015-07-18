@@ -26,7 +26,9 @@
          {
             index = gsm_port.read();
             
-            debug_port.print(index);
+            #ifdef DEBUG
+                debug_port.print(index);
+            #endif
           
             
             if(index == '#')

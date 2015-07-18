@@ -314,7 +314,10 @@ void storage_save_current()
        for(long i=STORAGE_DATA_START;i<=STORAGE_DATA_END;i++)
         {
             c = dueFlashStorage.read(i);
-            debug_port.print(c);
+            
+            #ifdef DEBUG
+                debug_port.print(c);
+            #endif
             
             if(c == STORAGE_INDEX_CHAR)
               {

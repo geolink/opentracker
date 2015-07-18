@@ -54,7 +54,9 @@
          index++;   
        
           //debug
-          debug_port.print(c);
+          #ifdef DEBUG
+              debug_port.print(c);
+          #endif
          
           if(fix == 1)  //fix already acquired
           {   
