@@ -535,7 +535,8 @@
                                 
                 if(chunk_pos >= PACKET_SIZE)
                   {               
-                     gsm_wait_for_reply(1,0);
+                     delay(1000);
+                     gsm_get_reply();
 
                      //validate previous transmission  
                      gsm_validate_tcp();
@@ -564,7 +565,7 @@
                     gsm_port.print(chunk_len); 
                     gsm_port.print("\r");  
                     
-                    gsm_wait_for_reply(1,0);
+                    delay(1000);
               }
 
             //sending data 
