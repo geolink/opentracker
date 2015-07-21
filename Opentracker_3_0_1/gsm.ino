@@ -536,7 +536,7 @@
                 if(chunk_pos >= PACKET_SIZE)
                   {               
                      delay(1000);
-                     gsm_get_reply();
+                     gsm_get_reply(1);
 
                      //validate previous transmission  
                      gsm_validate_tcp();
