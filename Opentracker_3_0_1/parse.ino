@@ -16,8 +16,8 @@
       debug_print(F("parse_receive_reply() started"));  
       
       //clean modem buffer
-      gsm_get_reply(0);  
-      
+      gsm_get_reply(1);
+
       for(int i=0;i<30;i++)
         {
           gsm_port.print("AT+QIRD=0,1,0,100");
