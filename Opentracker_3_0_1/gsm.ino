@@ -1,6 +1,8 @@
  
   //gsm functions
-  
+  #ifndef GSM_STAY_ONLINE
+    #define GSM_STAY_ONLINE 0   // 0 == Disconnect Session after each send of data (Default). 1 == Stay Online to keep session active
+  #endif
   
    void gsm_setup()
     {
@@ -282,6 +284,10 @@
  
   int gsm_disconnect(int waitForReply)
     {
+#if GSM_STAY_ONLINE
+      debug_print(F("gsm_disconnect() Disabled")); 
+      return 1;
+#else
       int ret = 0;          
       debug_print(F("gsm_disconnect() started")); 
       
@@ -309,6 +315,7 @@
      debug_print(F("gsm_disconnect() completed")); 
      return ret;    
       
+#endif
     }
   
   int gsm_set_apn()  
