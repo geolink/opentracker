@@ -691,7 +691,7 @@
           
           if (SEND_RAW) {
               gsm_wait_for_reply(1,1);
-          if (!SEND_RAW) {
+          } else {
               //get reply and parse
               ret_tmp = parse_receive_reply();           
           }
