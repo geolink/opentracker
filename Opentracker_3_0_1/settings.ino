@@ -24,7 +24,7 @@ void settings_load()
       
       debug_print(F("settings_load() started"));
       
-      
+      /* force using default config 
       debug_print(F("settings_load(): setting defaults from config"));
       config.interval = INTERVAL;
       config.interval_send = INTERVAL_SEND;
@@ -39,10 +39,11 @@ void settings_load()
       debug_print(F("settings_load(): set config.interval:"));
       debug_print(config.interval);    
       debug_print(config.apn);    
+      */
+      
 
           
-      /* MEMORY saving does not work - using static values from config
-      // dueFlashStorage needs comparatility fixing - TODO
+      /* MEMORY saving was works, dueFlashStorage was fixed */
       
       byte first_run = dueFlashStorage.read(STORAGE_FIRST_RUN_PAGE);  
       debug_print(F("settings_load(): First run flag:"));
@@ -138,7 +139,7 @@ void settings_load()
            strlcpy(config.pwd, DEFAULT_PASS, 20);
         } 
         
-        */
+       
        
       debug_print(F("settings_load() finished"));      
     }
