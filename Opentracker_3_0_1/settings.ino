@@ -44,7 +44,7 @@ void settings_load()
 
           
       /* MEMORY saving was works, dueFlashStorage was fixed */
-      
+      /*
       byte first_run = dueFlashStorage.read(STORAGE_FIRST_RUN_PAGE);  
       debug_print(F("settings_load(): First run flag:"));
       debug_print(first_run);     
@@ -58,6 +58,7 @@ void settings_load()
         {
           debug_print(F("settings_load(): no a first run."));
         }
+        */
       
       
       byte* b = dueFlashStorage.readAddress(STORAGE_CONFIG_PAGE); // byte array which is read from flash at adress        
