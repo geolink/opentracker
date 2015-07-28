@@ -6,3 +6,5 @@ Official website: [https://www.geolink.io](https://www.geolink.io)
 
 The new IDE integration files are available at: <https://github.com/geolink/opentracker-arduino-board>
 
+All PCB files are available at: https://github.com/geolink/opentracker-hardware
+
