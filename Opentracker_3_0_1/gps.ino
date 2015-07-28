@@ -172,8 +172,8 @@
                 }
 
                 //converting date to data packet                    
-                ltoa(date_gps, tmp, 10);
-                for(int i=0;i<strlen(tmp);i++)
+                ltoa(date_gps+1000000, tmp, 10);
+                for(int i=1;i<strlen(tmp);i++)
                   {
                    data_current[data_index] = tmp[i]; 
                    data_index++;
@@ -188,8 +188,8 @@
                 }
 
                 //time
-                ltoa(time_gps, tmp, 10);
-                for(int i=0;i<strlen(tmp);i++)
+                ltoa(time_gps+100000000, tmp, 10);
+                for(int i=1;i<strlen(tmp);i++)
                   {
                    data_current[data_index] = tmp[i]; 
                    data_index++;
