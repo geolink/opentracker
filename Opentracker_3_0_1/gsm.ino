@@ -79,7 +79,6 @@
           
          //modem already on, turn modem off 
          gsm_on_off();
-         delay(5000);    //wait for modem to shutdown         
        }
        else
        {
