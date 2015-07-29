@@ -12,11 +12,11 @@
   #define INTERVAL 10000       //how often to collect data (milli sec, 600000 - 10 mins)
   #define INTERVAL_SEND 1      //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
   #define POWERSAVE 0          //enable powersaving (turn off modem, gps on every loop)
-  #define KEY "cSQ88qShwC3V"     //key for connection, will be sent with every data transmission
+  #define KEY "cSQ88qShwC3"    //key for connection, will be sent with every data transmission - max 12 chars
   #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
   #define SMS_KEY "pass"       //default password for SMS auth
 
-  #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 1 // don't check for sms commands when the engine is running
+  #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // don't check for sms commands when the engine is running
 
   #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
 
