@@ -2,3 +2,4 @@
 * text eol=lf
 
 *.pdf binary
+*.exe binary
