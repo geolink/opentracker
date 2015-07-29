@@ -173,7 +173,7 @@
     {
      char *tmp; 
      char *tmpcmd;  
-     int i=0;  
+     long val;  
      int k=0;
       
      debug_print(F("sms_cmd_run() started"));   
@@ -186,35 +186,27 @@
           debug_print(F("sms_cmd_run(): Set APN command detected"));        
        
           //setting new APN                   
-          while ((tmp = strtok_r(cmd, "=", &cmd)) != NULL) 
-              {
-                if(i > 0)
-                  {
-                    debug_print(F("sms_cmd_run(): New APN:"));
-                    debug_print(tmp);
-                    
-                    //updating APN in config 
-                    for(k=0;k<strlen(tmp);k++)
-                       {
-                         config.apn[k] = tmp[k];
-                       }
-                     
-                    config.apn[k] = '\0';  //null terminate APN
+          tmp += strlen("apn=");
 
-                    debug_print(F("New APN configured:"));   
-                    debug_print(config.apn); 
-                    
-                    save_config=1;  
-                    power_reboot=1;
-                    
-                    //send SMS reply  
-                    sms_send_msg("APN saved", phone);
-                    
-                    break;                  
-                  }
-               
-                i++;   
-              }             
+          debug_print(F("sms_cmd_run(): New APN:"));
+          debug_print(tmp);
+          
+          //updating APN in config 
+          for(k=0;k<strlen(tmp);k++)
+             {
+               config.apn[k] = tmp[k];
+             }
+           
+          config.apn[k] = '\0';  //null terminate APN
+
+          debug_print(F("New APN configured:"));   
+          debug_print(config.apn); 
+          
+          save_config=1;  
+          power_reboot=1;
+          
+          //send SMS reply  
+          sms_send_msg("APN saved", phone);
         }
         
      //APN password
@@ -224,34 +216,27 @@
           debug_print(F("sms_cmd_run(): Set APN Pass command detected"));        
        
           //setting new APN pass                
-          while ((tmp = strtok_r(cmd, "=", &cmd)) != NULL) 
-              {
-                if(i > 0)
-                  {
-                    debug_print(F("sms_cmd_run(): New APN pass:"));
-                    debug_print(tmp);
-                    
-                    //updating in config 
-                    for(k=0;k<strlen(tmp);k++)
-                       {
-                         config.pwd[k] = tmp[k];
-                       }
-                    
-                    config.pwd[k] = '\0';  //null terminate 
-                       
-                    debug_print(F("New APN pass configured:"));   
-                    debug_print(config.pwd); 
-                    
-                    save_config=1;  
-                    power_reboot=1;
-                    
-                    //send SMS reply  
-                    sms_send_msg("APN password saved", phone);                    
-                    break;                  
-                  }
-               
-                i++;   
-              }             
+          tmp += strlen("gprspass=");
+
+          debug_print(F("sms_cmd_run(): New APN pass:"));
+          debug_print(tmp);
+          
+          //updating in config 
+          for(k=0;k<strlen(tmp);k++)
+             {
+               config.pwd[k] = tmp[k];
+             }
+          
+          config.pwd[k] = '\0';  //null terminate 
+             
+          debug_print(F("New APN pass configured:"));   
+          debug_print(config.pwd); 
+          
+          save_config=1;  
+          power_reboot=1;
+          
+          //send SMS reply  
+          sms_send_msg("APN password saved", phone);                    
         }
         
      //APN username
@@ -261,34 +246,27 @@
           debug_print(F("sms_cmd_run(): Set APN User command detected"));        
        
           //setting new APN                   
-          while ((tmp = strtok_r(cmd, "=", &cmd)) != NULL) 
-              {
-                if(i > 0)
-                  {
-                    debug_print(F("sms_cmd_run(): New APN user:"));
-                    debug_print(tmp);
-                    
-                    //updating APN in config 
-                    for(k=0;k<strlen(tmp);k++)
-                       {
-                         config.user[k] = tmp[k];
-                       }
-                   
-                    config.user[k] = '\0';  //null terminate APN
-                       
-                    debug_print(F("New APN user configured:"));   
-                    debug_print(config.user); 
-                    
-                    save_config=1;  
-                    power_reboot=1;
-                    
-                    //send SMS reply  
-                    sms_send_msg("APN username saved", phone);                    
-                    break;                  
-                  }
-               
-                i++;   
-              }             
+          tmp += strlen("gprsuser=");
+
+          debug_print(F("sms_cmd_run(): New APN user:"));
+          debug_print(tmp);
+          
+          //updating APN in config 
+          for(k=0;k<strlen(tmp);k++)
+             {
+               config.user[k] = tmp[k];
+             }
+         
+          config.user[k] = '\0';  //null terminate APN
+             
+          debug_print(F("New APN user configured:"));   
+          debug_print(config.user); 
+          
+          save_config=1;  
+          power_reboot=1;
+          
+          //send SMS reply  
+          sms_send_msg("APN username saved", phone);                    
         }
      
      //SMS pass 
@@ -298,33 +276,26 @@
           debug_print(F("sms_cmd_run(): Set smspass command detected"));        
        
           //setting new APN                   
-          while ((tmp = strtok_r(cmd, "=", &cmd)) != NULL) 
-              {
-                if(i > 0)
-                  {
-                    debug_print(F("sms_cmd_run(): New smspass:"));
-                    debug_print(tmp);
-                    
-                    //updating APN in config 
-                    for(k=0;k<strlen(tmp);k++)
-                       {
-                         config.sms_key[k] = tmp[k];
-                       }
-                                          
-                    config.sms_key[k] = '\0';  //null terminate APN
-                       
-                    debug_print(F("New sms_key configured:"));   
-                    debug_print(config.sms_key); 
-                    
-                    save_config=1;                       
-                    
-                    //send SMS reply 
-                    sms_send_msg("SMS password saved", phone);                    
-                    break;                  
-                  }
-               
-                i++;   
-              }             
+          tmp += strlen("smspass=");
+
+          debug_print(F("sms_cmd_run(): New smspass:"));
+          debug_print(tmp);
+          
+          //updating APN in config 
+          for(k=0;k<strlen(tmp);k++)
+             {
+               config.sms_key[k] = tmp[k];
+             }
+                                
+          config.sms_key[k] = '\0';  //null terminate APN
+             
+          debug_print(F("New sms_key configured:"));   
+          debug_print(config.sms_key); 
+          
+          save_config=1;                       
+          
+          //send SMS reply 
+          sms_send_msg("SMS password saved", phone);                    
         }
         
      
@@ -335,34 +306,27 @@
           debug_print(F("sms_cmd_run(): Set smspass command detected"));        
        
           //setting new APN                   
-          while ((tmp = strtok_r(cmd, "=", &cmd)) != NULL) 
-              {
-                if(i > 0)
-                  {
-                    debug_print(F("sms_cmd_run(): New pin:"));
-                    debug_print(tmp);
-                    
-                    //updating pin in config 
-                    for(k=0;k<strlen(tmp);k++)
-                       {
-                         config.sim_pin[k] = tmp[k];
-                       }
-                                          
-                    config.sim_pin[k] = '\0';  //null terminate  
-                       
-                    debug_print(F("New sim_pin configured:"));   
-                    debug_print(config.sim_pin); 
-                    
-                    save_config=1;  
-                    power_reboot=1;                    
-                    
-                    //send SMS reply 
-                    sms_send_msg("SIM pin saved", phone);                    
-                    break;                  
-                  }
-               
-                i++;   
-              }             
+          tmp += strlen("pin=");
+
+          debug_print(F("sms_cmd_run(): New pin:"));
+          debug_print(tmp);
+          
+          //updating pin in config 
+          for(k=0;k<strlen(tmp);k++)
+             {
+               config.sim_pin[k] = tmp[k];
+             }
+                                
+          config.sim_pin[k] = '\0';  //null terminate  
+             
+          debug_print(F("New sim_pin configured:"));   
+          debug_print(config.sim_pin); 
+          
+          save_config=1;  
+          power_reboot=1;                    
+          
+          //send SMS reply 
+          sms_send_msg("SIM pin saved", phone);                    
         }
         
      //interval  
@@ -372,32 +336,32 @@
           debug_print(F("sms_cmd_run(): Set interval command detected"));        
        
           //setting new APN                   
-          while ((tmp = strtok_r(cmd, "=", &cmd)) != NULL) 
-              {
-                if(i > 0)
-                  {
-                    debug_print(F("sms_cmd_run(): New inteval:"));
-                    debug_print(tmp);
-                    
-                    //updating interval in config 
-                    config.interval = atol(tmp);
-                     
-                   //convert back to milliseconds
-                    config.interval = config.interval*1000;
-                       
-                    debug_print(F("New interval configured:"));   
-                    debug_print(config.interval); 
-                    
-                    save_config=1;  
-                    power_reboot=1;
-                    
-                    //send SMS reply 
-                    sms_send_msg("Interval saved", phone);                    
-                    break;                  
-                  }
+          tmp += strlen("int=");
+          
+          debug_print(F("sms_cmd_run(): New interval:"));
+          debug_print(tmp);
+
+          val = atol(tmp);
+          
+          if (val > 0)
+          {
+            //updating interval in config 
+            config.interval = 
+             
+            //convert back to milliseconds
+            config.interval = config.interval*1000;
                
-                i++;   
-              }             
+            debug_print(F("New interval configured:"));   
+            debug_print(config.interval); 
+            
+            save_config=1;  
+            power_reboot=1;
+            
+            //send SMS reply 
+            sms_send_msg("Interval saved", phone);                    
+          }
+          else
+            debug_print(F("sms_cmd_run(): invalid value"));
         }
         
      tmp = strstr(cmd, "locate");
