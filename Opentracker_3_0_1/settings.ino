@@ -41,13 +41,14 @@ void settings_load()
       debug_print(config.apn);    
       */
       
+      //delay(5000); //debug remove
  
      
       byte first_run = dueFlashStorage.read(STORAGE_FIRST_RUN_PAGE);  
       debug_print(F("settings_load(): First run flag:"));
       debug_print(first_run);     
       
-      if(first_run != '1')
+      if(first_run != 1)
         {
           //first run was not set, this is first even run of the board use config from tracker.h
           debug_print(F("settings_load(): setting defaults from config"));
