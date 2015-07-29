@@ -27,9 +27,25 @@
     {
       //turn on the modem
       debug_print(F("gsm_on_off() started"));
+
+      unsigned long timeout = millis();
       
-      digitalWrite(PIN_C_PWR_GSM, HIGH);  
-      delay(4000);
+      if (digitalRead(PIN_STATUS_GSM) == LOW) // now off, turn on
+      {
+        digitalWrite(PIN_C_PWR_GSM, HIGH);
+        while (digitalRead(PIN_STATUS_GSM) == LOW || millis() < timeout + 5000)
+          delay(100);
+        digitalWrite(PIN_C_PWR_GSM, LOW);        
+        delay(1000);
+      }  
+      else // now on, turn off
+      {
+        digitalWrite(PIN_C_PWR_GSM, HIGH);
+        delay(800);
+        digitalWrite(PIN_C_PWR_GSM, LOW);        
+        while (digitalRead(PIN_STATUS_GSM) == HIGH || millis() < timeout + 12000)
+          delay(100);
+      }  
       digitalWrite(PIN_C_PWR_GSM, LOW);        
       
       debug_print(F("gsm_on_off() finished"));
@@ -487,7 +503,7 @@
 
        //sending header                     
        gsm_port.print(HTTP_HEADER1); 
-       gsm_port.print(http_len); 
+       gsm_port.print(tmp_http_len); 
        gsm_port.print(HTTP_HEADER2);           
        
        //validate header delivery
