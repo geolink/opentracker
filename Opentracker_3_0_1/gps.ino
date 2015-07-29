@@ -128,7 +128,7 @@
               
              //update current time var - format 04/12/98,00:35:45+00
              // Add 1000000 to ensure the position of the digits
-             ltoa(date_gps+1000000, tmp, 10);  //1ddmmyy                    
+             ltoa(date_gps + 1000000, tmp, 10);  //1ddmmyy                    
              time_char[0] = tmp[1]; 
              time_char[1] = tmp[2]; 
              time_char[2] = '/'; 
@@ -188,7 +188,7 @@
                 }
 
                 //time
-                ltoa(time_gps, tmp, 10);
+                ltoa(time_gps, tmp, 10);               
                 for(int i=0;i<strlen(tmp);i++)
                   {
                    data_current[data_index] = tmp[i]; 

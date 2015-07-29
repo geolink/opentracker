@@ -49,8 +49,8 @@
   #define URL "/index.php"   
 
   #define DEFAULT_APN "internet"  //default APN
-  #define DEFAULT_USER "guest"  //default APN user
-  #define DEFAULT_PASS "guest"  //default APN pass  
+  #define DEFAULT_USER ""  //default APN user
+  #define DEFAULT_PASS ""  //default APN pass  
 
   const char HTTP_HEADER1[ ] = "POST /index.php  HTTP/1.0\r\nHost: updates.geolink.io \r\nContent-type: application/x-www-form-urlencoded\r\nContent-length:";  //HTTP header line before length 
   const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close\r\n\r\n";        //HTTP header line after length
