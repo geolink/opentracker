@@ -66,7 +66,7 @@ void settings_load()
           debug_print(config.interval);    
           debug_print(config.apn);    
           
-      
+          
           dueFlashStorage.write(STORAGE_FIRST_RUN_PAGE,1);  //set first run flag          
           settings_save(); //save settings
           
