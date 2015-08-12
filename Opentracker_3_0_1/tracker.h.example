@@ -1,79 +1,76 @@
 
-  //OpenTracker config
-  #define DEBUG 1          //enable debug msg, sent to serial port  
+//OpenTracker config
+#define DEBUG 1          //enable debug msg, sent to serial port
 
-  #define ALWAYS_ON 0      //set to 1 to make the tracker log even with the ignition off
+#define ALWAYS_ON 0      //set to 1 to make the tracker log even with the ignition off
 
-  long led_interval = 1000;    // interval at which to blink status led (milliseconds) 
-   
-  int SEND_DATA = 1;
+long led_interval = 1000;    // interval at which to blink status led (milliseconds)
 
-  //default settings (can be overwritten and stored in EEPRom)
-  #define INTERVAL 10000       //how often to collect data (milli sec, 600000 - 10 mins)
-  #define INTERVAL_SEND 1      //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
-  #define POWERSAVE 0          //enable powersaving (turn off modem, gps on every loop)
-  #define KEY "cSQ88qShwC3"    //key for connection, will be sent with every data transmission - max 12 chars
-  #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
-  #define SMS_KEY "pass"       //default password for SMS auth
+int SEND_DATA = 1;
 
-  #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // don't check for sms commands when the engine is running
+//default settings (can be overwritten and stored in EEPRom)
+#define INTERVAL 10000       //how often to collect data (milli sec, 600000 - 10 mins)
+#define INTERVAL_SEND 1      //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
+#define POWERSAVE 0          //enable powersaving (turn off modem, gps on every loop)
+#define KEY "cSQ88qShwC3"    //key for connection, will be sent with every data transmission - max 12 chars
+#define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
+#define SMS_KEY "pass"       //default password for SMS auth
 
-  #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
+#define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // don't check for sms commands when the engine is running
 
-  #define GSM_MODEM_COMMAND_TIMEOUT 10
-  #define GSM_SEND_FAILURES_REBOOT 0  // 0 == disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
-  #define GSM_STAY_ONLINE 0           // 0 == Disconnect Session after each send of data (Default). 1 == Stay Online to keep session active - breaks SMS checks?
+#define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
 
-  #define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 1 // when the engine is running, log position as fast as possible
+#define GSM_MODEM_COMMAND_TIMEOUT 10
+#define GSM_SEND_FAILURES_REBOOT 0  // 0 == disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
+#define GSM_STAY_ONLINE 0           // 0 == Disconnect Session after each send of data (Default). 1 == Stay Online to keep session active - breaks SMS checks?
 
-  #define SEND_RAW 0 // enable to use the new raw tcp send method to minimise data use
+#define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 1 // when the engine is running, log position as fast as possible
+
+#define SEND_RAW 0 // enable to use the new raw tcp send method to minimise data use
 #define SEND_RAW_INCLUDE_IMEI 1
-  #define SEND_RAW_INCLUDE_KEY 1
-  #define SEND_RAW_INCLUDE_TIMESTAMP 0
+#define SEND_RAW_INCLUDE_KEY 1
+#define SEND_RAW_INCLUDE_TIMESTAMP 0
 
-  #define DATA_INCLUDE_GPS_DATE 1 // enable to include the GPS date in the POST string
-  #define DATA_INCLUDE_GPS_TIME 1 // enable to include the GPS time in the POST string
-  #define DATA_INCLUDE_LATITUDE 1 // enable to include latitude
-  #define DATA_INCLUDE_LONGITUDE 1 // enable to include longitude
-  #define DATA_INCLUDE_SPEED 1 // enable to include speed (km/h)
-  #define DATA_INCLUDE_ALTITUDE 1 // enable to include altitude
-  #define DATA_INCLUDE_HEADING 1 // enable to include heading
-  #define DATA_INCLUDE_HDOP 1 // enable to include hdop
-  #define DATA_INCLUDE_SATELLITES 1 // enable to include satellites
-  #define DATA_INCLUDE_BATTERY_LEVEL 0  // enable to include the battery level in the POST string
-  #define DATA_INCLUDE_IGNITION_STATE 0 // enable to include the ignition state in the POST string
-  #define DATA_INCLUDE_ENGINE_RUNNING_TIME 0 // enable to include the engine running time (in seconds) in the POST string
+#define DATA_INCLUDE_GPS_DATE 1 // enable to include the GPS date in the POST string
+#define DATA_INCLUDE_GPS_TIME 1 // enable to include the GPS time in the POST string
+#define DATA_INCLUDE_LATITUDE 1 // enable to include latitude
+#define DATA_INCLUDE_LONGITUDE 1 // enable to include longitude
+#define DATA_INCLUDE_SPEED 1 // enable to include speed (km/h)
+#define DATA_INCLUDE_ALTITUDE 1 // enable to include altitude
+#define DATA_INCLUDE_HEADING 1 // enable to include heading
+#define DATA_INCLUDE_HDOP 1 // enable to include hdop
+#define DATA_INCLUDE_SATELLITES 1 // enable to include satellites
+#define DATA_INCLUDE_BATTERY_LEVEL 0  // enable to include the battery level in the POST string
+#define DATA_INCLUDE_IGNITION_STATE 0 // enable to include the ignition state in the POST string
+#define DATA_INCLUDE_ENGINE_RUNNING_TIME 0 // enable to include the engine running time (in seconds) in the POST string
 
-  #define PROTO "TCP"
+#define PROTO "TCP"
 #define HOSTNAME "updates.geolink.io"
-  #define HTTP_PORT "80"  
-  #define URL "/index.php"   
+#define HTTP_PORT "80"
+#define URL "/index.php"
 
-  #define DEFAULT_APN "internet"  //default APN
-  #define DEFAULT_USER ""  //default APN user
-  #define DEFAULT_PASS ""  //default APN pass  
+#define DEFAULT_APN "internet"  //default APN
+#define DEFAULT_USER ""  //default APN user
+#define DEFAULT_PASS ""  //default APN pass
 
 #define DEFAULT_ALARM_ON   0  //if active SMS will be sent on Ignition ON/OFF
-#define DEFAULT_ALARM_SMS  ""  //default SMS for alarm  
-  const char HTTP_HEADER1[ ] = "POST /index.php  HTTP/1.0\r\nHost: updates.geolink.io \r\nContent-type: application/x-www-form-urlencoded\r\nContent-length:";  //HTTP header line before length 
-  const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close\r\n\r\n";        //HTTP header line after length
-  
-  
-  #define PACKET_SIZE 1400    //TCP data chunk size, modem accept max 1460 bytes per send
-  #define PACKET_SIZE_DELIVERY 3000    //in case modem has this number of bytes undelivered, wait till sending new data (3000 bytes default, max sending TCP buffer is 7300)
+#define DEFAULT_ALARM_SMS  ""  //default SMS for alarm
+const char HTTP_HEADER1[ ] = "POST /index.php  HTTP/1.0\r\nHost: updates.geolink.io \r\nContent-type: application/x-www-form-urlencoded\r\nContent-length:";  //HTTP header line before length
+const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close\r\n\r\n";        //HTTP header line after length
 
-  #define CONNECT_RETRY 5    //how many time to retry connecting to remote server
+#define PACKET_SIZE 1400    //TCP data chunk size, modem accept max 1460 bytes per send
+#define PACKET_SIZE_DELIVERY 3000    //in case modem has this number of bytes undelivered, wait till sending new data (3000 bytes default, max sending TCP buffer is 7300)
 
-  #define STORAGE 1                     //save logs in flash storage
-  #define STORAGE_CONFIG_PAGE 1         //flash index to store configuration - just after FIRST_RUN page
-  #define STORAGE_FIRST_RUN_PAGE 0      //flash index to store flag for first run - very first page
-  #define STORAGE_DATA_START 200        //starting flash index to store logs (200 first bytes reserved for configuration)
-  #define STORAGE_DATA_END 262142       //the last possible flash index (max 262143, one last byte must be reserved for marker)
-//  #define STORAGE_DATA_END 600       //the last possible flash index (max 262143, one last byte must be reserved for marker)
-    
-  #define STORAGE_INDEX_CHAR 35         //character used as index separator (ascii 35 = #), data must not have this character
-  #define STORAGE_INDEX_SENT_CHAR 64    //character used as index separator indicating sent logs position (ascii 64 = @), data must not have this character  
+#define CONNECT_RETRY 5    //how many time to retry connecting to remote server
 
+#define STORAGE 1                     //save logs in flash storage
+#define STORAGE_CONFIG_PAGE 1         //flash index to store configuration - just after FIRST_RUN page
+#define STORAGE_FIRST_RUN_PAGE 0      //flash index to store flag for first run - very first page
+#define STORAGE_DATA_START 200        //starting flash index to store logs (200 first bytes reserved for configuration)
+#define STORAGE_DATA_END 262142       //the last possible flash index (max 262143, one last byte must be reserved for marker)
+// #define STORAGE_DATA_END 600       //the last possible flash index (max 262143, one last byte must be reserved for marker)
 
-  
-  #define WEBSOCKET 1         //use websockets instead of traditional sending (real time updates and two ways comms) - todo
+#define STORAGE_INDEX_CHAR 35         //character used as index separator (ascii 35 = #), data must not have this character
+#define STORAGE_INDEX_SENT_CHAR 64    //character used as index separator indicating sent logs position (ascii 64 = @), data must not have this character
+
+#define WEBSOCKET 1         //use websockets instead of traditional sending (real time updates and two ways comms) - todo
