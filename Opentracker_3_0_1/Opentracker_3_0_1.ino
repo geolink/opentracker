@@ -14,6 +14,11 @@
     #define debug_print(x)
   #endif
   
+#ifdef SEND_RAW
+#define collect_data(i)  collect_all_data_raw(i);
+#else
+#define collect_data(i)  collect_all_data(i);
+#endif
   // Variables will change:
   int ledState = LOW;             // ledState used to set the LED
   long previousMillis = 0;        // will store last time LED was updated
@@ -58,8 +63,8 @@
     char sim_pin[5];        //PIN for SIM card
     char sms_key[12];       //password for SMS commands
     char imei[20];          //IMEI number
-
-    
+  byte alarm_on;
+  char alarm_phone[20];   //alarm phone number
   };
 
   settings config;
@@ -132,7 +137,9 @@ void setup() {
     //set to connect once started
     interval_count = config.interval_send;    
     
-     
+  if (config.alarm_on) {
+    sms_send_msg("Alarm Activated", config.alarm_phone);
+  }
     debug_print(F("setup() completed"));
 
 }
@@ -169,13 +176,22 @@ void loop() {
       // engine started
       engine_start = millis();
       engineRunning = 0;
+      if (config.alarm_on == 1) {
+        sms_send_msg("Ignition ON", config.alarm_phone);
+      }
     }
   } else {
     if (engineRunning != 1) {
       // engine stopped
       if (engineRunning == 0) {
         engineRunningTime += (millis() - engine_start);
+        if (config.alarm_on == 1) {
+          sms_send_msg("Ignition OFF", config.alarm_phone);
       }
+        // sending data before sleep with ignition mode OFF
+        collect_data(IGNT_STAT);
+        send_data();
+    }
       engineRunning = 1;
     }
 
@@ -193,40 +209,18 @@ void loop() {
 
    //collecting GPS data
 
-   if (SEND_RAW) {
-       collect_all_data_raw(IGNT_STAT);
-   } else {
-       collect_all_data(IGNT_STAT);
-   }
+  collect_data(IGNT_STAT);
    
-   debug_print(F("Current:")); 
-   debug_print(data_current); 
 
-   if (SEND_DATA) {
-       int i = gsm_send_data();         
+  send_data();
 
-       if(i != 1)
-       {
-      //current data not sent, save to sd card  
-          debug_print(F("Can not send data, saving to flash memory"));
 /*
        #ifdef STORAGE
-          storage_save_current();   //in case this fails - data is lost
-       #endif   
     
-*/
 
  
-        }
-        else
-        {
-            debug_print(F("Data sent successfully."));
-        }
-   }
   
    
-   /*
-   #ifdef STORAGE
     //send available log files    
     storage_send_logs();
    

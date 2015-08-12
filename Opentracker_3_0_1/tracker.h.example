@@ -27,6 +27,7 @@
   #define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 1 // when the engine is running, log position as fast as possible
 
   #define SEND_RAW 0 // enable to use the new raw tcp send method to minimise data use
+#define SEND_RAW_INCLUDE_IMEI 1
   #define SEND_RAW_INCLUDE_KEY 1
   #define SEND_RAW_INCLUDE_TIMESTAMP 0
 
@@ -43,8 +44,8 @@
   #define DATA_INCLUDE_IGNITION_STATE 0 // enable to include the ignition state in the POST string
   #define DATA_INCLUDE_ENGINE_RUNNING_TIME 0 // enable to include the engine running time (in seconds) in the POST string
 
-  #define HOSTNAME "updates.geolink.io"
   #define PROTO "TCP"
+#define HOSTNAME "updates.geolink.io"
   #define HTTP_PORT "80"  
   #define URL "/index.php"   
 
@@ -52,6 +53,8 @@
   #define DEFAULT_USER ""  //default APN user
   #define DEFAULT_PASS ""  //default APN pass  
 
+#define DEFAULT_ALARM_ON   0  //if active SMS will be sent on Ignition ON/OFF
+#define DEFAULT_ALARM_SMS  ""  //default SMS for alarm  
   const char HTTP_HEADER1[ ] = "POST /index.php  HTTP/1.0\r\nHost: updates.geolink.io \r\nContent-type: application/x-www-form-urlencoded\r\nContent-length:";  //HTTP header line before length 
   const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close\r\n\r\n";        //HTTP header line after length
   

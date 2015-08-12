@@ -55,12 +55,14 @@ void settings_load()
           config.interval = INTERVAL;
           config.interval_send = INTERVAL_SEND;
           config.powersave = POWERSAVE;
+          config.alarm_on =  DEFAULT_ALARM_ON;
     
           strlcpy(config.key, KEY, 12);
           strlcpy(config.sms_key, SMS_KEY, 12);
           strlcpy(config.apn, DEFAULT_APN, 64);
           strlcpy(config.user, DEFAULT_USER, 20);
           strlcpy(config.pwd, DEFAULT_PASS, 20);      
+          strlcpy(config.alarm_phone, DEFAULT_ALARM_SMS, 20);      
         
           debug_print(F("settings_load(): set config.interval:"));
           debug_print(config.interval);    

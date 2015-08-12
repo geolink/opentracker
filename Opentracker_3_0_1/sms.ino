@@ -329,6 +329,36 @@
           sms_send_msg("SIM pin saved", phone);                    
         }
         
+  //alarm
+  tmp = strstr(cmd, "alarm=");
+  if (tmp != NULL)
+  {
+    //setting new APN
+    tmp += strlen("alarm=");
+    debug_print(F("sms_cmd_run(): Alarm:"));
+    debug_print(tmp);
+    if (tmp == "off") {
+      config.alarm_on = 0;
+    } else {
+      config.alarm_on = 1;
+    }
+    //updating alarm phone
+    for (k = 0; k < strlen(phone); k++)
+    {
+      config.alarm_phone[k] = phone[k];
+    }
+    config.alarm_phone[k] = '\0';  //null terminate
+    debug_print(F("New alarm_phone configured:"));
+    debug_print(config.alarm_phone);
+    save_config = 1;
+    power_reboot = 1;
+    //send SMS reply
+    if (config.alarm_on) {
+      sms_send_msg("Alarm set ON", phone);
+    } else {
+      sms_send_msg("Alarm set OFF", phone);
+    }
+  }
      //interval  
      tmp = strstr(cmd, "int=");  
      if(tmp!=NULL) 

@@ -1,5 +1,8 @@
- //collect GPS data for sending 
+//collect and send GPS data for sending
  
+/**
+* This is default collect data function for HTTP
+*/
    void  collect_all_data(int ignitionState) {
    
     debug_print(F("collect_all_data() started"));       
@@ -82,13 +85,24 @@
     
   }
   
+/**
+* This function collects data for RAW TCP
+*/
   void collect_all_data_raw(int ignitionState)
   {
     debug_print(F("collect_all_data_raw() started"));
 
     gsm_get_time();
 
+  if (SEND_RAW_INCLUDE_IMEI) {
+    for (int i = 0; i < strlen(config.imei); i++) {
+      data_current[data_index++] = config.imei[i];
+    }
+  }
     if (SEND_RAW_INCLUDE_KEY) {
+    if (data_index > 0) {
+      data_current[data_index++] = ',';
+    }
         for (int i=0;i<strlen(config.key);i++) {
             data_current[data_index++] = config.key[i];
         }
@@ -169,3 +183,27 @@
 
     debug_print(F("collect_all_data_raw() completed"));
   }
+/**
+ * This function send collected data using HTTP or TCP
+ */
+void send_data() {
+  debug_print(F("Current:"));
+  debug_print(data_current);
+  if (SEND_DATA) {
+    int i = gsm_send_data();
+    if (i != 1)
+    {
+      //current data not sent, save to sd card
+      debug_print(F("Can not send data, saving to flash memory"));
+      /*
+             #ifdef STORAGE
+                storage_save_current();   //in case this fails - data is lost
+             #endif
+      */
+    }
+    else
+    {
+      debug_print(F("Data sent successfully."));
+    }
+  }
+}
