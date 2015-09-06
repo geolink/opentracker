@@ -4,6 +4,8 @@ if [ "`whoami`" != "root" ] ; then
     exit 0
 fi
 
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+
 while :
 do
     ./daemon.rb

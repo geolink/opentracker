@@ -1,0 +1,8 @@
+OpenTracker data logging daemon
+===============================
+
+Set database connection details in config/config.rb
+
+Set the rest of the config in the database, eg:
+
+insert into config (`key`,server,port,uid,gid,include_key,include_timestamp,include_gps_date,include_gps_time,include_latitude,include_longitude,include_speed,include_altitude,include_heading,include_hdop,include_satellites,include_battery_level,include_ignition_state,include_engine_running_time,timestamp_use,show_received,debug,detect_engineoff_movement,engineoff_movement_threshold,detect_enginestart_athome,athome_file,detect_enginestart_overnight,enginestart_overnight_from,enginestart_overnight_to,prowl_api_key,log_journeys,event_alerts) values ('xxxxxxxxxx','127.0.0.1',80,65534,65534,1,0,0,0,1,1,1,1,1,1,1,1,1,1,'server',1,0,1,20,1,'/home/me/at_home',1,'00:00','07:00','',0,0);
