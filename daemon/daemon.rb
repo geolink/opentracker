@@ -187,7 +187,7 @@ class OpenTrackerDaemon
         if @config[:log_journeys]
           journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
 
-          @db[:journey].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+          @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
           @db[:journey].where('id = ?',journey[:id]).update(:to_timestamp => ts, :to_latitude => data[:latitude], :to_longitude => data[:longitude])
         end
       end
