@@ -273,19 +273,21 @@ class OpenTrackerDaemon
 
     data = {}
 
-    for i in 0...keys.length
-      if m[i+1].match /\A[0-9]+\z/
-        data[keys[i].to_sym] = m[i+1].to_i
-      elsif m[i+1].match /\A[0-9\.]+\z/
-        data[keys[i].to_sym] = m[i+1].to_f
-      else
-        data[keys[i].to_sym] = m[i+1]
-      end
+    if !m.nil?
+      for i in 0...keys.length
+        if m[i+1].match /\A[0-9]+\z/
+          data[keys[i].to_sym] = m[i+1].to_i
+        elsif m[i+1].match /\A[0-9\.]+\z/
+          data[keys[i].to_sym] = m[i+1].to_f
+        else
+          data[keys[i].to_sym] = m[i+1]
+        end
 
-      if keys[i] == 'speed'
-        data[:speed] = (data[:speed] * 0.621371).round(2)
-      elsif keys[i] == 'ignition_state'
-        data[:ignition_state] = (data[:ignition_state] == 1)
+        if keys[i] == 'speed'
+          data[:speed] = (data[:speed] * 0.621371).round(2)
+        elsif keys[i] == 'ignition_state'
+          data[:ignition_state] = (data[:ignition_state] == 1)
+        end
       end
     end
 
