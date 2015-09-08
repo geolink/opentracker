@@ -162,7 +162,7 @@ class OpenTrackerDaemon
         total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
 
         if @config[:event_alerts]
-          alert 'Moving', "Moved #{distance}"
+          alert 'Moving', "Moved #{total_distance}m"
         end
 
         @db[:event].insert(:timestamp => ts, :event => 'moved', :moved => distance, :moved_total => total_distance)
