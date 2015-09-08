@@ -41,7 +41,8 @@ class OpenTrackerDaemon
       raise "Database connection is not defined in config.rb"
     end
 
-    @db = Sequel.connect(config[:db])
+    @db_config = config[:db]
+    @db = Sequel.connect(@db_config)
 
     load_config
 
@@ -65,6 +66,10 @@ class OpenTrackerDaemon
     end
   end
 
+  def reconnect
+    @db = Sequel.connect(@db_config)
+  end
+
   def load_config
     @config = @db[:config].first
   end
@@ -77,7 +82,12 @@ class OpenTrackerDaemon
 
           @config[:show_received] and puts "#{input}"
 
-          load_config
+          begin
+            load_config
+          rescue Sequel::DatabaseDisconnectError
+            reconnect
+            load_config
+          end
 
           handle_request input, session.peeraddr[2]
 
