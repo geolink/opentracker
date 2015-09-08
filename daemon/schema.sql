@@ -56,8 +56,9 @@ CREATE TABLE `config` (
   `prowl_api_key` varchar(40) COLLATE utf8_bin NOT NULL,
   `log_journeys` tinyint(1) NOT NULL,
   `event_alerts` tinyint(1) NOT NULL,
+  `engine_running_voltage` decimal(4,2) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +75,7 @@ CREATE TABLE `event` (
   `moved` varchar(64) COLLATE utf8_bin NOT NULL,
   `moved_total` varchar(64) COLLATE utf8_bin NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=36367 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -96,7 +97,7 @@ CREATE TABLE `journey` (
   `to_place` varchar(64) COLLATE utf8_bin DEFAULT NULL,
   `routed` tinyint(1) unsigned NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1151 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -116,7 +117,7 @@ CREATE TABLE `journey_step` (
   PRIMARY KEY (`id`),
   KEY `journey_id_fk` (`journey_id`),
   CONSTRAINT `journey_id_fk` FOREIGN KEY (`journey_id`) REFERENCES `journey` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=36323 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -141,7 +142,7 @@ CREATE TABLE `log` (
   `engine_running_time` bigint(20) NOT NULL,
   `ip` varchar(16) COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=307910 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -153,4 +154,4 @@ CREATE TABLE `log` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-09-06 14:06:40
+-- Dump completed on 2015-09-08 20:06:58

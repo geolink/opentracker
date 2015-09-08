@@ -99,6 +99,12 @@ class OpenTrackerDaemon
 
       data.delete(:key)
 
+      if !data[:ignition_state]
+        data[:status] = 'ignition off'
+      else
+        data[:status] = data[:battery_level] >= @config[:engine_running_voltage] ? 'engine running' : 'position 2'
+      end
+
       if @config[:timestamp_use] == 'server'
         ts = Time.now
       elsif @config[:timestamp_use] == 'gsm'
@@ -116,81 +122,89 @@ class OpenTrackerDaemon
 
       last_row = @db[:log].order(Sequel.desc(:id)).limit(1).first
 
+      if !last_row[:ignition_state]
+        last_row[:status] = 'ignition off'
+      else
+        last_row[:status] = last_row[:battery_level] >= @config[:engine_running_voltage] ? 'engine running' : 'position 2'
+      end
+
       distance = sprintf("%.2f",get_distance(last_row[:latitude], last_row[:longitude], data[:latitude], data[:longitude]))
 
-      if @config[:detect_engineoff_movement] and !data[:ignition_state] and !last_row[:ignition_state]
+      if last_row[:status] != data[:status]
+        if @config[:event_alerts]
+          alert 'Ignition', "#{last_row[:status]} => #{data[:status]}"
+        end
+
+        if ['position 2','engine running'].include?(data[:status])
+          n = ts.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2} ([0-9]{2}:[0-9]{2}):[0-9]{2}$/)
+
+          time = n[1]
+
+          prefix = data[:status] == 'position 2' ? 'Ignition turned' : 'Engine started'
+
+          if @config[:detect_enginestart_athome] and File.exists?(@config[:athome_file]) and File.open(@config[:athome_file],"r").read.strip.to_i == 1
+            alert 'Engine', prefix + ' while at home!'
+          end
+
+          if @config[:detect_enginestart_overnight] and time >= @config[:enginestart_overnight_from] and time <= @config[:enginestart_overnight_to]
+            alert 'Engine', prefix + ' overnight!'
+          end
+
+          @db[:event].insert(:timestamp => ts, :event => prefix, :moved => distance, :moved_total => distance)
+
+          if @config[:log_journeys] and data[:status] == 'engine running'
+            @db[:journey].insert(:from_timestamp => ts, :from_latitude => data[:latitude], :from_longitude => data[:longitude])
+
+            journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
+
+            @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+          end
+        end
+
+        if last_row[:status] == 'engine running'
+          last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
+          total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
+
+          @db[:event].insert(:timestamp => ts, :event => 'engine-stopped', :moved => distance, :moved_total => total_distance)
+
+          if @config[:log_journeys]
+            journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
+
+            @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+            @db[:journey].where('id = ?',journey[:id]).update(:to_timestamp => ts, :to_latitude => data[:latitude], :to_longitude => data[:longitude])
+          end
+        end
+      else
+        if data[:status] == 'engine running'
+          last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
+          total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
+
+          if @config[:event_alerts]
+            alert 'Moving', "Moved #{total_distance}m"
+          end
+
+          @db[:event].insert(:timestamp => ts, :event => 'moved', :moved => distance, :moved_total => total_distance)
+
+          if @config[:log_journeys]
+            journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
+
+            @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+          end
+        end
+      end
+
+      if @config[:detect_engineoff_movement] and ['ignition off','position 2'].include?(data[:status]) and ['ignition off','position 2'].include?(last_row[:status])
         if distance.to_f >= @config[:engineoff_movement_threshold]
           alert 'Movement',"Moved #{distance} metres with engine off!"
 
-          last_event = @db[:event].order(Sequel(:id)).limit(1).first
+          last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
           total_distance = sprintf("%.2f",last_event[:total_distance].to_f + distance.to_f)
 
           @db[:event].insert(:timestamp => ts, :event => 'engine-off-moved', :moved => distance, :moved_total => total_distance)
         end
       end
 
-      if !last_row[:ignition_state] and data[:ignition_state]
-        if @config[:event_alerts]
-          alert 'Engine','Engine started'
-        end
-
-        n = ts.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2} ([0-9]{2}:[0-9]{2}):[0-9]{2}$/)
-
-        time = n[1]
-
-        if @config[:detect_enginestart_athome] and File.exists?(@config[:athome_file]) and File.open(@config[:athome_file],"r").read.strip.to_i == 1
-          alert 'Engine','Engine started while at home!'
-        end
-
-        if @config[:detect_enginestart_overnight] and time >= @config[:enginestart_overnight_from] and time <= @config[:enginestart_overnight_to]
-          alert 'Engine','Engine started overnight!'
-        end
-
-        @db[:event].insert(:timestamp => ts, :event => 'engine-started', :moved => distance, :moved_total => distance)
-
-        if @config[:log_journeys]
-          @db[:journey].insert(:from_timestamp => ts, :from_latitude => data[:latitude], :from_longitude => data[:longitude])
-
-          journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
-
-          @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
-        end
-      end
-
-      if last_row[:ignition_state] and data[:ignition_state]
-        last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
-        total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
-
-        if @config[:event_alerts]
-          alert 'Moving', "Moved #{total_distance}m"
-        end
-
-        @db[:event].insert(:timestamp => ts, :event => 'moved', :moved => distance, :moved_total => total_distance)
-
-        if @config[:log_journeys]
-          journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
-
-          @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
-        end
-      end
-
-      if last_row[:ignition_state] and !data[:ignition_state]
-        last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
-        total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
-
-        if @config[:event_alerts]
-          alert 'Engine', 'Engine stopped'
-        end
-
-        @db[:event].insert(:timestamp => ts, :event => 'engine-stopped', :moved => distance, :moved_total => total_distance)
-
-        if @config[:log_journeys]
-          journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
-
-          @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
-          @db[:journey].where('id = ?',journey[:id]).update(:to_timestamp => ts, :to_latitude => data[:latitude], :to_longitude => data[:longitude])
-        end
-      end
+      data.delete(:status)
 
       data[:timestamp] = ts
       data[:ip] = ipaddr
@@ -268,6 +282,8 @@ class OpenTrackerDaemon
     data
   end
 end
+
+Thread.abort_on_exception = true
 
 ot = OpenTrackerDaemon.new
 ot.start_server
