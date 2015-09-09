@@ -319,7 +319,7 @@ void sms_cmd_run(char *cmd, char *phone) {
 
     if(val > 0) {
       //updating interval in config
-      config.interval =
+      config.interval = val;
 
       //convert back to milliseconds
       config.interval = config.interval*1000;
