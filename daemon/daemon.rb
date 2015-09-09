@@ -138,7 +138,7 @@ class OpenTrackerDaemon
         last_row[:status] = last_row[:battery_level] >= @config[:engine_running_voltage] ? 'engine running' : 'position 2'
       end
 
-      distance = sprintf("%.2f",get_distance(last_row[:latitude], last_row[:longitude], data[:latitude], data[:longitude]))
+      last_row_distance = sprintf("%.2f",get_distance(last_row[:latitude], last_row[:longitude], data[:latitude], data[:longitude]))
 
       if last_row[:status] != data[:status]
         if @config[:event_alerts]
@@ -160,7 +160,7 @@ class OpenTrackerDaemon
             alert 'Engine', prefix + ' overnight!'
           end
 
-          @db[:event].insert(:timestamp => ts, :event => prefix, :moved => distance, :moved_total => distance)
+          @db[:event].insert(:timestamp => ts, :event => prefix, :moved => last_row_distance, :moved_total => last_row_distance)
 
           if @config[:log_journeys] and data[:status] == 'engine running'
             @db[:journey].insert(:from_timestamp => ts, :from_latitude => data[:latitude], :from_longitude => data[:longitude])
@@ -173,9 +173,9 @@ class OpenTrackerDaemon
 
         if last_row[:status] == 'engine running'
           last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
-          total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
+          total_distance = sprintf("%.2f",last_event[:moved_total].to_f + last_row_distance.to_f)
 
-          @db[:event].insert(:timestamp => ts, :event => 'engine-stopped', :moved => distance, :moved_total => total_distance)
+          @db[:event].insert(:timestamp => ts, :event => 'engine-stopped', :moved => last_row_distance, :moved_total => total_distance)
 
           if @config[:log_journeys]
             journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
@@ -187,13 +187,15 @@ class OpenTrackerDaemon
       else
         if data[:status] == 'engine running'
           last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
-          total_distance = sprintf("%.2f",last_event[:moved_total].to_f + distance.to_f)
+          last_engineoff = @db[:log].where('ignition_state = ? or battery_level < ?',0,@config[:engine_running_voltage]).order(Sequel.desc(:id)).limit(1).first
+
+          total_distance = sprintf("%.2f",get_distance(last_engineoff[:latitude], last_engineoff[:longitude], data[:latitude], data[:longitude]))
 
           if @config[:event_alerts]
             alert 'Moving', "Moved #{total_distance}m"
           end
 
-          @db[:event].insert(:timestamp => ts, :event => 'moved', :moved => distance, :moved_total => total_distance)
+          @db[:event].insert(:timestamp => ts, :event => 'moved', :moved => last_row_distance, :moved_total => total_distance)
 
           if @config[:log_journeys]
             journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
@@ -204,13 +206,13 @@ class OpenTrackerDaemon
       end
 
       if @config[:detect_engineoff_movement] and ['ignition off','position 2'].include?(data[:status]) and ['ignition off','position 2'].include?(last_row[:status])
-        if distance.to_f >= @config[:engineoff_movement_threshold]
-          alert 'Movement',"Moved #{distance} metres with engine off!"
+        if last_row_distance.to_f >= @config[:engineoff_movement_threshold]
+          alert 'Movement',"Moved #{last_row_distance} metres with engine off!"
 
           last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
-          total_distance = sprintf("%.2f",last_event[:total_distance].to_f + distance.to_f)
+          total_distance = sprintf("%.2f",last_event[:total_distance].to_f + last_row_distance.to_f)
 
-          @db[:event].insert(:timestamp => ts, :event => 'engine-off-moved', :moved => distance, :moved_total => total_distance)
+          @db[:event].insert(:timestamp => ts, :event => 'engine-off-moved', :moved => last_row_distance, :moved_total => total_distance)
         end
       end
 
