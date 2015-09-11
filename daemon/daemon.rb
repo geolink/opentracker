@@ -118,11 +118,11 @@ class OpenTrackerDaemon
       if @config[:timestamp_use] == 'server'
         ts = Time.now
       elsif @config[:timestamp_use] == 'gsm'
-        t = data[:timestamp].match /^([0-9]{2})\/([0-9]{2})\/([0-9]{2}),([0-9]{2}\:[0-9]{2}\:[0-9]{2})$/
+        t = data[:timestamp].match /\A([0-9]{2})\/([0-9]{2})\/([0-9]{2}),([0-9]{2}\:[0-9]{2}\:[0-9]{2})\z/
         ts = Time.parse "20" + t[1] + "-" + t[2] + "-" + t[3] + " " + t[4]
       elsif @config[:timestamp_use] == 'gps'
-        t1 = data[:gps_date].match(/^([0-9]{2})([0-9]{2})([0-9]{2})$/)
-        t2 = data[:gps_time].match(/^([0-9]{1,2})([0-9]{2})([0-9]{2})([0-9]{2})$/)
+        t1 = data[:gps_date].match(/\A([0-9]{2})([0-9]{2})([0-9]{2})\z/)
+        t2 = data[:gps_time].match(/\A([0-9]{1,2})([0-9]{2})([0-9]{2})([0-9]{2})\z/)
         ts = Time.parse "20" + t1[3] + "-" + t1[2] + "-" + t1[1] + " " + t2[1].rjust(2,'0') + ":" + t2[2] + ":" + t2[3]
       end
 
@@ -146,7 +146,7 @@ class OpenTrackerDaemon
         end
 
         if ['position 2','engine running'].include?(data[:status])
-          n = ts.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2} ([0-9]{2}:[0-9]{2}):[0-9]{2}$/)
+          n = ts.match(/\A[0-9]{4}-[0-9]{2}-[0-9]{2} ([0-9]{2}:[0-9]{2}):[0-9]{2}\z/)
 
           time = n[1]
 
