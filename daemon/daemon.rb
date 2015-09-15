@@ -191,7 +191,7 @@ class OpenTrackerDaemon
 
           total_distance = sprintf("%.2f",get_distance(last_engineoff[:latitude], last_engineoff[:longitude], data[:latitude], data[:longitude]))
 
-          if @config[:event_alerts]
+          if @config[:event_alerts] and total_distance != '0.00'
             alert 'Moving', "Moved #{total_distance}m"
           end
 
