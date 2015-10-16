@@ -127,7 +127,7 @@ class OpenTracker
     end
 
     def forward(data)
-        res = Net::HTTP.post_form(URI('http://tigalupdates.opengps.net/update.php'),
+        res = Net::HTTP.post_form(URI('http://updates.geolink.io/index.php'),
             'imei' => $imei,
             'key' => $key,
             'd' => data.gsub(/\].*$/,'')
