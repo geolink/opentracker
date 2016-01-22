@@ -4,299 +4,300 @@ require 'socket'
 require 'mysql'
 require 'process'
 require 'time'
-require 'cgi'
-require 'net/http'
-require 'net/https'
-require 'uri'
+require 'sequel'
+require 'prowl'
 
-load './daemon_config.rb'
+$data_keys = {
+  'key' => '([0-9a-zA-Z]+)',
+  'timestamp' => '([0-9]{2}\/[0-9]{2}\/[0-9]{2},[0-9]{2}\:[0-9]{2}\:[0-9]{2})',
+  'gps_date' => '([0-9]{6})',
+  'gps_time' => '([0-9]+)',
+  'latitude' => '([0-9\.\-]+)',
+  'longitude' => '([0-9\.\-]+)',
+  'speed' => '([0-9\.\-]+)',
+  'altitude' => '([0-9\.\-]+)',
+  'heading' => '([0-9\.\-]+)',
+  'hdop' => '([0-9]+)',
+  'satellites' => '([0-9]+)',
+  'battery_level' => '([0-9\.]+)',
+  'ignition_state' => '([01])',
+  'engine_running_time' => '([0-9]+)'
+}
 
 class OpenTrackerDaemon
-    def initialize
-        @server = TCPServer.new($server, $port)
+  def initialize
+    config_file = File.dirname(__FILE__) + "/config/config.rb"
 
-        Process::Sys.setuid $user
-        Process::Sys.seteuid $group
-
-        !$include_key and puts "WARNING: $include_key == false: authentication disabled!"
-
-        if $timestamp_use == 'gsm' and !$include_timestamp
-            puts "Error: $timestamp_use == 'gsm' requires $include_timestamp"
-            exit
-        end
-        if $timestamp_use == 'gps' and (!$include_gps_date || !$include_gps_time)
-            puts "Error: $timestamp_use == 'gps' requires $include_gps_date and $include_gps_time"
-            exit
-        end
-        if !["server","gsm","gps"].include? $timestamp_use
-            puts "Error: invalid setting for $timestamp_use; valid settings are server, gsm or gps"
-            exit
-        end
-
-        @segments, @attributes = determine_attributes
-        @regex = "^" + @segments.join(",")
+    if !File.exist? config_file
+      raise "Config file not found: #{config_file}"
     end
 
-    def start_server
-        while (session = @server.accept)
-            unless session.peeraddr.nil?
-                Thread.start do
-                    input = session.gets
-
-                    $show_received and puts "#{input}"
-
-                    load './daemon_config.rb'
-
-                    handle_request input, session.peeraddr[2]
-
-                    session.close
-                end
-            end
-        end
+    config = {}
+    instance_eval(File.read(config_file)).each do |key, value|
+      config[key] = value
     end
 
-    def handle_request(req, ipaddr)
-        if req == nil
-            return
+    if !config[:db]
+      raise "Database connection is not defined in config.rb"
+    end
+
+    @db_config = config[:db]
+    @db = Sequel.connect(@db_config)
+
+    load_config
+
+    @server = TCPServer.new(@config[:server], @config[:port])
+
+    Process::Sys.setuid @config[:uid]
+    Process::Sys.seteuid @config[:gid]
+
+    !@config[:include_key] and puts "WARNING: $include_key == false: authentication disabled!"
+
+    if @config[:timestamp_use] == 'gsm' and !@config[:include_timestamp]
+      raise "Error: $timestamp_use == 'gsm' requires $include_timestamp"
+    end
+
+    if @config[:timestamp_use] == 'gps' and (!@config[:include_gps_date] || !@config[:include_gps_time])
+      raise "Error: $timestamp_use == 'gps' requires $include_gps_date and $include_gps_time"
+    end
+
+    if !["server","gsm","gps"].include? @config[:timestamp_use]
+      raise "Error: invalid setting for $timestamp_use; valid settings are server, gsm or gps"
+    end
+  end
+
+  def reconnect
+    @db = Sequel.connect(@db_config)
+  end
+
+  def load_config
+    @config = @db[:config].first
+  end
+
+  def start_server
+    while (session = @server.accept)
+      unless session.peeraddr.nil?
+        Thread.start do
+          input = session.gets
+
+          @config[:show_received] and puts "#{input}"
+
+          begin
+            load_config
+          rescue Sequel::DatabaseDisconnectError
+            reconnect
+            load_config
+          end
+
+          handle_request input, session.peeraddr[2]
+
+          session.close
+        end
+      end
+    end
+  end
+
+  def handle_request(req, ipaddr)
+    if req == nil
+      return
+    end
+
+    data = parse_data(req)
+
+    if data[:key] and data[:key] == @config[:key]
+      @config[:debug] and puts "key match"
+
+      data.delete(:key)
+
+      if !data[:ignition_state]
+        data[:status] = 'ignition off'
+      else
+        data[:status] = data[:battery_level] >= @config[:engine_running_voltage] ? 'engine running' : 'position 2'
+      end
+
+      if @config[:timestamp_use] == 'server'
+        ts = Time.now
+      elsif @config[:timestamp_use] == 'gsm'
+        t = data[:timestamp].match /\A([0-9]{2})\/([0-9]{2})\/([0-9]{2}),([0-9]{2}\:[0-9]{2}\:[0-9]{2})\z/
+        ts = Time.parse "20" + t[1] + "-" + t[2] + "-" + t[3] + " " + t[4]
+      elsif @config[:timestamp_use] == 'gps'
+        t1 = data[:gps_date].match(/\A([0-9]{2})([0-9]{2})([0-9]{2})\z/)
+        t2 = data[:gps_time].match(/\A([0-9]{1,2})([0-9]{2})([0-9]{2})([0-9]{2})\z/)
+        ts = Time.parse "20" + t1[3] + "-" + t1[2] + "-" + t1[1] + " " + t2[1].rjust(2,'0') + ":" + t2[2] + ":" + t2[3]
+      end
+
+      ts = ts.strftime "%Y-%m-%d %H:%M:%S"
+
+      @config[:debug] and puts "timestamp: #{ts}"
+
+      last_row = @db[:log].order(Sequel.desc(:id)).limit(1).first
+
+      if !last_row[:ignition_state]
+        last_row[:status] = 'ignition off'
+      else
+        last_row[:status] = last_row[:battery_level] >= @config[:engine_running_voltage] ? 'engine running' : 'position 2'
+      end
+
+      last_row_distance = sprintf("%.2f",get_distance(last_row[:latitude], last_row[:longitude], data[:latitude], data[:longitude]))
+
+      if last_row[:status] != data[:status]
+        if @config[:event_alerts]
+          alert 'Ignition', "#{last_row[:status]} => #{data[:status]}"
         end
 
-        m = req.match Regexp.new(@regex)
+        if ['position 2','engine running'].include?(data[:status])
+          n = ts.match(/\A[0-9]{4}-[0-9]{2}-[0-9]{2} ([0-9]{2}:[0-9]{2}):[0-9]{2}\z/)
 
-        if m != nil and m[1] and (!$include_key || m[1] == $key)
-            $debug and puts "key match"
+          time = n[1]
 
-            if $timestamp_use == 'server'
-                ts = Time.now
-            elsif $timestamp_use == 'gsm'
-                t = m[key_position("timestamp")].match /^([0-9]{2})\/([0-9]{2})\/([0-9]{2}),([0-9]{2}\:[0-9]{2}\:[0-9]{2})$/
-                ts = Time.parse "20" + t[1] + "-" + t[2] + "-" + t[3] + " " + t[4]
-            elsif $timestamp_use == 'gps'
-                t1 = m[key_position("gps_date")].match(/^([0-9]{2})([0-9]{2})([0-9]{2})$/)
-                t2 = m[key_position("gps_time")].match(/^([0-9]{1,2})([0-9]{2})([0-9]{2})([0-9]{2})$/)
-                ts = Time.parse "20" + t1[3] + "-" + t1[2] + "-" + t1[1] + " " + t2[1].rjust(2,'0') + ":" + t2[2] + ":" + t2[3]
-            end
+          prefix = data[:status] == 'position 2' ? 'Ignition turned' : 'Engine started'
 
-            ts = ts.strftime "%Y-%m-%d %H:%M:%S"
+          if @config[:detect_enginestart_athome] and File.exists?(@config[:athome_file]) and File.open(@config[:athome_file],"r").read.strip.to_i == 1
+            alert 'Engine', prefix + ' while at home!'
+          end
 
-            $debug and puts "timestamp: #{ts}"
+          if @config[:detect_enginestart_overnight] and time >= @config[:enginestart_overnight_from] and time <= @config[:enginestart_overnight_to]
+            alert 'Engine', prefix + ' overnight!'
+          end
 
-            values = []
-            attributes = @attributes.clone
+          @db[:event].insert(:timestamp => ts, :event => prefix, :moved => last_row_distance, :moved_total => last_row_distance)
 
-            for i in 0...attributes.length
-                if attributes[i] == 'speed'
-                    values.push (m[key_position("speed")].to_f * 0.621371).round(2)
-                elsif attributes[i] != 'key'
-                    values.push m[key_position(attributes[i])]
-                end
-            end
+          if @config[:log_journeys] and data[:status] == 'engine running'
+            @db[:journey].insert(:from_timestamp => ts, :from_latitude => data[:latitude], :from_longitude => data[:longitude])
 
-            con = Mysql.new $mysql_host, $mysql_user, $mysql_pass, $mysql_db
+            journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
 
-            last_row = query(con, "select * from `log` order by id desc limit 1")
+            @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+          end
+        end
 
-            if $detect_engineoff_movement and m[key_position("ignition_state")].to_i == 0 and last_row["ignition_state"].to_i == 0
-                distance = sprintf("%.2f",get_distance(last_row['latitude'], last_row['longitude'], m[key_position("latitude")], m[key_position("longitude")]))
+        if last_row[:status] == 'engine running'
+          last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
+          total_distance = sprintf("%.2f",last_event[:moved_total].to_f + last_row_distance.to_f)
 
-                if distance.to_f >= $engineoff_movement_threshold
-                    alert('Movement',"Moved #{distance} metres with engine off!")
+          @db[:event].insert(:timestamp => ts, :event => 'engine-stopped', :moved => last_row_distance, :moved_total => total_distance)
 
-                    last_event = query(con, "select * from `event` order by id desc limit 1")
-                    total_distance = sprintf("%.2f",last_event["total_distance"].to_f + distance.to_f)
+          if @config[:log_journeys]
+            journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
 
-                    con.query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{ts}','engine-off-moved','#{distance}','#{total_distance}');")
-                end
-            end
+            @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+            @db[:journey].where('id = ?',journey[:id]).update(:to_timestamp => ts, :to_latitude => data[:latitude], :to_longitude => data[:longitude])
+          end
+        end
+      else
+        if data[:status] == 'engine running'
+          last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
+          last_engineoff = @db[:log].where('ignition_state = ? or battery_level < ?',0,@config[:engine_running_voltage]).order(Sequel.desc(:id)).limit(1).first
 
-            if last_row["ignition_state"].to_i == 0 and m[key_position("ignition_state")].to_i == 1
-                n = ts.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2} ([0-9]{2}:[0-9]{2}):[0-9]{2}$/)
+          total_distance = sprintf("%.2f",get_distance(last_engineoff[:latitude], last_engineoff[:longitude], data[:latitude], data[:longitude]))
 
-                time = n[1]
+          if @config[:event_alerts] and total_distance != '0.00'
+            alert 'Moving', "Moved #{total_distance}m"
+          end
 
-                if $detect_enginestart_athome and File.exists?($athome_file) and File.open($athome_file,"r").read.strip.to_i == 1
-                    alert('Engine','Engine started while at home!')
-                end
+          @db[:event].insert(:timestamp => ts, :event => 'moved', :moved => last_row_distance, :moved_total => total_distance)
 
-                if $detect_enginestart_overnight and time >= $enginestart_overnight_from and time <= $enginestart_overnight_to
-                    alert('Engine','Engine started overnight!')
-                end
+          if @config[:log_journeys]
+            journey = @db[:journey].order(Sequel.desc(:id)).limit(1).first
 
-                puts "insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{ts}','engine-started','#{distance}','#{distance}');"
+            @db[:journey_step].insert(:journey_id => journey[:id], :timestamp => ts, :latitude => data[:latitude], :longitude => data[:longitude])
+          end
+        end
+      end
 
-                con.query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{ts}','engine-started','#{distance}','#{distance}');")
+      if @config[:detect_engineoff_movement] and ['ignition off','position 2'].include?(data[:status]) and ['ignition off','position 2'].include?(last_row[:status])
+        if last_row_distance.to_f >= @config[:engineoff_movement_threshold]
+          alert 'Movement',"Moved #{last_row_distance} metres with engine off!"
 
-                if $log_journeys
-                    con.query("insert into `journey` (`from_timestamp`,`from_latitude`,`from_longitude`) values ('#{ts}','#{m[key_position("latitude")]}','#{m[key_position("longitude")]}')")
-                    journey = query(con, "select * from `journey` order by id desc limit 1")
+          last_event = @db[:event].order(Sequel.desc(:id)).limit(1).first
+          total_distance = sprintf("%.2f",last_event[:total_distance].to_f + last_row_distance.to_f)
 
-                    con.query("insert into `journey_step` (`journey_id`,`timestamp`,`latitude`,`longitude`) values ('#{journey["id"]}','#{ts}','#{m[key_position("latitude")]}','#{m[key_position("longitude")]}')")
-                end
-            end
+          @db[:event].insert(:timestamp => ts, :event => 'engine-off-moved', :moved => last_row_distance, :moved_total => total_distance)
+        end
+      end
 
-            if last_row["ignition_state"].to_i == 1 and m[key_position("ignition_state")].to_i == 1
-                last_event = query(con, "select * from `event` order by id desc limit 1")
-                total_distance = sprintf("%.2f",last_event["moved_total"].to_f + distance.to_f)
+      data.delete(:status)
 
-                con.query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{ts}','moved','#{distance}','#{total_distance}');")
+      data[:timestamp] = ts
+      data[:ip] = ipaddr
 
-                if $log_journeys
-                    journey = query(con, "select * from `journey` order by id desc limit 1")
+      @db[:log].insert(data)
+    else
+      @config[:debug] and puts "Error: key '#{m[1]}' != #{@config[:key]}"
+    end
 
-                    con.query("insert into `journey_step` (`journey_id`,`timestamp`,`latitude`,`longitude`) values ('#{journey["id"]}','#{ts}','#{m[key_position("latitude")]}','#{m[key_position("longitude")]}')")
-                end
-            end
+  end
 
-            if last_row["ignition_state"].to_i == 1 and m[key_position("ignition_state")].to_i == 0
-                last_event = query(con, "select * from `event` order by id desc limit 1")
-                total_distance = sprintf("%.2f",last_event["moved_total"].to_f + distance.to_f)
+  def alert(type, msg)
+    if @config[:prowl_api_key]
+      Prowl.add({
+        :apikey => @config[:prowl_api_key],
+        :application => 'Tracker',
+        :event => type,
+        :description => msg
+      })
+    end
+  end
 
-                con.query("insert into `event` (`timestamp`,`event`,`moved`,`moved_total`) values ('#{ts}','engine-stopped','#{distance}','#{total_distance}');")
+  def get_distance(latitudeFrom, longitudeFrom, latitudeTo, longitudeTo, earthRadius = 6371000)
+    # convert from degrees to radians
+    latFrom = deg2rad(latitudeFrom)
+    lonFrom = deg2rad(longitudeFrom)
+    latTo = deg2rad(latitudeTo)
+    lonTo = deg2rad(longitudeTo)
 
-                if $log_journeys
-                    journey = query(con, "select * from `journey` order by id desc limit 1")
+    latDelta = latTo - latFrom
+    lonDelta = lonTo - lonFrom
 
-                    con.query("insert into `journey_step` (`journey_id`,`timestamp`,`latitude`,`longitude`) values ('#{journey["id"]}','#{ts}','#{m[key_position("latitude")]}','#{m[key_position("longitude")]}')")
-                    con.query("update journey set to_timestamp = '#{ts}', to_latitude = '#{m[key_position("latitude")]}', to_longitude = '#{m[key_position("longitude")]}' where id = #{journey["id"]}")
-                end
-            end
+    angle = 2 * Math::asin(Math::sqrt(Math::sin(latDelta / 2) ** 2) + Math::cos(latFrom) * Math::cos(latTo) * (Math::sin(lonDelta / 2) ** 2))
 
-            $debug and puts values.inspect
+    angle * earthRadius
+  end
 
-            attributes.shift
+  def deg2rad(deg)
+    deg.to_f * Math::PI / 180
+  end
 
-            $debug and puts attributes.inspect
+  def parse_data(request)
+    keys = []
+    regex_seg = []
 
-            query = "INSERT into `log` (timestamp," + attributes.join(",") + ",ip) values ('" + ts + "'," + values.join(",") + ",'#{ipaddr}');"
+    $data_keys.each do |key, regex|
+      if @config["include_#{key}".to_sym]
+        keys.push key
+        regex_seg.push regex
+      end
+    end
 
-            $debug and puts "#{query}"
+    @regex = '\A' + regex_seg.join(',')
 
-            con.query(query)
-            con.close
+    m = request.match Regexp.new(@regex)
+
+    data = {}
+
+    if !m.nil?
+      for i in 0...keys.length
+        if m[i+1].match /\A[0-9]+\z/
+          data[keys[i].to_sym] = m[i+1].to_i
+        elsif m[i+1].match /\A[0-9\.]+\z/
+          data[keys[i].to_sym] = m[i+1].to_f
         else
-            $debug and puts "Error: key '#{m[1]}' != #{$key}"
+          data[keys[i].to_sym] = m[i+1]
         end
 
+        if keys[i] == 'speed'
+          data[:speed] = (data[:speed] * 0.621371).round(2)
+        elsif keys[i] == 'ignition_state'
+          data[:ignition_state] = (data[:ignition_state] == 1)
+        end
+      end
     end
 
-    def query(con, sql)
-        res = con.query(sql)
-
-        row = {}
-
-        if res
-            rowdata = res.fetch_row
-            fields = res.fetch_fields
-
-            for i in 0...fields.length
-                row[fields[i].name] = rowdata[i]
-            end
-        end
-
-        row
-    end
-
-    def alert(type, msg)
-        if $prowl_api_key
-            msg = URI::escape(msg)
-            url = URI.parse("https://prowl.weks.net/publicapi/add")
-            http = Net::HTTP.new(url.host, url.port)
-            http.use_ssl = true
-            request = Net::HTTP::Get.new(url.path + "?apikey=#{$prowl_api_key}&application=Tracker&event=#{type}&description=#{msg}&priority=2")
-            response = http.start {|http| http.request(request) }
-        end
-    end
-
-    def get_distance(latitudeFrom, longitudeFrom, latitudeTo, longitudeTo, earthRadius = 6371000)
-        # convert from degrees to radians
-        latFrom = deg2rad(latitudeFrom)
-        lonFrom = deg2rad(longitudeFrom)
-        latTo = deg2rad(latitudeTo)
-        lonTo = deg2rad(longitudeTo)
-
-        latDelta = latTo - latFrom
-        lonDelta = lonTo - lonFrom
-
-        angle = 2 * Math::asin(Math::sqrt(Math::sin(latDelta / 2) ** 2) + Math::cos(latFrom) * Math::cos(latTo) * (Math::sin(lonDelta / 2) ** 2))
-
-        angle * earthRadius
-    end
-
-    def deg2rad(deg)
-        deg.to_f * Math::PI / 180
-    end
-
-    def determine_attributes
-        segments = []
-        attributes = []
-
-        if $include_key
-            segments.push '([0-9a-zA-Z]+)'
-            attributes.push 'key'
-        end
-        if $include_timestamp
-            segments.push '([0-9]{2}\/[0-9]{2}\/[0-9]{2},[0-9]{2}\:[0-9]{2}\:[0-9]{2})'
-            attributes.push 'timestamp'
-        end
-        if $include_gps_date
-            segments.push '([0-9]{6})'
-            attributes.push 'gps_date'
-        end
-        if $include_gps_time
-            segments.push '([0-9]+)'
-            attributes.push 'gps_time'
-        end
-        if $include_latitude
-            segments.push '([0-9\.\-]+)'
-            attributes.push 'latitude'
-        end
-        if $include_longitude
-            segments.push '([0-9\.\-]+)'
-            attributes.push 'longitude'
-        end
-        if $include_speed
-            segments.push '([0-9\.\-]+)'
-            attributes.push 'speed'
-        end
-        if $include_altitude
-            segments.push '([0-9\.\-]+)'
-            attributes.push 'altitude'
-        end
-        if $include_heading
-            segments.push '([0-9\.\-]+)'
-            attributes.push 'heading'
-        end
-        if $include_hdop
-            segments.push '([0-9]+)'
-            attributes.push 'hdop'
-        end
-        if $include_satellites
-            segments.push '([0-9]+)'
-            attributes.push 'satellites'
-        end
-        if $include_battery_level
-            segments.push '([0-9\.]+)'
-            attributes.push 'battery_level'
-        end
-        if $include_ignition_state
-            segments.push '([01])'
-            attributes.push 'ignition_state'
-        end
-        if $include_engine_running_time
-            segments.push '([0-9]+)'
-            attributes.push 'running_time'
-        end
-
-        return [segments, attributes]
-    end
-
-    def key_position(attribute)
-        for i in 0...@attributes.length
-            if @attributes[i] == attribute
-                return i+1
-            end
-        end
-    end
+    data
+  end
 end
+
+Thread.abort_on_exception = true
 
 ot = OpenTrackerDaemon.new
 ot.start_server

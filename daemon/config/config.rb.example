@@ -1,0 +1,12 @@
+
+{
+    :db => {
+      :adapter => 'mysql',
+      :user => 'root',
+      :database => 'tracker',
+      :password => '',
+      :host => 'localhost',
+      :timeout => 60,
+      :reconnect => true
+    }
+}
