@@ -416,6 +416,18 @@
           sms_send_msg(msg, phone);
         }
 
+     tmp = strstr(cmd, "tomtom");
+     if(tmp!=NULL)
+        {
+          debug_print(F("sms_cmd_run(): Locate command detected"));
+
+          char msg[255];
+
+          snprintf(msg,255,"tomtomhome://geo:lat=%s&long=%s",lat_current,lon_current);
+
+          sms_send_msg(msg, phone);
+        }
+
      tmp = strstr(cmd, "dataoff");
      if (tmp!=NULL)
          {
