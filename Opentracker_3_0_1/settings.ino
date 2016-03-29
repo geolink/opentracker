@@ -76,7 +76,7 @@ void settings_load() {
   debug_print(F("settings_load(): config.interval:"));
   debug_print(config.interval);
 
-  if((config.interval == -1) || (config.interval == NULL) || (config.interval < 0) || (config.interval > 5184000)) {
+  if((config.interval == -1) || (config.interval < 0) || (config.interval > 5184000)) {
     debug_print(F("settings_load(): interval not found, setting default"));
     config.interval = INTERVAL;
 
@@ -88,7 +88,7 @@ void settings_load() {
   debug_print(F("settings_load(): config.interval_send:"));
   debug_print(config.interval_send);
 
-  if((config.interval_send == -1) || (config.interval_send == NULL) || (config.interval < 0) || (config.interval > 100)) {
+  if((config.interval_send == -1) || (config.interval_send < 0) || (config.interval_send > 100)) {
     debug_print(F("settings_load(): interval_send not found, setting default"));
     config.interval_send = INTERVAL_SEND;
 
