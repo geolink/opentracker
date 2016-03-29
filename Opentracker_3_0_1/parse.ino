@@ -31,7 +31,7 @@ int parse_receive_reply() {
     }
 
     if(header != 1) {
-      tmp = strstr(modem_reply, "close\r\n\r\n");
+      tmp = strstr(modem_reply, "close\r\n");
       if(tmp!=NULL) {
         debug_print(F("Found header packet"));
         header = 1;
