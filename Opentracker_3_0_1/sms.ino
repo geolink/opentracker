@@ -378,7 +378,7 @@ void sms_cmd_run(char *cmd, char *phone) {
   debug_print(F("sms_cmd_run() completed"));
 }
 
-void sms_send_msg(char *cmd, char *phone) {
+void sms_send_msg(const char *cmd, const char *phone) {
   //send SMS message to number
   debug_print(F("sms_send_msg() started"));
 
@@ -393,7 +393,7 @@ void sms_send_msg(char *cmd, char *phone) {
 
   gsm_wait_for_reply(0,0);
 
-  char *tmp = strstr(modem_reply, ">");
+  const char *tmp = strstr(modem_reply, ">");
   if(tmp!=NULL) {
     debug_print(F("Modem replied with >"));
     gsm_port.print(cmd);
