@@ -1,6 +1,6 @@
-
 //tracker config
 #include "tracker.h"
+#include "addon.h"
 
 //External libraries
 #include <TinyGPS.h>
@@ -9,9 +9,9 @@
 #include <DueFlashStorage.h>
 
 #ifdef DEBUG
-#define debug_print(x)  debug_port.println(x)
+#define debug_print  debug_port.println
 #else
-#define debug_print(x)
+#define debug_print(...)
 #endif
 
 #ifdef SEND_RAW
@@ -86,6 +86,12 @@ void setup() {
   pinMode(PIN_C_REBOOT, OUTPUT);
   digitalWrite(PIN_C_REBOOT, LOW);  //this is required
 
+  //setup ignition detection
+  pinMode(PIN_S_DETECT, INPUT);
+
+  //initialize addon board hardware
+  addon_init();
+
   debug_print(F("setup() started"));
 
   //blink software start
@@ -110,6 +116,15 @@ void setup() {
   //supply PIN code is needed
   gsm_set_pin();
 
+  // wait for modem ready (status 0)
+  time_start = millis();
+  do {
+    int pas = gsm_get_modem_status();
+    if(pas==0 || pas==3 || pas==4) break;
+    delay(3000);
+  }
+  while (millis() - time_start < 60000);
+
   //get GSM IMEI
   gsm_get_imei();
 
@@ -124,16 +139,15 @@ void setup() {
     storage_get_index();
   #endif
 
-  //setup ignition detection
-
-  pinMode(PIN_S_DETECT, INPUT);
-
   //set to connect once started
   interval_count = config.interval_send;
 
   if(config.alarm_on) {
     sms_send_msg("Alarm Activated", config.alarm_phone);
   }
+
+  // setup addon board functionalities
+  addon_setup();
 
   debug_print(F("setup() completed"));
 }
@@ -150,6 +164,8 @@ void loop() {
   }
 
   status_led();
+
+  addon_loop();
 
   if(!SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
     sms_check();
@@ -248,15 +264,16 @@ void loop() {
         //time_diff = 1000;
 
         if(time_diff > 0) {
-          delay(time_diff);
+          addon_delay(time_diff);
         } else {
           debug_print(F("Error: negative sleep time."));
-          delay(500);
+          addon_delay(500);
         }
       } else {
         //probably counter reset, 50 days passed
         debug_print(F("Time counter reset"));
-        delay(1000);
+        addon_delay(1000);
       }
    }
 }
+
