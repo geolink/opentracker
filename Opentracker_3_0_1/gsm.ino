@@ -130,7 +130,7 @@ void gsm_set_pin() {
       }
     }
   } else {
-    debug_print(F("gsm_set_pin(): PIN is not requered"));
+    debug_print(F("gsm_set_pin(): PIN is not required"));
   }
 
   debug_print(F("gsm_set_pin() completed"));
@@ -244,6 +244,25 @@ void gsm_send_at() {
   debug_print(F("gsm_send_at() completed"));
 }
 
+int gsm_get_modem_status() {
+  debug_print(F("gsm_get_modem_status() started"));
+
+  gsm_port.print("AT+CPAS");
+  gsm_port.print("\r");
+  delay(50);
+
+  gsm_wait_for_reply(1,1);
+
+  int pas = -1; // unexpected reply
+  char *tmp = strstr(modem_reply, "+CPAS:");
+  if(tmp!=NULL)
+    pas = atoi(tmp+6);
+
+  debug_print(F("gsm_get_modem_status() returned: "));
+  debug_print(pas);
+  return pas;
+}
+
 int gsm_disconnect(int waitForReply) {
   #if GSM_STAY_ONLINE
     debug_print(F("gsm_disconnect() Disabled"));
@@ -300,6 +319,12 @@ int gsm_set_apn()  {
 
   gsm_wait_for_reply(1,0);
 
+  gsm_port.print("AT+QIACT\r");
+
+  gsm_wait_for_reply(1,0);
+  if (modem_reply[0] == 0)
+    gsm_wait_for_reply(1,0);
+
   debug_print(F("gsm_set_apn() completed"));
 
   return 1;
@@ -339,6 +364,8 @@ int gsm_connect()  {
       debug_print(F("Can not connect to remote server: "));
       debug_print(HOSTNAME);
     }
+
+    addon_delay(2000); // wait 2s before retrying
   }
 
   debug_print(F("gsm_connect() completed"));
@@ -383,6 +410,8 @@ int gsm_validate_tcp() {
     } else {
       debug_print(F("gsm_validate_tcp() data not yet delivered."));
     }
+
+    addon_event(ON_SEND_DATA);
   }
 
   debug_print(F("gsm_validate_tcp() completed."));
@@ -587,6 +616,8 @@ int gsm_send_data() {
   //opening connection
   ret_tmp = gsm_connect();
   if(ret_tmp == 1) {
+    addon_event(ON_SEND_STARTED);
+    
     //connection opened, just send data
     if(SEND_RAW) {
       gsm_send_raw_current();
@@ -601,6 +632,8 @@ int gsm_send_data() {
       ret_tmp = parse_receive_reply();
     }
 
+    addon_event(ON_SEND_COMPLETED);
+
     gsm_disconnect(0);
 
     gsm_send_failures = 0;
@@ -609,6 +642,7 @@ int gsm_send_data() {
     gsm_disconnect(0);
 
     gsm_send_failures++;
+    addon_event(ON_SEND_FAILED);
 
     if(GSM_SEND_FAILURES_REBOOT > 0 && gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
       power_reboot = 1;
@@ -618,6 +652,7 @@ int gsm_send_data() {
   return ret_tmp;
 }
 
+// use fullBuffer != 0 if you want to read multiple lines
 void gsm_get_reply(int fullBuffer) {
   //get reply from the modem
   byte index = 0;
@@ -641,8 +676,11 @@ void gsm_get_reply(int fullBuffer) {
     debug_print(F("Modem Reply:"));
     debug_print(modem_reply);
   }
+
+  addon_event(ON_MODEM_REPLY);
 }
 
+// use allowOK = 0 if OK comes before the end of the modem reply
 void gsm_wait_for_reply(int allowOK, int fullBuffer) {
   unsigned long timeout = millis();
 
@@ -693,6 +731,11 @@ int gsm_is_final_result(int allowOK) {
         return true;
       }
       return false;
+    case 'A':
+      if(strcmp(&modem_reply[1], "LREADY CONNECT\r\n") == 0) {
+        return true;
+      }
+      return false;
     case 'B':
       if(strcmp(&modem_reply[1], "USY\r\n") == 0) {
         return true;
@@ -703,6 +746,9 @@ int gsm_is_final_result(int allowOK) {
         return true;
       }
       if(strcmp(&modem_reply[1], "ONNECT FAIL\r\n") == 0) {
+        return true;
+      }
+      if(strcmp(&modem_reply[1], "LOSED\r\n") == 0) {
         return true;
       }
       return false;
