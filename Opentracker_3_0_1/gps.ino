@@ -284,6 +284,7 @@ void collect_gps_data() {
     if(fix == 1) {
       //fix was found
       debug_print(F("collect_gps_data(): fix acquired"));
+      addon_event(ON_LOCATION_FIXED);
       break;
     } else {
       //  debug_print(F("collect_gps_data(): fix not acquired, retrying"));
@@ -297,7 +298,7 @@ void collect_gps_data() {
       // set the LED with the ledState of the variable:
       digitalWrite(PIN_POWER_LED, ledState);
 
-      delay(12);
+      addon_delay(12);
     }
   }
 
@@ -307,5 +308,6 @@ void collect_gps_data() {
 
   if(fix != 1) {
     debug_print(F("collect_gps_data(): fix not acquired, given up."));
+    addon_event(ON_LOCATION_LOST);
   }
 }
