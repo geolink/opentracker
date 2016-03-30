@@ -14,7 +14,7 @@
 #define debug_print(...)
 #endif
 
-#ifdef SEND_RAW
+#if SEND_RAW
 #define collect_data(i)  collect_all_data_raw(i);
 #else
 #define collect_data(i)  collect_all_data(i);
