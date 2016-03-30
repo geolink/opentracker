@@ -337,22 +337,29 @@ int gsm_connect()  {
 
   //try to connect multiple times
   for(int i=0;i<CONNECT_RETRY;i++) {
-    debug_print(F("Connecting to remote server..."));
-    debug_print(i);
-
-    //open socket connection to remote host
-    //opening connection
-    gsm_port.print("AT+QIOPEN=\"");
-    gsm_port.print(PROTO);
-    gsm_port.print("\",\"");
-    gsm_port.print(HOSTNAME);
-    gsm_port.print("\",\"");
-    gsm_port.print(HTTP_PORT);
-    gsm_port.print("\"");
-    gsm_port.print("\r");
-
+    // check if connected from previous attempts
+    gsm_port.print("AT+QISTAT\r");
     gsm_wait_for_reply(0,0);
-
+    
+    if(strstr(modem_reply, "CONNECT OK") == NULL) {
+  
+      debug_print(F("Connecting to remote server..."));
+      debug_print(i);
+  
+      //open socket connection to remote host
+      //opening connection
+      gsm_port.print("AT+QIOPEN=\"");
+      gsm_port.print(PROTO);
+      gsm_port.print("\",\"");
+      gsm_port.print(HOSTNAME);
+      gsm_port.print("\",\"");
+      gsm_port.print(HTTP_PORT);
+      gsm_port.print("\"");
+      gsm_port.print("\r");
+  
+      gsm_wait_for_reply(0,0);
+    }
+    
     char *tmp = strstr(modem_reply, "CONNECT OK");
     if(tmp!=NULL) {
       debug_print(F("Connected to remote server: "));
@@ -780,6 +787,9 @@ int gsm_is_final_result(int allowOK) {
       return false;
     case 'S':
       if(STARTS_WITH(&modem_reply[1], "END ")) {
+        return true;
+      }
+      if(STARTS_WITH(&modem_reply[1], "TATE: ")) {
         return true;
       }
       /* no break */
