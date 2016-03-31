@@ -8,7 +8,7 @@
 
 #include <DueFlashStorage.h>
 
-#ifdef DEBUG
+#if DEBUG
 #define debug_print  debug_port.println
 #else
 #define debug_print(...)
@@ -74,9 +74,6 @@ settings config;
 #define gsm_port Serial2
 
 void setup() {
-  //setting serial ports
-  debug_port.begin(9600);
-
   //setup led pin
   pinMode(PIN_POWER_LED, OUTPUT);
   digitalWrite(PIN_POWER_LED, LOW);
@@ -87,9 +84,16 @@ void setup() {
   //setup ignition detection
   pinMode(PIN_S_DETECT, INPUT);
 
+  //initialize GSM and GPS hardware
+  gsm_init();
+  gps_init();
+  
   //initialize addon board hardware
   addon_init();
 
+  //setting debug serial port
+  debug_port.begin(9600);
+  delay(2000);
   debug_print(F("setup() started"));
 
   //blink software start
@@ -99,38 +103,9 @@ void setup() {
 
   //GPS setup
   gps_setup();
-  gps_on_off();
 
   //GSM setup
   gsm_setup();
-
-  //turn on GSM
-  gsm_restart();
-
-  //send AT
-  gsm_send_at();
-  gsm_send_at();
-
-  //supply PIN code is needed
-  gsm_set_pin();
-
-  // wait for modem ready (status 0)
-  time_start = millis();
-  do {
-    int pas = gsm_get_modem_status();
-    if(pas==0 || pas==3 || pas==4) break;
-    delay(3000);
-  }
-  while (millis() - time_start < 60000);
-
-  //get GSM IMEI
-  gsm_get_imei();
-
-  //misc GSM startup commands (disable echo)
-  gsm_startup_cmd();
-
-  //set GSM APN
-  gsm_set_apn();
 
   //get current log index
   #ifdef STORAGE
