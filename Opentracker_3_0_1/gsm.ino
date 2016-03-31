@@ -264,6 +264,11 @@ int gsm_get_modem_status() {
 }
 
 int gsm_disconnect(int waitForReply) {
+  //close connection, if previous attempts left it open
+  gsm_port.print("AT+QICLOSE");
+  gsm_port.print("\r");
+  gsm_wait_for_reply(0,0);
+
   #if GSM_STAY_ONLINE
     debug_print(F("gsm_disconnect() Disabled"));
     return 1;
@@ -297,6 +302,8 @@ int gsm_disconnect(int waitForReply) {
 int gsm_set_apn()  {
   debug_print(F("gsm_set_apn() started"));
 
+  addon_event(ON_MODEM_ACTIVATION);
+  
   //set all APN data, dns, etc
   gsm_port.print("AT+QIREGAPP=\"");
   gsm_port.print(config.apn);
@@ -321,9 +328,14 @@ int gsm_set_apn()  {
 
   gsm_port.print("AT+QIACT\r");
 
-  gsm_wait_for_reply(1,0);
-  if (modem_reply[0] == 0)
+  // wait for GPRS contex activation (first time)
+  time_start = millis();
+  do {
     gsm_wait_for_reply(1,0);
+    if(modem_reply[0] != 0) break;
+  }
+  while (millis() - time_start < 60000);
+  gsm_send_at();
 
   debug_print(F("gsm_set_apn() completed"));
 
@@ -337,6 +349,8 @@ int gsm_connect()  {
 
   //try to connect multiple times
   for(int i=0;i<CONNECT_RETRY;i++) {
+    gsm_get_modem_status(); // diagnostic only
+    
     // check if connected from previous attempts
     gsm_port.print("AT+QISTAT\r");
     gsm_wait_for_reply(0,0);
