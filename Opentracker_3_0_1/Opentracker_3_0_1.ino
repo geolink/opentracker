@@ -75,9 +75,7 @@ settings config;
 
 void setup() {
   //setting serial ports
-  gsm_port.begin(115200);
   debug_port.begin(9600);
-  gps_port.begin(9600);
 
   //setup led pin
   pinMode(PIN_POWER_LED, OUTPUT);

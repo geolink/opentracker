@@ -16,7 +16,11 @@ void gsm_setup() {
 
   pinMode(PIN_STATUS_GSM, INPUT);
   pinMode(PIN_RING_GSM, INPUT);
-  pinMode(PIN_WAKE_GSM, INPUT);
+  
+  pinMode(PIN_WAKE_GSM, OUTPUT); 
+  digitalWrite(PIN_WAKE_GSM, HIGH);
+
+  gsm_port.begin(115200);
 
   debug_print(F("gsm_setup() finished"));
 }
@@ -43,6 +47,29 @@ void gsm_on_off() {
   digitalWrite(PIN_C_PWR_GSM, LOW);
 
   debug_print(F("gsm_on_off() finished"));
+}
+
+void gsm_standby() {
+  // clear wake signal
+  digitalWrite(PIN_WAKE_GSM, HIGH);
+  // standby GSM
+  gsm_port.print("AT+CFUN=0\r");
+  gsm_wait_for_reply(1,0);
+  gsm_port.print("AT+QSCLK=1\r");
+  gsm_wait_for_reply(1,0);
+  // disable serial port
+  gsm_port.end();
+}
+
+void gsm_wakeup() {
+  // enable serial port
+  gsm_port.begin(115200);
+  // wake GSM
+  digitalWrite(PIN_WAKE_GSM, LOW);
+  gsm_port.print("AT+QSCLK=0\r");
+  gsm_wait_for_reply(1,0);
+  gsm_port.print("AT+CFUN=1\r");
+  gsm_wait_for_reply(1,0);
 }
 
 void gsm_restart() {

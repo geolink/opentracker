@@ -1,14 +1,15 @@
 
 void gps_setup() {
   debug_print(F("gps_setup() started"));
-  // digitalWrite(PIN_STANDBY_GPS, HIGH);
-  // pinMode(PIN_STANDBY_GPS, OUTPUT);
 
   pinMode(PIN_STANDBY_GPS, OUTPUT);
   digitalWrite(PIN_STANDBY_GPS, LOW);
 
   pinMode(PIN_RESET_GPS, OUTPUT);
   digitalWrite(PIN_RESET_GPS, LOW);
+
+  gps_port.begin(9600);
+
   debug_print(F("gps_setup() started"));
 }
 
@@ -19,6 +20,20 @@ void gps_on_off() {
   digitalWrite(PIN_STANDBY_GPS, LOW);
 
   debug_print(F("gps_on_off() finished"));
+}
+
+void gps_standby() {
+  // standby GPS
+  gps_port.print("$PMTK161,0*28\r\n");
+  // disable serial port
+  gps_port.end();
+}
+
+void gps_wakeup() {
+  // enable serial port
+  gps_port.begin(9600);
+  // exit GPS standby
+  gps_port.print("\r\n");
 }
 
 //collect GPS data from serial port
