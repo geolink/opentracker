@@ -13,9 +13,6 @@ int parse_receive_reply() {
 
   debug_print(F("parse_receive_reply() started"));
 
-  //clean modem buffer
-  gsm_get_reply(1);
-
   addon_event(ON_RECEIVE_STARTED);
 
   for(int i=0;i<30;i++) {

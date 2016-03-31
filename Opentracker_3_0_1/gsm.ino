@@ -474,6 +474,8 @@ void gsm_send_http_current() {
   gsm_port.print(tmp_http_len);
   gsm_port.print(HTTP_HEADER2);
 
+  gsm_wait_for_reply(1,0);
+
   //validate header delivery
   gsm_validate_tcp();
 
@@ -485,6 +487,7 @@ void gsm_send_http_current() {
   gsm_port.print("AT+QISEND=");
   gsm_port.print(13+strlen(config.imei)+strlen(config.key));
   gsm_port.print("\r");
+
   gsm_wait_for_reply(1,0);
 
   gsm_port.print("imei=");
@@ -511,15 +514,13 @@ void gsm_send_http_current() {
   debug_print(F("gsm_send_http(): Body packet size:"));
   debug_print(chunk_len);
 
-  int k=0;
   for(int i=0;i<tmp_len;i++) {
     if((i == 0) || (chunk_pos >= PACKET_SIZE)) {
       debug_print(F("gsm_send_http(): Sending data chunk:"));
       debug_print(chunk_pos);
 
       if(chunk_pos >= PACKET_SIZE) {
-        delay(1000);
-        gsm_get_reply(1);
+        gsm_wait_for_reply(1,0);
 
         //validate previous transmission
         gsm_validate_tcp();
@@ -546,15 +547,15 @@ void gsm_send_http_current() {
       gsm_port.print("AT+QISEND=");
       gsm_port.print(chunk_len);
       gsm_port.print("\r");
-
-      delay(1000);
+    
+      gsm_wait_for_reply(1,0);
     }
 
     //sending data
     gsm_port.print(data_current[i]);
     chunk_pos++;
-    k++;
   }
+  gsm_wait_for_reply(1,0);
   debug_print(F("gsm_send_http(): data sent."));
 }
 
@@ -579,7 +580,6 @@ void gsm_send_raw_current() {
   debug_print(F("gsm_send_raw(): Body packet size:"));
   debug_print(chunk_len);
 
-  int k=0;
   for(int i=0;i<tmp_len;i++) {
     if((i == 0) || (chunk_pos >= PACKET_SIZE)) {
       debug_print(F("gsm_send_raw(): Sending data chunk:"));
@@ -620,9 +620,8 @@ void gsm_send_raw_current() {
     //sending data
     gsm_port.print(data_current[i]);
     chunk_pos++;
-    k++;
   }
-
+  gsm_wait_for_reply(1,0);
   debug_print(F("gsm_send_raw(): data sent."));
 }
 
@@ -654,9 +653,7 @@ int gsm_send_data() {
       gsm_send_http_current();  //send all current data
     }
 
-    if(SEND_RAW) {
-      gsm_wait_for_reply(1,1);
-    } else {
+    if(!SEND_RAW) {
       //get reply and parse
       ret_tmp = parse_receive_reply();
     }
