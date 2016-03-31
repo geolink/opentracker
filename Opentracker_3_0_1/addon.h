@@ -30,16 +30,17 @@ void addon_event(int event) {
 
 // event types
 enum {
-  ON_MODEM_REPLY,
-  ON_SEND_STARTED,
-  ON_SEND_DATA,
-  ON_SEND_COMPLETED,
-  ON_SEND_FAILED,
-  ON_RECEIVE_STARTED,
-  ON_RECEIVE_DATA,
-  ON_RECEIVE_COMPLETED,
-  ON_RECEIVE_FAILED,
-  ON_LOCATION_FIXED,
-  ON_LOCATION_LOST,
+  ON_MODEM_REPLY,         // after each modem reply (can snoop modem_reply[] buffer)
+  ON_MODEM_ACTIVATION,    // during the first modem GPRS activation
+  ON_SEND_STARTED,        // before initiating a new data connection
+  ON_SEND_DATA,           // before sending a block of data
+  ON_SEND_COMPLETED,      // after the end of successful transmission
+  ON_SEND_FAILED,         // after the end of failed trasmission
+  ON_RECEIVE_STARTED,     // before starting to receive data
+  ON_RECEIVE_DATA,        // after receiving each block of data
+  ON_RECEIVE_COMPLETED,   // after the end of successful reception
+  ON_RECEIVE_FAILED,      // after the end of failed receiption
+  ON_LOCATION_FIXED,      // after GPS acquired fix (valid location)
+  ON_LOCATION_LOST,       // after GPS failed to acquire new fix (invalid location)
 };
 
