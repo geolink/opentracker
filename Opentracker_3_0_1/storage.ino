@@ -94,6 +94,8 @@ void storage_send_logs() {
       debug_print(strlen(tmp_http_len));
       debug_print(strlen(HTTP_HEADER2));
 
+      addon_event(ON_SEND_DATA);
+
       debug_print(F("storage_send_logs(): Sending bytes:"));
       debug_print(index_tmp);
       debug_print(http_len);
@@ -119,6 +121,8 @@ void storage_send_logs() {
 
       //do not send other data before current is delivered
       if(delivered == 1) {
+        addon_event(ON_SEND_DATA);
+
         //sending imei and key first
         gsm_port.print("AT+QISEND=");
         gsm_port.print(13+strlen(config.imei)+strlen(config.key));
@@ -179,6 +183,8 @@ void storage_send_logs() {
                 break;
               }
             }
+
+            addon_event(ON_SEND_DATA);
 
             debug_print(F("gsm_send_http(): chunk length:"));
             debug_print(chunk_len);

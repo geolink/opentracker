@@ -16,6 +16,8 @@ int parse_receive_reply() {
   //clean modem buffer
   gsm_get_reply(1);
 
+  addon_event(ON_RECEIVE_STARTED);
+
   for(int i=0;i<30;i++) {
     gsm_port.print("AT+QIRD=0,1,0,100");
     gsm_port.print("\r");
@@ -64,6 +66,8 @@ int parse_receive_reply() {
 
       cmd[index] = '\0';
     }
+    
+    addon_event(ON_RECEIVE_DATA);
   }
 
   if(SEND_RAW) {
@@ -75,8 +79,10 @@ int parse_receive_reply() {
       //all data was received by server
       debug_print(F("Data was fully received by the server."));
       ret = 1;
+      addon_event(ON_RECEIVE_COMPLETED);
     } else {
       debug_print(F("Data was not received by the server."));
+      addon_event(ON_RECEIVE_FAILED);
     }
   }
 
