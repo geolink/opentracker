@@ -1,6 +1,6 @@
 
-void gps_setup() {
-  debug_print(F("gps_setup() started"));
+void gps_init() {
+  debug_print(F("gps_init() started"));
 
   pinMode(PIN_STANDBY_GPS, OUTPUT);
   digitalWrite(PIN_STANDBY_GPS, LOW);
@@ -10,16 +10,50 @@ void gps_setup() {
 
   gps_port.begin(9600);
 
-  debug_print(F("gps_setup() started"));
+  debug_print(F("gps_init() completed"));
 }
 
-void gps_on_off() {
-  //turn on GPS
-  debug_print(F("gps_on_off() started"));
+void gps_setup() {
+  debug_print(F("gps_setup() started"));
 
+  gps_on();
+
+  // read the first 4 lines within timeout
+  unsigned long t = millis();
+  for(int i=0; i<4; ++i) {
+    int c = -1;
+    while (c != '\n' && (millis() - t < 5000))
+      if(gps_port.available()) {
+        c = gps_port.read();
+        if(DEBUG)
+          debug_port.write(c);
+      }
+  }
+  if(millis() - t > 5000) debug_print(F("GPS not responding"));
+  
+  debug_print(F("gps_setup() completed"));
+}
+
+void gps_on() {
+  //turn off GPS
+  debug_print(F("gps_on() started"));
+
+  delay(100);
   digitalWrite(PIN_STANDBY_GPS, LOW);
+  digitalWrite(PIN_RESET_GPS, LOW);
 
-  debug_print(F("gps_on_off() finished"));
+  debug_print(F("gps_on() completed"));
+}
+
+void gps_off() {
+  //turn off GPS
+  debug_print(F("gps_off() started"));
+
+  digitalWrite(PIN_STANDBY_GPS, HIGH);
+  digitalWrite(PIN_RESET_GPS, HIGH);
+  delay(100);
+
+  debug_print(F("gps_off() completed"));
 }
 
 void gps_standby() {
