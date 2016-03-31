@@ -4,9 +4,9 @@
   #define GSM_STAY_ONLINE 0   // 0 == Disconnect Session after each send of data (Default). 1 == Stay Online to keep session active
 #endif
 
-void gsm_setup() {
+void gsm_init() {
   //setup modem pins
-  debug_print(F("gsm_setup() started"));
+  debug_print(F("gsm_init() started"));
 
   pinMode(PIN_C_PWR_GSM, OUTPUT);
   digitalWrite(PIN_C_PWR_GSM, LOW);
@@ -22,31 +22,41 @@ void gsm_setup() {
 
   gsm_port.begin(115200);
 
-  debug_print(F("gsm_setup() finished"));
+  debug_print(F("gsm_init() finished"));
 }
 
-void gsm_on_off() {
+void gsm_on() {
   //turn on the modem
-  debug_print(F("gsm_on_off() started"));
+  debug_print(F("gsm_on() started"));
 
-  unsigned long timeout = millis();
+  unsigned long t = millis();
 
   if(digitalRead(PIN_STATUS_GSM) == LOW) { // now off, turn on
     digitalWrite(PIN_C_PWR_GSM, HIGH);
-    while (digitalRead(PIN_STATUS_GSM) == LOW || millis() < timeout + 5000)
+    while ((digitalRead(PIN_STATUS_GSM) == LOW) && (millis() - t < 5000))
       delay(100);
     digitalWrite(PIN_C_PWR_GSM, LOW);
     delay(1000);
-  } else { // now on, turn off
-    digitalWrite(PIN_C_PWR_GSM, HIGH);
-    delay(800);
-    digitalWrite(PIN_C_PWR_GSM, LOW);
-    while (digitalRead(PIN_STATUS_GSM) == HIGH || millis() < timeout + 12000)
-      delay(100);
   }
-  digitalWrite(PIN_C_PWR_GSM, LOW);
 
-  debug_print(F("gsm_on_off() finished"));
+  debug_print(F("gsm_on() finished"));
+}
+
+void gsm_off(int emergency) {
+  //turn off the modem
+  debug_print(F("gsm_off() started"));
+
+  unsigned long t = millis();
+
+  if(digitalRead(PIN_STATUS_GSM) == HIGH) { // now on, turn off
+    digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, HIGH);
+    while ((digitalRead(PIN_STATUS_GSM) == HIGH) && (millis() - t < 5000))
+      delay(100);
+    digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, LOW);
+    delay(1000);
+  }
+
+  debug_print(F("gsm_off() finished"));
 }
 
 void gsm_standby() {
@@ -72,8 +82,8 @@ void gsm_wakeup() {
   gsm_wait_for_reply(1,0);
 }
 
-void gsm_restart() {
-  debug_print(F("gsm_restart() started"));
+void gsm_setup() {
+  debug_print(F("gsm_setup() started"));
 
   //blink modem restart
   for(int i = 0; i < 5; i++) {
@@ -86,22 +96,35 @@ void gsm_restart() {
     delay(200);
   }
 
-  //restart modem
-  //check if modem is ON (PWRMON is HIGH)
-  int pwrmon = digitalRead(PIN_STATUS_GSM);
-  if(pwrmon == HIGH) {
-    debug_print(F("PWRMON is HIGH. Modem already running."));
-
-    //modem already on, turn modem off
-    gsm_on_off();
-  } else {
-    debug_print(F("PWRMON is LOW. Modem is not running."));
-  }
-
   //turn on modem
-  gsm_on_off();
+  gsm_on();
 
-  debug_print(F("gsm_restart() completed"));
+  //send AT
+  gsm_send_at();
+  gsm_send_at();
+
+  //supply PIN code is needed
+  gsm_set_pin();
+
+  // wait for modem ready (status 0)
+  unsigned long t = millis();
+  do {
+    int pas = gsm_get_modem_status();
+    if(pas==0 || pas==3 || pas==4) break;
+    delay(3000);
+  }
+  while (millis() - t < 60000);
+
+  //get GSM IMEI
+  gsm_get_imei();
+
+  //misc GSM startup commands (disable echo)
+  gsm_startup_cmd();
+
+  //set GSM APN
+  gsm_set_apn();
+
+  debug_print(F("gsm_setup() completed"));
 }
 
 void gsm_set_time() {
@@ -356,12 +379,12 @@ int gsm_set_apn()  {
   gsm_port.print("AT+QIACT\r");
 
   // wait for GPRS contex activation (first time)
-  time_start = millis();
+  unsigned long t = millis();
   do {
     gsm_wait_for_reply(1,0);
     if(modem_reply[0] != 0) break;
   }
-  while (millis() - time_start < 60000);
+  while (millis() - t < 60000);
   gsm_send_at();
 
   debug_print(F("gsm_set_apn() completed"));
