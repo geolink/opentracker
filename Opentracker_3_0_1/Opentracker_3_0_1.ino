@@ -135,9 +135,11 @@ void loop() {
   if(data_index >= DATA_LIMIT) {
     data_index = 0;
   }
-
+  
   status_led();
 
+  debug_check_input();
+  
   addon_loop();
 
   if(!SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
@@ -248,5 +250,27 @@ void loop() {
         addon_delay(1000);
       }
    }
+}
+
+// when DEBUG is defined >= 2 then serial monitor accepts test commands
+void debug_check_input() {
+#if DEBUG > 1
+  if (debug_port.available()) {
+    int c = debug_port.read();
+    debug_port.print(F("debug_check_input() got: "));
+    debug_port.println((char)c);
+    switch (c)
+    {
+    case 'r':
+      reboot();
+      break;
+    case 'l':
+      enter_low_power();
+      delay(15000);
+      exit_low_power();
+      break;
+    }
+  }
+#endif
 }
 

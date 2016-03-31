@@ -1,6 +1,6 @@
 
 //OpenTracker config
-#define DEBUG 1          //enable debug msg, sent to serial port
+#define DEBUG 1          //debug console (0=disabled, 1=send diangostic messages, 2=also accept test commands)
 
 #define ALWAYS_ON 0      //set to 1 to make the tracker log even with the ignition off
 
