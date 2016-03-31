@@ -417,8 +417,6 @@ int gsm_validate_tcp() {
     } else {
       debug_print(F("gsm_validate_tcp() data not yet delivered."));
     }
-
-    addon_event(ON_SEND_DATA);
   }
 
   debug_print(F("gsm_validate_tcp() completed."));
@@ -445,6 +443,8 @@ void gsm_send_http_current() {
 
   int tmp_len = strlen(HTTP_HEADER1)+strlen(tmp_http_len)+strlen(HTTP_HEADER2);
 
+  addon_event(ON_SEND_DATA);
+
   debug_print(F("gsm_send_http(): Length of header packet:"));
   debug_print(tmp_len);
 
@@ -462,6 +462,9 @@ void gsm_send_http_current() {
 
   //validate header delivery
   gsm_validate_tcp();
+
+  addon_event(ON_SEND_DATA);
+
   debug_print(F("gsm_send_http(): Sending IMEI and Key"));
 
   //sending imei and key first
@@ -519,6 +522,9 @@ void gsm_send_http_current() {
 
         chunk_pos = 0;
       }
+      
+      addon_event(ON_SEND_DATA);
+
       debug_print(F("gsm_send_http(): chunk length:"));
       debug_print(chunk_len);
 
@@ -583,6 +589,8 @@ void gsm_send_raw_current() {
 
         chunk_pos = 0;
       }
+
+      addon_event(ON_SEND_DATA);
 
       debug_print(F("gsm_send_raw(): chunk length:"));
       debug_print(chunk_len);
