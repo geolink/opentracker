@@ -8,8 +8,10 @@
 
 #include <DueFlashStorage.h>
 
+bool debug_enable = true; // runtime flag to disable debug console
+
 #if DEBUG
-#define debug_print  debug_port.println
+#define debug_print(...)  do { if(debug_enable) debug_port.println(__VA_ARGS__); } while(0)
 #else
 #define debug_print(...)
 #endif
@@ -255,7 +257,10 @@ void loop() {
 // when DEBUG is defined >= 2 then serial monitor accepts test commands
 void debug_check_input() {
 #if DEBUG > 1
-  if (debug_port.available()) {
+  if(!debug_enable)
+    return;
+    
+  if(debug_port.available()) {
     int c = debug_port.read();
     debug_port.print(F("debug_check_input() got: "));
     debug_port.println((char)c);
@@ -266,7 +271,7 @@ void debug_check_input() {
       break;
     case 'l':
       enter_low_power();
-      delay(15000);
+      addon_delay(15000);
       exit_low_power();
       break;
     }

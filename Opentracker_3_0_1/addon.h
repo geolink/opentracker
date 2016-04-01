@@ -30,8 +30,10 @@ void addon_event(int event) {
 
 // event types
 enum {
-  ON_DEVICE_STANDBY,      // after changing CPU to low power mode (adjust clocks)
-  ON_DEVICE_WAKEUP,       // after changing CPU bak to full pwoer (adjust clocks)
+  ON_DEVICE_STANDBY,      // before going to low power mode
+  ON_DEVICE_WAKEUP,       // after going back to full power mode
+  ON_CLOCK_PAUSE,         // before changing system clock
+  ON_CLOCK_RESUME,        // after changing system clock
   ON_MODEM_REPLY,         // after each modem reply (can snoop modem_reply[] buffer)
   ON_MODEM_ACTIVATION,    // during the first modem GPRS activation
   ON_SEND_STARTED,        // before initiating a new data connection

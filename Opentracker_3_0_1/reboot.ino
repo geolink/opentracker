@@ -31,10 +31,23 @@ void reboot() {
 void enter_low_power() {
   debug_print(F("enter_low_power() started"));
 
+  addon_event(ON_DEVICE_STANDBY);
+  
+  // enter standby/sleep mode
+
+  gps_standby();
+  gps_close();
+
+  gsm_standby();
+  gsm_close();
+
+  addon_event(ON_CLOCK_PAUSE);
+
   // switch to low-power mode with interrupts disabled
   cpu_irq_disable();
 
   // disable USB
+  debug_enable = false;
   // Console.end() does nothing, manually disable USB serial console
   USBDevice.detach(); // detach from Host
 
@@ -46,7 +59,7 @@ void enter_low_power() {
   NVIC_DisableIRQ((IRQn_Type) ID_UOTGHS);
 
   // slow down CPU
-  pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_64); // master clock prescaler set to 64
+  pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
   pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
 
   cpu_irq_enable();
@@ -55,21 +68,32 @@ void enter_low_power() {
   SystemCoreClockUpdate();
   SysTick_Config(SystemCoreClock / 1000);
 
-  addon_event(ON_DEVICE_STANDBY);
+  addon_event(ON_CLOCK_RESUME);
 }
 
 void exit_low_power() {
+  addon_event(ON_CLOCK_PAUSE);
 
   // re-init clocks to full speed
   SystemInit();
   SysTick_Config(SystemCoreClock / 1000);
-  
+
   // re-initialize USB
   UDD_Init();
   USBDevice.attach(); // re-attach to Host
+  debug_enable = true;
 
-  debug_print(F("exit_low_power() completed"));
+  addon_event(ON_CLOCK_RESUME);
+
+  // enable serial ports
+  gsm_open();
+  gsm_wakeup();
+  
+  gps_open();
+  gps_wakeup();
 
   addon_event(ON_DEVICE_WAKEUP);
+  
+  debug_print(F("exit_low_power() completed"));
 }
 
