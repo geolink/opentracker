@@ -34,7 +34,7 @@ char data_current[DATA_LIMIT];  //data collected in one go, max 2500 chars
 int data_index = 0;             //current data index (where last data record stopped)
 char time_char[20];             //time attached to every data line
 char modem_reply[200];          //data received from modem, max 200 chars
-long logindex = STORAGE_DATA_START;
+uint32_t logindex = STORAGE_DATA_START;
 bool save_config = 0;           //flag to save config to flash
 bool power_reboot = 0;          //flag to reboot everything (used after new settings have been saved)
 bool low_power = 0;             //flag for low power mode
@@ -77,16 +77,9 @@ settings config;
 #define gsm_port Serial2
 
 void setup() {
-  //setup led pin
-  pinMode(PIN_POWER_LED, OUTPUT);
-  digitalWrite(PIN_POWER_LED, LOW);
-
-  pinMode(PIN_C_REBOOT, OUTPUT);
-  digitalWrite(PIN_C_REBOOT, LOW);  //this is required
-
-  //setup ignition detection
-  pinMode(PIN_S_DETECT, INPUT);
-
+  //common hardware initialization
+  device_init();
+  
   //initialize GSM and GPS hardware
   gsm_init();
   gps_init();
@@ -196,15 +189,10 @@ void loop() {
 
     send_data();
 
-    /*
     #ifdef STORAGE
       //send available log files
-      storage_send_logs();
-
-      //debug
-      storage_dump();
+      storage_send_logs(1); // 0 = dump only, 1 = send data
     #endif
-    */
 
     //reset current data and counter
     data_index = 0;
@@ -257,6 +245,24 @@ void loop() {
         addon_delay(1000);
       }
    }
+}
+
+void device_init() {
+  //setup led pin
+  pinMode(PIN_POWER_LED, OUTPUT);
+  digitalWrite(PIN_POWER_LED, LOW);
+
+  pinMode(PIN_C_REBOOT, OUTPUT);
+  digitalWrite(PIN_C_REBOOT, LOW);  //this is required
+
+  //setup ignition detection
+  pinMode(PIN_S_DETECT, INPUT);
+
+  // setup relay outputs
+  pinMode(PIN_C_OUT_1, OUTPUT);
+  digitalWrite(PIN_C_OUT_1, LOW);
+  pinMode(PIN_C_OUT_2, OUTPUT);
+  digitalWrite(PIN_C_OUT_2, LOW);
 }
 
 // when DEBUG is defined >= 2 then serial monitor accepts test commands
