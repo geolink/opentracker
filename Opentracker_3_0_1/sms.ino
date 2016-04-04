@@ -17,65 +17,66 @@ void sms_check() {
   gsm_wait_at();
 
   for(int i=0;i<30;i++) {
-    if(gsm_port.available()) {
-      while(gsm_port.available()) {
-        index = gsm_port.read();
+    while(gsm_port.available()) {
+      index = gsm_port.read();
 
-        #ifdef DEBUG
-          debug_port.print(index);
-        #endif
+      #ifdef DEBUG
+        debug_port.print(index);
+      #endif
 
-        if(index == '#') {
-          //next data is probably command till \r
-          //all data before "," is sms password, the rest is command
-          debug_print(F("SMS command found"));
-          cmd = 1;
+      if(index == '#') {
+        //next data is probably command till \r
+        //all data before "," is sms password, the rest is command
+        debug_print(F("SMS command found"));
+        cmd = 1;
+        tmpcmd = NULL;
 
-          //get phone number
+        //get phone number
+        modem_reply[reply_index] = '\0';
+
+        //phone info will look like this: +CMGL: 10,"REC READ","+436601601234","","5 12:13:17+04"
+        //phone will start from ","+  and end with ",
+        tmp = strstr(modem_reply, "+CMGL:");
+        if(tmp!=NULL) {
+          debug_print(F("Getting phone number:"));
+          debug_print(reply_index);
+          debug_print(modem_reply);
+
+          tmp = strstr(modem_reply, "UNREAD\",\"");
+          if(tmp!=NULL) {
+            tmp += 9;
+            tmpcmd = strtok(tmp, "\",\"");
+            if(tmpcmd!=NULL) {
+              debug_print(F("Phone:"));
+              debug_print(tmpcmd);
+            }
+          }
+        }
+
+        reply_index = 0;
+      } else if(index == '\r') {
+        if(cmd == 1) {
+          debug_print(F("SMS command received:"));
+
           modem_reply[reply_index] = '\0';
 
-          //phone info will look like this: +CMGL: 10,"REC READ","+436601601234","","5 12:13:17+04"
-          //phone will start from ","+  and end with ",
-          tmp = strstr(modem_reply, "+CMGL:");
-          if(tmp!=NULL) {
-            debug_print(F("Getting phone number:"));
-            debug_print(reply_index);
-            debug_print(modem_reply);
+          debug_print(F("New line received after command"));
+          debug_print(modem_reply);
 
-            tmp = strstr(modem_reply, "\",\"+");
-            tmp += strlen("\",\"+");
-            tmpcmd = strtok(tmp, "\",\"");
-
-            debug_print(F("Phone:"));
-            debug_print(tmpcmd);
-
-          }
-
+          sms_cmd(modem_reply,tmpcmd);
           reply_index = 0;
-        } else if(index == '\r') {
-          if(cmd == 1) {
-            debug_print(F("SMS command received:"));
-
-            modem_reply[reply_index] = '\0';
-
-            debug_print(F("New line received after command"));
-            debug_print(modem_reply);
-
-            sms_cmd(modem_reply,tmpcmd);
-            reply_index = 0;
-            cmd = 0;
-          }
+          cmd = 0;
+        }
+      } else {
+        if(cmd == 1) {
+          modem_reply[reply_index] = index;
+          reply_index++;
         } else {
-          if(cmd == 1) {
+          if(reply_index < 200) {
             modem_reply[reply_index] = index;
             reply_index++;
           } else {
-            if(reply_index < 200) {
-              modem_reply[reply_index] = index;
-              reply_index++;
-            } else {
-              reply_index = 0;
-            }
+            reply_index = 0;
           }
         }
       }
@@ -115,7 +116,8 @@ void sms_cmd(char *cmd, char *phone) {
         debug_print(F("sms_cmd(): SMS password accepted, executing command from"));
         debug_print(phone);
 
-        sms_cmd_run(cmd,phone);
+        tmp = strtok_r(NULL, "\r", &cmd);
+        sms_cmd_run(tmp,phone);
         break;
       } else {
         debug_print(F("sms_cmd(): SMS password failed, ignoring command"));
@@ -279,11 +281,11 @@ void sms_cmd_run(char *cmd, char *phone) {
   //alarm
   tmp = strstr(cmd, "alarm=");
   if(tmp != NULL) {
-    //setting new APN
+    //setting alarm
     tmp += strlen("alarm=");
     debug_print(F("sms_cmd_run(): Alarm:"));
     debug_print(tmp);
-    if(tmp == "off") {
+    if(strcmp(tmp, "off") == 0) {
       config.alarm_on = 0;
     } else {
       config.alarm_on = 1;
@@ -387,7 +389,6 @@ void sms_send_msg(const char *cmd, const char *phone) {
   debug_print(cmd);
 
   gsm_port.print("AT+CMGS=\"");
-  gsm_port.print("+");
   gsm_port.print(phone);
   gsm_port.print("\"\r");
 
