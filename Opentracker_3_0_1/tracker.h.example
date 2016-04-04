@@ -66,12 +66,9 @@ const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close
 #define STORAGE 1                     //save logs in flash storage
 #define STORAGE_CONFIG_PAGE 1         //flash index to store configuration - just after FIRST_RUN page
 #define STORAGE_FIRST_RUN_PAGE 0      //flash index to store flag for first run - very first page
-#define STORAGE_DATA_START 200        //starting flash index to store logs (200 first bytes reserved for configuration)
-#define STORAGE_DATA_END 262142       //the last possible flash index (max 262143, one last byte must be reserved for marker)
-// #define STORAGE_DATA_END 600       //the last possible flash index (max 262143, one last byte must be reserved for marker)
-
-#define STORAGE_INDEX_CHAR 35         //character used as index separator (ascii 35 = #), data must not have this character
-#define STORAGE_INDEX_SENT_CHAR 64    //character used as index separator indicating sent logs position (ascii 64 = @), data must not have this character
+#define STORAGE_DATA_START 1024       //starting flash index to store logs (first bytes reserved for configuration)
+#define STORAGE_DATA_END 131071       //the last possible flash index (max 131072, one last byte must be reserved for marker)
+//#define STORAGE_DATA_END 2048       //the last possible flash index (max 131072, one last byte must be reserved for marker)
 
 #define WEBSOCKET 1         //use websockets instead of traditional sending (real time updates and two ways comms) - todo
 
