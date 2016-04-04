@@ -24,15 +24,17 @@ void reboot() {
     // the reset reason will be wrong when the board starts the next time around.
     WDT_Restart(WDT);
   }
-  
+
   debug_print(F("reboot() failed"));
 }
+
+bool restore_console = false;
 
 void enter_low_power() {
   debug_print(F("enter_low_power() started"));
 
   addon_event(ON_DEVICE_STANDBY);
-  
+
   // enter standby/sleep mode
 
   gps_standby();
@@ -41,59 +43,73 @@ void enter_low_power() {
   gsm_standby();
   gsm_close();
 
-  addon_event(ON_CLOCK_PAUSE);
+  if (!USBDevice.configured()) {
+    addon_event(ON_CLOCK_PAUSE);
 
-  // switch to low-power mode with interrupts disabled
-  cpu_irq_disable();
+    // switch to low-power mode with interrupts disabled
+    cpu_irq_disable();
 
-  // disable USB
-  debug_enable = false;
-  // Console.end() does nothing, manually disable USB serial console
-  USBDevice.detach(); // detach from Host
+    // disable USB console only if not opened on the PC
+    debug_enable = false;
+    // debug_port.end() does nothing, manually disable USB serial console
+    USBDevice.detach(); // detach from Host
+    restore_console = true;
 
-  // de-init procedure (reverses UDD_Init)
-  otg_freeze_clock();
-  pmc_disable_udpck();
-  pmc_disable_upll_clock();
-  pmc_disable_periph_clk(ID_UOTGHS);
-  NVIC_DisableIRQ((IRQn_Type) ID_UOTGHS);
+    // de-init procedure (reverses UDD_Init)
+    otg_freeze_clock();
+    pmc_disable_udpck();
+    pmc_disable_upll_clock();
+    pmc_disable_periph_clk(ID_UOTGHS);
+    NVIC_DisableIRQ((IRQn_Type) ID_UOTGHS);
 
-  // slow down CPU
-  pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
-  pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
+    // slow down CPU
+    pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
+    pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
 
-  cpu_irq_enable();
-  
-  // update timer settings
-  SystemCoreClockUpdate();
-  SysTick_Config(SystemCoreClock / 1000);
+    cpu_irq_enable();
 
-  addon_event(ON_CLOCK_RESUME);
+    // update timer settings
+    SystemCoreClockUpdate();
+    SysTick_Config(SystemCoreClock / 1000);
+
+    addon_event(ON_CLOCK_RESUME);
+
+  } else {
+    restore_console = false;
+  }
+
+  debug_print(F("enter_low_power() completed"));
 }
 
 void exit_low_power() {
-  addon_event(ON_CLOCK_PAUSE);
+  debug_print(F("exit_low_power() started"));
 
-  // re-init clocks to full speed
-  SystemInit();
-  SysTick_Config(SystemCoreClock / 1000);
+  if (restore_console) {
+    restore_console = false;
+    
+    addon_event(ON_CLOCK_PAUSE);
 
-  // re-initialize USB
-  UDD_Init();
-  USBDevice.attach(); // re-attach to Host
-  debug_enable = true;
+    // re-init clocks to full speed
+    SystemInit();
+    SysTick_Config(SystemCoreClock / 1000);
 
-  addon_event(ON_CLOCK_RESUME);
+    // re-initialize USB
+    UDD_Init();
+    USBDevice.attach(); // re-attach to Host
+    debug_enable = true;
+
+    addon_event(ON_CLOCK_RESUME);
+  }
 
   // enable serial ports
   gsm_open();
   gsm_wakeup();
-  
+
   gps_open();
   gps_wakeup();
 
   addon_event(ON_DEVICE_WAKEUP);
-  
+
   debug_print(F("exit_low_power() completed"));
 }
 

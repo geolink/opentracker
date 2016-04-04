@@ -30,13 +30,14 @@ long watchdogMillis = 0;        // will store last time modem watchdog was reset
 long time_start, time_stop, time_diff;             //count execution time to trigger interval
 int interval_count = 0;         //current interval count (increased on each data collection and reset after sending)
 
-char data_current[DATA_LIMIT];   //data collected in one go, max 2500 chars
-int data_index = 0;        //current data index (where last data record stopped)
+char data_current[DATA_LIMIT];  //data collected in one go, max 2500 chars
+int data_index = 0;             //current data index (where last data record stopped)
 char time_char[20];             //time attached to every data line
-char modem_reply[200];     //data received from modem, max 200 chars
+char modem_reply[200];          //data received from modem, max 200 chars
 long logindex = STORAGE_DATA_START;
-byte save_config = 0;      //flag to save config to flash
-byte power_reboot = 0;           //flag to reboot everything (used after new settings have been saved)
+bool save_config = 0;           //flag to save config to flash
+bool power_reboot = 0;          //flag to reboot everything (used after new settings have been saved)
+bool low_power = 0;             //flag for low power mode
 
 char lat_current[32];
 char lon_current[32];
@@ -227,28 +228,32 @@ void loop() {
 
     if(!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
       time_stop = millis();
-      if(time_stop > time_start) {
-        //check how many
-        time_diff = time_stop-time_start;
-        time_diff = config.interval-time_diff;
 
-        debug_print(F("Sleeping for:"));
-        debug_print(time_diff);
-        debug_print(F("ms"));
+      //signed difference is good if less than MAX_LONG
+      time_diff = time_stop-time_start;
+      time_diff = config.interval-time_diff;
 
-        //debug - no sleep
-        //debug_print(F("DEBUG: disable sleep."));
-        //time_diff = 1000;
+      debug_print(F("Sleeping for:"));
+      debug_print(time_diff);
+      debug_print(F("ms"));
 
-        if(time_diff > 0) {
-          addon_delay(time_diff);
-        } else {
-          debug_print(F("Error: negative sleep time."));
-          addon_delay(500);
+      //debug - no sleep
+      //debug_print(F("DEBUG: disable sleep."));
+      //time_diff = 1000;
+
+      if(time_diff > 0) {
+        addon_delay(time_diff);
+        /*
+        if(time_diff > 4000) {
+          enter_low_power();
         }
+        addon_delay(time_diff - 3000);
+        if(time_diff > 4000) {
+          exit_low_power();
+        }
+        */
       } else {
-        //probably counter reset, 50 days passed
-        debug_print(F("Time counter reset"));
+        debug_print(F("Error: negative sleep time."));
         addon_delay(1000);
       }
    }
