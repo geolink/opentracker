@@ -139,14 +139,23 @@ void sms_cmd_run(char *cmd, char *phone) {
   debug_print(F("sms_cmd_run() started"));
 
   //checking what command to execute
+  cmd = strtok_r(cmd, "=", &tmpcmd);
+  if(cmd != NULL) {
+    //get argument (if any)
+    tmp = strtok_r(NULL, "\r", &tmpcmd);
+    //remove whitespace from command
+    cmd = strtok_r(cmd, " ", &tmpcmd);
+    if(tmp != NULL) {
+      //remove whitespace from argument
+      tmp = strtok_r(tmp, " ", &tmpcmd);
+    }
+  }
+  debug_print(cmd);
+  debug_print(tmp);
+  
   //set APN
-  tmp = strstr(cmd, "apn=");
-  if(tmp!=NULL) {
-    debug_print(F("sms_cmd_run(): Set APN command detected"));
-
+  if(strcmp(cmd,"apn") == 0) {
     //setting new APN
-    tmp += strlen("apn=");
-
     debug_print(F("sms_cmd_run(): New APN:"));
     debug_print(tmp);
 
@@ -168,13 +177,8 @@ void sms_cmd_run(char *cmd, char *phone) {
   }
 
   //APN password
-  tmp = strstr(cmd, "gprspass=");
-  if(tmp!=NULL) {
-    debug_print(F("sms_cmd_run(): Set APN Pass command detected"));
-
+  if(strcmp(cmd, "gprspass") == 0) {
     //setting new APN pass
-    tmp += strlen("gprspass=");
-
     debug_print(F("sms_cmd_run(): New APN pass:"));
     debug_print(tmp);
 
@@ -196,13 +200,8 @@ void sms_cmd_run(char *cmd, char *phone) {
   }
 
   //APN username
-  tmp = strstr(cmd, "gprsuser=");
-  if(tmp!=NULL) {
-    debug_print(F("sms_cmd_run(): Set APN User command detected"));
-
+  if(strcmp(cmd, "gprsuser") == 0) {
     //setting new APN
-    tmp += strlen("gprsuser=");
-
     debug_print(F("sms_cmd_run(): New APN user:"));
     debug_print(tmp);
 
@@ -224,13 +223,8 @@ void sms_cmd_run(char *cmd, char *phone) {
   }
 
   //SMS pass
-  tmp = strstr(cmd, "smspass=");
-  if(tmp!=NULL) {
-    debug_print(F("sms_cmd_run(): Set smspass command detected"));
-
+  if(strcmp(cmd, "smspass") == 0) {
     //setting new APN
-    tmp += strlen("smspass=");
-
     debug_print(F("sms_cmd_run(): New smspass:"));
     debug_print(tmp);
 
@@ -251,13 +245,8 @@ void sms_cmd_run(char *cmd, char *phone) {
   }
 
   //PIN
-  tmp = strstr(cmd, "pin=");
-  if(tmp!=NULL) {
-    debug_print(F("sms_cmd_run(): Set smspass command detected"));
-
+  if(strcmp(cmd, "pin") == 0) {
     //setting new APN
-    tmp += strlen("pin=");
-
     debug_print(F("sms_cmd_run(): New pin:"));
     debug_print(tmp);
 
@@ -279,10 +268,8 @@ void sms_cmd_run(char *cmd, char *phone) {
   }
 
   //alarm
-  tmp = strstr(cmd, "alarm=");
-  if(tmp != NULL) {
+  if(strcmp(cmd, "alarm") == 0) {
     //setting alarm
-    tmp += strlen("alarm=");
     debug_print(F("sms_cmd_run(): Alarm:"));
     debug_print(tmp);
     if(strcmp(tmp, "off") == 0) {
@@ -307,13 +294,8 @@ void sms_cmd_run(char *cmd, char *phone) {
     }
   }
   //interval
-  tmp = strstr(cmd, "int=");
-  if(tmp!=NULL) {
-    debug_print(F("sms_cmd_run(): Set interval command detected"));
-
+  if(strcmp(cmd, "int") == 0) {
     //setting new APN
-    tmp += strlen("int=");
-
     debug_print(F("sms_cmd_run(): New interval:"));
     debug_print(tmp);
 
@@ -337,8 +319,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     } else debug_print(F("sms_cmd_run(): invalid value"));
   }
 
-  tmp = strstr(cmd, "locate");
-  if(tmp!=NULL) {
+  if(strcmp(cmd, "locate") == 0) {
     debug_print(F("sms_cmd_run(): Locate command detected"));
 
     char msg[255];
@@ -352,8 +333,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     sms_send_msg(msg, phone);
   }
 
-  tmp = strstr(cmd, "tomtom");
-  if(tmp!=NULL) {
+  if(strcmp(cmd, "tomtom") == 0) {
     debug_print(F("sms_cmd_run(): TomTom command detected"));
 
     char msg[255];
@@ -363,15 +343,13 @@ void sms_cmd_run(char *cmd, char *phone) {
     sms_send_msg(msg, phone);
   }
 
-  tmp = strstr(cmd, "dataoff");
-  if(tmp!=NULL) {
+  if(strcmp(cmd, "dataoff") == 0) {
     debug_print(F("sms_cmd_run(): Data off command detected"));
     sms_send_msg("Data OFF", phone);
     SEND_DATA = 0;
   }
 
-  tmp = strstr(cmd, "dataon");
-  if(tmp!=NULL) {
+  if(strcmp(cmd, "dataon") == 0) {
     debug_print(F("sms_cmd_run(): Data on command detected"));
     sms_send_msg("Data ON", phone);
     SEND_DATA = 1;
