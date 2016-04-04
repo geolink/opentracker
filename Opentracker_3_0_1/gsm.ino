@@ -149,6 +149,7 @@ void gsm_setup() {
 void gsm_config() {
   //supply PIN code if needed
   gsm_set_pin();
+  gsm_set_pin(); // twice, to handle errors due to longer latencies
 
   // wait for modem ready (status 0)
   unsigned long t = millis();
@@ -193,8 +194,7 @@ void gsm_set_pin() {
   gsm_port.print("AT+CPIN?");
   gsm_port.print("\r");
 
-  delay(1000);
-  gsm_get_reply(0);
+  gsm_wait_for_reply(1,1);
 
   char *tmp = strstr(modem_reply, "SIM PIN");
   if(tmp!=NULL) {
