@@ -97,16 +97,16 @@ void setup() {
 
   settings_load();
 
+  //get current log index
+  #if STORAGE
+    storage_get_index();
+  #endif
+
   //GPS setup
   gps_setup();
 
   //GSM setup
   gsm_setup();
-
-  //get current log index
-  #ifdef STORAGE
-    storage_get_index();
-  #endif
 
   //set to connect once started
   interval_count = config.interval_send;
@@ -189,7 +189,7 @@ void loop() {
 
     send_data();
 
-    #ifdef STORAGE
+    #if STORAGE
       //send available log files
       storage_send_logs(1); // 0 = dump only, 1 = send data
     #endif
