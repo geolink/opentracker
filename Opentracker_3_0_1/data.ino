@@ -191,11 +191,11 @@ void send_data() {
     if(i != 1) {
       //current data not sent, save to sd card
       debug_print(F("Can not send data, saving to flash memory"));
-      /*
+      
       #ifdef STORAGE
         storage_save_current();   //in case this fails - data is lost
       #endif
-      */
+      
     } else {
       debug_print(F("Data sent successfully."));
     }
