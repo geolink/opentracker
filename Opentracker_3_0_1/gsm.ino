@@ -531,7 +531,7 @@ int gsm_validate_tcp() {
   return ret;
 }
 
-void gsm_send_http_current() {
+int gsm_send_http_current() {
   //send HTTP request, after connection if fully opened
   //this will send Current data
 
@@ -594,72 +594,19 @@ void gsm_send_http_current() {
 
   debug_print(F("gsm_send_http(): Sending body"));
 
-  tmp_len = strlen(data_current);
-  int chunk_len;
-  int chunk_pos = 0;
-  int chunk_check = 0;
+  int tmp_ret = gsm_send_data_current();
 
-  if(tmp_len > PACKET_SIZE) {
-    chunk_len = PACKET_SIZE;
-  } else {
-    chunk_len = tmp_len;
-  }
-
-  debug_print(F("gsm_send_http(): Body packet size:"));
-  debug_print(chunk_len);
-
-  for(int i=0;i<tmp_len;i++) {
-    if((i == 0) || (chunk_pos >= PACKET_SIZE)) {
-      debug_print(F("gsm_send_http(): Sending data chunk:"));
-      debug_print(chunk_pos);
-
-      if(chunk_pos >= PACKET_SIZE) {
-        gsm_wait_for_reply(1,0);
-
-        //validate previous transmission
-        gsm_validate_tcp();
-
-        //next chunk, get chunk length, check if not the last one
-        chunk_check = tmp_len-i;
-
-        if(chunk_check > PACKET_SIZE) {
-          chunk_len = PACKET_SIZE;
-        } else {
-          //last packet
-          chunk_len = chunk_check;
-        }
-
-        chunk_pos = 0;
-      }
-      
-      addon_event(ON_SEND_DATA);
-
-      debug_print(F("gsm_send_http(): chunk length:"));
-      debug_print(chunk_len);
-
-      //sending chunk
-      gsm_port.print("AT+QISEND=");
-      gsm_port.print(chunk_len);
-      gsm_port.print("\r");
-    
-      gsm_wait_for_reply(1,0);
-    }
-
-    //sending data
-    gsm_port.print(data_current[i]);
-    chunk_pos++;
-  }
-  gsm_wait_for_reply(1,0);
   debug_print(F("gsm_send_http(): data sent."));
+  return tmp_ret;
 }
 
-void gsm_send_raw_current() {
-  //send raw TCP request, after connection if fully opened
+int gsm_send_data_current() {
   //this will send Current data
 
-  debug_print(F("gsm_send_raw(): sending data."));
+  debug_print(F("gsm_send_data_current(): sending data."));
   debug_print(data_current);
 
+  int tmp_ret = 1; // success
   int tmp_len = strlen(data_current);
   int chunk_len;
   int chunk_pos = 0;
@@ -671,16 +618,21 @@ void gsm_send_raw_current() {
     chunk_len = tmp_len;
   }
 
-  debug_print(F("gsm_send_raw(): Body packet size:"));
+  debug_print(F("gsm_send_data_current(): Body packet size:"));
   debug_print(chunk_len);
 
   for(int i=0;i<tmp_len;i++) {
     if((i == 0) || (chunk_pos >= PACKET_SIZE)) {
-      debug_print(F("gsm_send_raw(): Sending data chunk:"));
+      debug_print(F("gsm_send_data_current(): Sending data chunk:"));
       debug_print(chunk_pos);
 
       if(chunk_pos >= PACKET_SIZE) {
         gsm_wait_for_reply(1,0);
+
+        if (strstr(modem_reply, "SEND OK\r\n") == NULL) {
+          tmp_ret = 0;
+          break;
+        }
 
         //validate previous transmission
         gsm_validate_tcp();
@@ -700,7 +652,7 @@ void gsm_send_raw_current() {
 
       addon_event(ON_SEND_DATA);
 
-      debug_print(F("gsm_send_raw(): chunk length:"));
+      debug_print(F("gsm_send_data_current(): chunk length:"));
       debug_print(chunk_len);
 
       //sending chunk
@@ -716,7 +668,13 @@ void gsm_send_raw_current() {
     chunk_pos++;
   }
   gsm_wait_for_reply(1,0);
-  debug_print(F("gsm_send_raw(): data sent."));
+  
+  if (strstr(modem_reply, "SEND OK\r\n") == NULL)
+    tmp_ret = 0;
+
+  debug_print(F("gsm_send_data_current(): returned"));
+  debug_print(tmp_ret);
+  return tmp_ret;
 }
 
 int gsm_send_data() {
@@ -735,38 +693,34 @@ int gsm_send_data() {
     debug_print(F("Error deactivating GPRS."));
   }
 
+  addon_event(ON_SEND_STARTED);
+    
   //opening connection
   ret_tmp = gsm_connect();
   if(ret_tmp == 1) {
-    addon_event(ON_SEND_STARTED);
-    
     //connection opened, just send data
     if(SEND_RAW) {
-      gsm_send_raw_current();
+      ret_tmp = gsm_send_data_current();
     } else {
-      gsm_send_http_current();  //send all current data
+      // send data, if ok then parse reply
+      ret_tmp = gsm_send_http_current() && parse_receive_reply();
     }
-
-    if(!SEND_RAW) {
-      //get reply and parse
-      ret_tmp = parse_receive_reply();
-    }
+    gsm_disconnect(0);
+  }
+  if(ret_tmp) {
+    gsm_send_failures = 0;
 
     addon_event(ON_SEND_COMPLETED);
-
-    gsm_disconnect(0);
-
-    gsm_send_failures = 0;
   } else {
     debug_print(F("Error, can not send data, no connection."));
     gsm_disconnect(0);
 
     gsm_send_failures++;
     addon_event(ON_SEND_FAILED);
+  }
 
-    if(GSM_SEND_FAILURES_REBOOT > 0 && gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
-      power_reboot = 1;
-    }
+  if(GSM_SEND_FAILURES_REBOOT > 0 && gsm_send_failures >= GSM_SEND_FAILURES_REBOOT) {
+    power_reboot = 1;
   }
 
   return ret_tmp;
@@ -795,9 +749,9 @@ void gsm_get_reply(int fullBuffer) {
   if(strlen(modem_reply) >0) {
     debug_print(F("Modem Reply:"));
     debug_print(modem_reply);
-  }
 
-  addon_event(ON_MODEM_REPLY);
+    addon_event(ON_MODEM_REPLY);
+  }
 }
 
 // use allowOK = 0 if OK comes before the end of the modem reply
@@ -878,7 +832,7 @@ int gsm_is_final_result(int allowOK) {
       }
       return false;
     case 'E':
-      if(strcmp(&modem_reply[1], "RROR\r\n") == 0) {
+      if(STARTS_WITH(&modem_reply[1], "RROR")) {
         return true;
       }
       return false;
