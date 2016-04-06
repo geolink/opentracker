@@ -56,8 +56,17 @@ int SEND_DATA = 1;
 
 #define DEFAULT_ALARM_ON   0  //if active SMS will be sent on Ignition ON/OFF
 #define DEFAULT_ALARM_SMS  ""  //default SMS for alarm
-const char HTTP_HEADER1[ ] = "POST " URL " HTTP/1.0\r\nHost: " HOSTNAME "\r\nContent-type: application/x-www-form-urlencoded\r\nContent-length:";  //HTTP header line before length
-const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close\r\n\r\n";        //HTTP header line after length
+
+const char HTTP_HEADER1[ ] =        //HTTP header line before length
+  "POST " URL " HTTP/1.0\r\n"
+  "Host: " HOSTNAME "\r\n"
+  "Content-type: application/x-www-form-urlencoded\r\n"
+  "Content-length: ";
+const char HTTP_HEADER2[ ] =        //HTTP header line after length
+  "\r\n"
+  "User-Agent: OpenTracker3.0\r\n"
+  "Connection: close\r\n"
+  "\r\n";
 
 #define PACKET_SIZE 1400    //TCP data chunk size, modem accept max 1460 bytes per send
 #define PACKET_SIZE_DELIVERY 3000    //in case modem has this number of bytes undelivered, wait till sending new data (3000 bytes default, max sending TCP buffer is 7300)
@@ -65,8 +74,9 @@ const char HTTP_HEADER2[ ] = "\r\nUser-Agent:OpenTracker3.0\r\nConnection: close
 #define CONNECT_RETRY 5    //how many time to retry connecting to remote server
 
 #define STORAGE 1                     //save logs in flash storage
-#define STORAGE_CONFIG_PAGE 1         //flash index to store configuration - just after FIRST_RUN page
 #define STORAGE_FIRST_RUN_PAGE 0      //flash index to store flag for first run - very first page
+#define STORAGE_CONFIG_PAGE 1         //flash index to store configuration - just after FIRST_RUN page
+#define STORAGE_CONFIG_ADDON 512      //flash index to store addon configuration
 #define STORAGE_DATA_START 1024       //starting flash index to store logs (first bytes reserved for configuration)
 #define STORAGE_DATA_END 131071       //the last possible flash index (max 131072, one last byte must be reserved for marker)
 //#define STORAGE_DATA_END 2048       //the last possible flash index (max 131072, one last byte must be reserved for marker)
