@@ -4,7 +4,8 @@ void sms_check() {
   char index;
   byte cmd;
   int reply_index = 0;
-  char *tmp, *tmpcmd;
+  char *tmp = NULL, *tmpcmd = NULL;
+  char phone[32];
 
   debug_print(F("sms_check() started"));
 
@@ -29,7 +30,7 @@ void sms_check() {
         //all data before "," is sms password, the rest is command
         debug_print(F("SMS command found"));
         cmd = 1;
-        tmpcmd = NULL;
+        phone[0] = '\0';
 
         //get phone number
         modem_reply[reply_index] = '\0';
@@ -47,8 +48,9 @@ void sms_check() {
             tmp += 9;
             tmpcmd = strtok(tmp, "\",\"");
             if(tmpcmd!=NULL) {
+              strlcpy(phone, tmpcmd, 32);
               debug_print(F("Phone:"));
-              debug_print(tmpcmd);
+              debug_print(phone);
             }
           }
         }
@@ -56,14 +58,14 @@ void sms_check() {
         reply_index = 0;
       } else if(index == '\r') {
         if(cmd == 1) {
-          debug_print(F("SMS command received:"));
+          debug_print(F("\nSMS command received:"));
 
           modem_reply[reply_index] = '\0';
 
           debug_print(F("New line received after command"));
           debug_print(modem_reply);
 
-          sms_cmd(modem_reply,tmpcmd);
+          sms_cmd(modem_reply,phone);
           reply_index = 0;
           cmd = 0;
         }
@@ -103,14 +105,13 @@ void sms_check() {
 }
 
 void sms_cmd(char *cmd, char *phone) {
-  char msg[160], num[32];
+  char msg[160];
   char *tmp;
   int i=0;
 
   debug_print(F("sms_cmd() started"));
   // make a local copy (since this is coming from modem_reply, it will be overwritten)
   strlcpy(msg, cmd, 160);
-  strlcpy(num, phone, 32);
 
   //command separated by "," format: password,command=value
   tmp = strtok_r(msg, ",", &cmd);
@@ -119,13 +120,13 @@ void sms_cmd(char *cmd, char *phone) {
       //checking password
       if(strcmp(tmp, config.sms_key)  == 0) {
         debug_print(F("sms_cmd(): SMS password accepted, executing commands from"));
-        debug_print(num);
+        debug_print(phone);
       } else {
         debug_print(F("sms_cmd(): SMS password failed, ignoring commands"));
         break;
       }
     } else {
-      sms_cmd_run(tmp, num);
+      sms_cmd_run(tmp, phone);
     }
     tmp = strtok_r(NULL, ",\r", &cmd);
     i++;
