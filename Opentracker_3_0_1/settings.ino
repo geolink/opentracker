@@ -17,7 +17,7 @@ void storage_config_fill() {
 
 void settings_load() {
   //load all settings from EEPROM
-  int tmp;
+  byte tmp;
 
   debug_print(F("settings_load() started"));
 
@@ -45,6 +45,8 @@ void settings_load() {
     debug_print(config.interval);
     debug_print(config.apn);
 
+    addon_event(ON_SETTINGS_DEFAULT);
+
     dueFlashStorage.write(STORAGE_FIRST_RUN_PAGE,1);  //set first run flag
     settings_save(); //save settings
   } else {
@@ -52,6 +54,8 @@ void settings_load() {
 
     byte* b = dueFlashStorage.readAddress(STORAGE_CONFIG_PAGE); // byte array which is read from flash at adress
     memcpy(&config, b, sizeof(settings)); // copy byte array to temporary struct
+
+    addon_event(ON_SETTINGS_LOAD);
   }
 
   //setting defaults in case nothing loaded
@@ -137,5 +141,7 @@ void settings_save() {
   memcpy(b2, &config, sizeof(settings)); // copy the struct to the byte array
   dueFlashStorage.write(STORAGE_CONFIG_PAGE, b2, sizeof(settings)); // write byte array to flash
 
+  addon_event(ON_SETTINGS_LOAD);
+  
   debug_print(F("settings_save() finished"));
 }

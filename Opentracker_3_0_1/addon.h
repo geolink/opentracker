@@ -26,7 +26,13 @@ void addon_event(int event) {
   // called on some tracker events (see below list)
 }
 
+void addon_sms_command(char *cmd, char *arg, const char *phone) {
+  // called to handle unknown SMS commands
+}
+
 #endif
+
+struct addon_settings;
 
 // event types
 enum {
@@ -34,6 +40,9 @@ enum {
   ON_DEVICE_WAKEUP,       // after going back to full power mode
   ON_CLOCK_PAUSE,         // before changing system clock
   ON_CLOCK_RESUME,        // after changing system clock
+  ON_SETTINGS_DEFAULT,    // when loading default settings in volatile memory
+  ON_SETTINGS_LOAD,       // when loading saved settings from volatile memory
+  ON_SETTINGS_SAVE,       // when saving settings to persistent storage
   ON_MODEM_REPLY,         // after each modem reply (can snoop modem_reply[] buffer)
   ON_MODEM_ACTIVATION,    // during the first modem GPRS activation
   ON_SEND_STARTED,        // before initiating a new data connection
