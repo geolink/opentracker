@@ -343,15 +343,20 @@ int gsm_get_modem_status() {
 
   gsm_port.print("AT+CPAS");
   gsm_port.print("\r");
-  delay(50);
-
-  gsm_wait_for_reply(1,1);
 
   int pas = -1; // unexpected reply
-  char *tmp = strstr(modem_reply, "+CPAS:");
-  if(tmp!=NULL)
-    pas = atoi(tmp+6);
-
+  for (int k=0; k<10; ++k) {
+    delay(50);
+    gsm_get_reply(0);
+  
+    char *tmp = strstr(modem_reply, "+CPAS:");
+    if(tmp!=NULL) {
+      pas = atoi(tmp+6);
+      break;
+    }
+  }
+  gsm_wait_for_reply(1,0);
+  
   debug_print(F("gsm_get_modem_status() returned: "));
   debug_print(pas);
   return pas;
@@ -576,6 +581,8 @@ int gsm_send_http_current() {
   addon_event(ON_SEND_DATA);
 
   debug_print(F("gsm_send_http(): Sending IMEI and Key"));
+  debug_print(config.imei);
+  // don't disclose the key
 
   //sending imei and key first
   gsm_port.print("AT+QISEND=");
