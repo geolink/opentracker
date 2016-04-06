@@ -119,14 +119,15 @@ void sms_cmd(char *cmd, char *phone) {
       //checking password
       if(strcmp(tmp, config.sms_key)  == 0) {
         debug_print(F("sms_cmd(): SMS password accepted, executing commands from"));
-        debug_print(phone);
+        debug_print(num);
       } else {
-        debug_print(F("sms_cmd(): SMS password failed, ignoring command"));
+        debug_print(F("sms_cmd(): SMS password failed, ignoring commands"));
+        break;
       }
     } else {
-      tmp = strtok_r(NULL, ",\r", &cmd);
       sms_cmd_run(tmp, num);
     }
+    tmp = strtok_r(NULL, ",\r", &cmd);
     i++;
   }
 
@@ -174,7 +175,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     sms_send_msg("APN saved", phone);
   }
-
+  else
   //APN password
   if(strcmp(cmd, "gprspass") == 0) {
     //setting new APN pass
@@ -197,7 +198,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     sms_send_msg("APN password saved", phone);
   }
-
+  else
   //APN username
   if(strcmp(cmd, "gprsuser") == 0) {
     //setting new APN
@@ -220,7 +221,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     sms_send_msg("APN username saved", phone);
   }
-
+  else
   //SMS pass
   if(strcmp(cmd, "smspass") == 0) {
     //setting new APN
@@ -242,7 +243,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     sms_send_msg("SMS password saved", phone);
   }
-
+  else
   //PIN
   if(strcmp(cmd, "pin") == 0) {
     //setting new APN
@@ -265,7 +266,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     sms_send_msg("SIM pin saved", phone);
   }
-
+  else
   //alarm
   if(strcmp(cmd, "alarm") == 0) {
     //setting alarm
@@ -292,6 +293,7 @@ void sms_cmd_run(char *cmd, char *phone) {
       sms_send_msg("Alarm set OFF", phone);
     }
   }
+  else
   //interval
   if(strcmp(cmd, "int") == 0) {
     //setting new APN
@@ -317,7 +319,7 @@ void sms_cmd_run(char *cmd, char *phone) {
       sms_send_msg("Interval saved", phone);
     } else debug_print(F("sms_cmd_run(): invalid value"));
   }
-
+  else
   if(strcmp(cmd, "locate") == 0) {
     debug_print(F("sms_cmd_run(): Locate command detected"));
 
@@ -328,31 +330,33 @@ void sms_cmd_run(char *cmd, char *phone) {
     }
     sms_send_msg(msg, phone);
   }
-
+  else
   if(strcmp(cmd, "tomtom") == 0) {
     debug_print(F("sms_cmd_run(): TomTom command detected"));
 
     snprintf(msg,160,"tomtomhome://geo:lat=%s&long=%s",lat_current,lon_current);
     sms_send_msg(msg, phone);
   }
-
+  else
   if(strcmp(cmd, "dataoff") == 0) {
     debug_print(F("sms_cmd_run(): Data off command detected"));
     sms_send_msg("Data OFF", phone);
     SEND_DATA = 0;
   }
-
+  else
   if(strcmp(cmd, "dataon") == 0) {
     debug_print(F("sms_cmd_run(): Data on command detected"));
     sms_send_msg("Data ON", phone);
     SEND_DATA = 1;
   }
-
+  else
   if(strcmp(cmd, "getimei") == 0) {
     debug_print(F("sms_cmd_run(): Get IMEI command detected"));
     snprintf(msg,160,"IMEI: %s",config.imei);
     sms_send_msg(msg, phone);
   }
+  else
+    addon_sms_command(cmd, tmp, phone);
 
   debug_print(F("sms_cmd_run() completed"));
 }
