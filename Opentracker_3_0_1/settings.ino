@@ -141,7 +141,7 @@ void settings_save() {
   memcpy(b2, &config, sizeof(settings)); // copy the struct to the byte array
   dueFlashStorage.write(STORAGE_CONFIG_PAGE, b2, sizeof(settings)); // write byte array to flash
 
-  addon_event(ON_SETTINGS_LOAD);
+  addon_event(ON_SETTINGS_SAVE);
   
   debug_print(F("settings_save() finished"));
 }
