@@ -21,25 +21,6 @@ void settings_load() {
 
   debug_print(F("settings_load() started"));
 
-  /* force using default config
-  debug_print(F("settings_load(): setting defaults from config"));
-  config.interval = INTERVAL;
-  config.interval_send = INTERVAL_SEND;
-  config.powersave = POWERSAVE;
-
-  strlcpy(config.key, KEY, 12);
-  strlcpy(config.sms_key, SMS_KEY, 12);
-  strlcpy(config.apn, DEFAULT_APN, 20);
-  strlcpy(config.user, DEFAULT_USER, 20);
-  strlcpy(config.pwd, DEFAULT_PASS, 20);
-
-  debug_print(F("settings_load(): set config.interval:"));
-  debug_print(config.interval);
-  debug_print(config.apn);
-  */
-
-  //delay(5000); //debug remove
-
   byte first_run = dueFlashStorage.read(STORAGE_FIRST_RUN_PAGE);
   debug_print(F("settings_load(): First run flag:"));
   debug_print(first_run);
@@ -54,6 +35,7 @@ void settings_load() {
 
     strlcpy(config.key, KEY, 12);
     strlcpy(config.sms_key, SMS_KEY, 12);
+    strlcpy(config.sim_pin, SIM_PIN, 5);
     strlcpy(config.apn, DEFAULT_APN, 64);
     strlcpy(config.user, DEFAULT_USER, 20);
     strlcpy(config.pwd, DEFAULT_PASS, 20);
@@ -118,6 +100,12 @@ void settings_load() {
   if(tmp == 255) { //this check is not sufficient
     debug_print("settings_load(): SMS key not found, setting default");
     strlcpy(config.sms_key, SMS_KEY, 12);
+  }
+
+  tmp = config.sim_pin[0];
+  if(tmp == 255) { //this check is not sufficient
+    debug_print("settings_load(): SMS key not found, setting default");
+    strlcpy(config.sim_pin, SIM_PIN, 5);
   }
 
   tmp = config.apn[0];
