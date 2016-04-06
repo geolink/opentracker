@@ -103,27 +103,30 @@ void sms_check() {
 }
 
 void sms_cmd(char *cmd, char *phone) {
+  char msg[160], num[32];
   char *tmp;
   int i=0;
 
   debug_print(F("sms_cmd() started"));
+  // make a local copy (since this is coming from modem_reply, it will be overwritten)
+  strlcpy(msg, cmd, 160);
+  strlcpy(num, phone, 32);
 
   //command separated by "," format: password,command=value
-  while ((tmp = strtok_r(cmd, ",", &cmd)) != NULL) {
+  tmp = strtok_r(msg, ",", &cmd);
+  while (tmp != NULL && i < 10) {
     if(i == 0) {
       //checking password
       if(strcmp(tmp, config.sms_key)  == 0) {
-        debug_print(F("sms_cmd(): SMS password accepted, executing command from"));
+        debug_print(F("sms_cmd(): SMS password accepted, executing commands from"));
         debug_print(phone);
-
-        tmp = strtok_r(NULL, "\r", &cmd);
-        sms_cmd_run(tmp,phone);
-        break;
       } else {
         debug_print(F("sms_cmd(): SMS password failed, ignoring command"));
       }
+    } else {
+      tmp = strtok_r(NULL, ",\r", &cmd);
+      sms_cmd_run(tmp, num);
     }
-
     i++;
   }
 
@@ -131,10 +134,12 @@ void sms_cmd(char *cmd, char *phone) {
 }
 
 void sms_cmd_run(char *cmd, char *phone) {
-  char *tmp;
-  char *tmpcmd;
+  char *tmp = NULL;
+  char *tmpcmd = NULL;
   long val;
   int k=0;
+
+  char msg[160];
 
   debug_print(F("sms_cmd_run() started"));
 
@@ -142,13 +147,7 @@ void sms_cmd_run(char *cmd, char *phone) {
   cmd = strtok_r(cmd, "=", &tmpcmd);
   if(cmd != NULL) {
     //get argument (if any)
-    tmp = strtok_r(NULL, "\r", &tmpcmd);
-    //remove whitespace from command
-    cmd = strtok_r(cmd, " ", &tmpcmd);
-    if(tmp != NULL) {
-      //remove whitespace from argument
-      tmp = strtok_r(tmp, " ", &tmpcmd);
-    }
+    tmp = strtok_r(NULL, ",\r", &tmpcmd);
   }
   debug_print(cmd);
   debug_print(tmp);
@@ -322,24 +321,18 @@ void sms_cmd_run(char *cmd, char *phone) {
   if(strcmp(cmd, "locate") == 0) {
     debug_print(F("sms_cmd_run(): Locate command detected"));
 
-    char msg[255];
-
     if(LOCATE_COMMAND_FORMAT_IOS) {
-      snprintf(msg,255,"comgooglemaps://?q=%s,%s",lat_current,lon_current);
+      snprintf(msg,160,"comgooglemaps://?q=%s,%s",lat_current,lon_current);
     } else {
-      snprintf(msg,255,"https://maps.google.co.uk/maps/place/%s,%s",lat_current,lon_current);
+      snprintf(msg,160,"https://maps.google.co.uk/maps/place/%s,%s",lat_current,lon_current);
     }
-
     sms_send_msg(msg, phone);
   }
 
   if(strcmp(cmd, "tomtom") == 0) {
     debug_print(F("sms_cmd_run(): TomTom command detected"));
 
-    char msg[255];
-
-    snprintf(msg,255,"tomtomhome://geo:lat=%s&long=%s",lat_current,lon_current);
-
+    snprintf(msg,160,"tomtomhome://geo:lat=%s&long=%s",lat_current,lon_current);
     sms_send_msg(msg, phone);
   }
 
@@ -353,6 +346,12 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(F("sms_cmd_run(): Data on command detected"));
     sms_send_msg("Data ON", phone);
     SEND_DATA = 1;
+  }
+
+  if(strcmp(cmd, "getimei") == 0) {
+    debug_print(F("sms_cmd_run(): Get IMEI command detected"));
+    snprintf(msg,160,"IMEI: %s",config.imei);
+    sms_send_msg(msg, phone);
   }
 
   debug_print(F("sms_cmd_run() completed"));
