@@ -74,7 +74,6 @@ void gsm_on() {
 
   // auto-baudrate
   gsm_send_at();
-  gsm_send_at();
 
   // make sure it's not sleeping
   gsm_wakeup();
@@ -701,8 +700,6 @@ int gsm_send_data() {
 
   //send 2 ATs
   gsm_send_at();
-
-  gsm_wait_for_reply(1,0);
 
   //disconnect GSM
   ret_tmp = gsm_disconnect(1);
