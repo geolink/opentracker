@@ -18,13 +18,13 @@ void addon_delay(long ms) {
 }
 
 void addon_init() {
-  // Additional pin configuration
+  // Global state initialization and additional pin configuration
   // (e.g. initialize I/O pins on expansion header, on-chip peripherals like
   // UART, USART, SPI, I2C, or external I/O expanders)
 }
 
 void addon_setup() {
-  // Additional hardware setup
+  // Additional hardware setup, after modem setup
   // (e.g. configure external chips, or send additional modem commands)
 }
 
@@ -32,9 +32,19 @@ void addon_loop() {
   // Anything you want to execute during the main or other wait loops
 }
 
+void addon_sms_command(char *cmd, char *arg, const char *phone) {
+  // Handle SMS commands not already handled by the main application
+}
+
 void addon_event(int event) {
   // Handle event notifications
   switch (event) {
+  case ON_SETTINGS_DEFAULT:
+    break;
+  case ON_SETTINGS_LOAD:
+    break;
+  case ON_SETTINGS_SAVE:
+    break;
   case ON_CLOCK_PAUSE:
     break;
   case ON_CLOCK_RESUME:
