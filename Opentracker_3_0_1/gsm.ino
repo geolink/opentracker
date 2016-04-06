@@ -194,6 +194,7 @@ void gsm_set_pin() {
   gsm_port.print("AT+CPIN?");
   gsm_port.print("\r");
 
+  gsm_wait_at();
   gsm_wait_for_reply(1,1);
 
   char *tmp = strstr(modem_reply, "SIM PIN");
