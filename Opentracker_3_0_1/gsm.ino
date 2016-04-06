@@ -149,7 +149,6 @@ void gsm_setup() {
 void gsm_config() {
   //supply PIN code if needed
   gsm_set_pin();
-  gsm_set_pin(); // twice, to handle errors due to longer latencies
 
   // wait for modem ready (status 0)
   unsigned long t = millis();
@@ -190,44 +189,52 @@ void gsm_set_time() {
 void gsm_set_pin() {
   debug_print(F("gsm_set_pin() started"));
 
-  //checking if PIN is set
-  gsm_port.print("AT+CPIN?");
-  gsm_port.print("\r");
-
-  gsm_wait_at();
-  gsm_wait_for_reply(1,1);
-
-  char *tmp = strstr(modem_reply, "SIM PIN");
-  if(tmp!=NULL) {
-    debug_print(F("gsm_set_pin(): PIN is required"));
-
-    //checking if pin is valid one
-    if(config.sim_pin[0] == -1) {
-      debug_print(F("gsm_set_pin(): PIN is not supplied."));
-    } else {
-      if(strlen(config.sim_pin) == 4) {
-        debug_print(F("gsm_set_pin(): PIN supplied, sending to modem."));
-
-        gsm_port.print("AT+CPIN=");
-        gsm_port.print(config.sim_pin);
-        gsm_port.print("\r");
-
-        gsm_wait_for_reply(1,0);
-
-        tmp = strstr(modem_reply, "OK");
-        if(tmp!=NULL) {
-          debug_print(F("gsm_set_pin(): PIN is accepted"));
-        } else {
-          debug_print(F("gsm_set_pin(): PIN is not accepted"));
-        }
+  for (int k=0; k<5; ++k) {
+    //checking if PIN is set
+    gsm_port.print("AT+CPIN?");
+    gsm_port.print("\r");
+  
+    gsm_wait_at();
+    gsm_wait_for_reply(1,1);
+  
+    char *tmp = strstr(modem_reply, "SIM PIN");
+    if(tmp!=NULL) {
+      debug_print(F("gsm_set_pin(): PIN is required"));
+  
+      //checking if pin is valid one
+      if(config.sim_pin[0] == 255) {
+        debug_print(F("gsm_set_pin(): PIN is not supplied."));
       } else {
-        debug_print(F("gsm_set_pin(): PIN supplied, but has invalid length. Not sending to modem."));
+        if(strlen(config.sim_pin) == 4) {
+          debug_print(F("gsm_set_pin(): PIN supplied, sending to modem."));
+  
+          gsm_port.print("AT+CPIN=");
+          gsm_port.print(config.sim_pin);
+          gsm_port.print("\r");
+  
+          gsm_wait_for_reply(1,0);
+  
+          tmp = strstr(modem_reply, "OK");
+          if(tmp!=NULL) {
+            debug_print(F("gsm_set_pin(): PIN is accepted"));
+          } else {
+            debug_print(F("gsm_set_pin(): PIN is not accepted"));
+          }
+          break;
+        } else {
+          debug_print(F("gsm_set_pin(): PIN supplied, but has invalid length. Not sending to modem."));
+          break;
+        }
       }
     }
-  } else {
-    debug_print(F("gsm_set_pin(): PIN is not required"));
+    tmp = strstr(modem_reply, "READY");
+    if(tmp!=NULL) {
+      debug_print(F("gsm_set_pin(): PIN is not required"));
+      break;
+    }
+    delay(2000);
   }
-
+  
   debug_print(F("gsm_set_pin() completed"));
 }
 
@@ -332,9 +339,13 @@ void gsm_send_at() {
 
   gsm_port.print("AT");
   gsm_port.print("\r");
+  delay(50);
 
   gsm_port.print("AT");
   gsm_port.print("\r");
+  delay(50);
+
+  gsm_get_reply(1);
 
   debug_print(F("gsm_send_at() completed"));
 }
