@@ -141,6 +141,12 @@ void loop() {
   if(!SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
     sms_check();
   }
+  
+  if(save_config == 1) {
+    //config should be saved
+    settings_save();
+    save_config = 0;
+  }
 
   // Check if ignition is turned on
   IGNT_STAT = digitalRead(PIN_S_DETECT);
@@ -171,10 +177,6 @@ void loop() {
       }
       engineRunning = 1;
     }
-
-    if(SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
-      sms_check();
-    }
   }
 
   if(ALWAYS_ON || IGNT_STAT == 0) {
@@ -186,7 +188,6 @@ void loop() {
     //collecting GPS data
 
     collect_data(IGNT_STAT);
-
     send_data();
 
     #if STORAGE
@@ -196,55 +197,49 @@ void loop() {
 
     //reset current data and counter
     data_index = 0;
-    } else {
-      debug_print(F("Ignition is OFF!"));
-     // Insert here only code that should be processed when Ignition is OFF
+  } else {
+    debug_print(F("Ignition is OFF!"));
+   // Insert here only code that should be processed when Ignition is OFF
 
-    }
+  }
 
-    if(save_config == 1) {
-      //config should be saved
-      settings_save();
-      save_config = 0;
-    }
+  if(power_reboot == 1) {
+    //reboot unit
+    reboot();
+    power_reboot = 0;
+  }
 
-    if(power_reboot == 1) {
-      //reboot unit
-      reboot();
-      power_reboot = 0;
-    }
-
-    if(!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
-      time_stop = millis();
-
-      //signed difference is good if less than MAX_LONG
-      time_diff = time_stop-time_start;
-      time_diff = config.interval-time_diff;
-
-      debug_print(F("Sleeping for:"));
-      debug_print(time_diff);
-      debug_print(F("ms"));
-
-      //debug - no sleep
-      //debug_print(F("DEBUG: disable sleep."));
-      //time_diff = 1000;
-
-      if(time_diff > 0) {
-        addon_delay(time_diff);
-        /*
-        if(time_diff > 4000) {
-          enter_low_power();
-        }
-        addon_delay(time_diff - 3000);
-        if(time_diff > 4000) {
-          exit_low_power();
-        }
-        */
-      } else {
-        debug_print(F("Error: negative sleep time."));
-        addon_delay(1000);
+  if(!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
+    time_stop = millis();
+  
+    //signed difference is good if less than MAX_LONG
+    time_diff = time_stop-time_start;
+    time_diff = config.interval-time_diff;
+  
+    debug_print(F("Sleeping for:"));
+    debug_print(time_diff);
+    debug_print(F("ms"));
+  
+    //debug - no sleep
+    //debug_print(F("DEBUG: disable sleep."));
+    //time_diff = 1000;
+  
+    if(time_diff > 0) {
+      addon_delay(time_diff);
+      /*
+      if(time_diff > 4000) {
+        enter_low_power();
       }
-   }
+      addon_delay(time_diff - 3000);
+      if(time_diff > 4000) {
+        exit_low_power();
+      }
+      */
+    } else {
+      debug_print(F("Error: negative sleep time."));
+      addon_delay(1000);
+    }
+  }
 }
 
 void device_init() {
