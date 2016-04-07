@@ -61,19 +61,35 @@ void gsm_on() {
   //turn on the modem
   debug_print(F("gsm_on() started"));
 
-  unsigned long t = millis();
+  int k=0;
+  for (;;) {
+    unsigned long t = millis();
+  
+    if(digitalRead(PIN_STATUS_GSM) == LOW) { // now off, turn on
+      digitalWrite(PIN_C_PWR_GSM, HIGH);
+      while ((digitalRead(PIN_STATUS_GSM) == LOW) && (millis() - t < 5000))
+        delay(100);
+      digitalWrite(PIN_C_PWR_GSM, LOW);
+      delay(1000);
+    }
+    gsm_flags |= GSM_F_POWER;
+  
+    // auto-baudrate
+    if (gsm_send_at())
+      break;
+    debug_print(F("gsm_on(): failed auto-baudrate"));
 
-  if(digitalRead(PIN_STATUS_GSM) == LOW) { // now off, turn on
-    digitalWrite(PIN_C_PWR_GSM, HIGH);
-    while ((digitalRead(PIN_STATUS_GSM) == LOW) && (millis() - t < 5000))
-      delay(100);
-    digitalWrite(PIN_C_PWR_GSM, LOW);
+    if (++k >= 5) // max attempts
+      break;
+      
+    gsm_off(0);
+    gsm_off(1);
+
     delay(1000);
-  }
-  gsm_flags |= GSM_F_POWER;
 
-  // auto-baudrate
-  gsm_send_at();
+    debug_print(F("gsm_on(): try again"));
+    debug_print(k);
+  }
 
   // make sure it's not sleeping
   gsm_wakeup();
@@ -333,20 +349,25 @@ void gsm_get_imei() {
   debug_print(F("gsm_get_imei() completed"));
 }
 
-void gsm_send_at() {
+int gsm_send_at() {
   debug_print(F("gsm_send_at() started"));
 
-  gsm_port.print("AT");
-  gsm_port.print("\r");
-  delay(50);
+  int ret = 0;
+  for (int k=0; k<5; ++k) {
+    gsm_port.print("AT");
+    gsm_port.print("\r");
+    delay(50);
+  
+    gsm_get_reply(1);
+    ret = (strstr(modem_reply, "AT") != NULL)
+      && (strstr(modem_reply, "OK") != NULL);
+    if (ret) break;
 
-  gsm_port.print("AT");
-  gsm_port.print("\r");
-  delay(50);
-
-  gsm_get_reply(1);
-
+    delay(1000);
+  }
   debug_print(F("gsm_send_at() completed"));
+  debug_print(ret);
+  return ret;
 }
 
 int gsm_get_modem_status() {
@@ -494,6 +515,9 @@ int gsm_connect()  {
       } else {
         debug_print(F("Can not connect to remote server: "));
         debug_print(HOSTNAME);
+        
+        gsm_port.print("AT+CEER\r");
+        gsm_wait_for_reply(1,0);
       }
     }
 
