@@ -40,7 +40,7 @@ int parse_receive_reply() {
         tmp += strlen("\r\n\r\n");
         tmpcmd = strtok(tmp, "OK");
 
-        for(index=0;index<strlen(tmpcmd)-2;index++) {
+        for(index=0;index<strlen(tmpcmd)-2&&index<sizeof(cmd)-1;index++) {
           cmd[index] = tmpcmd[index];
         }
 
@@ -56,7 +56,7 @@ int parse_receive_reply() {
       tmp += strlen("\r\n");
       tmpcmd = strtok(tmp, "\r\nOK");
 
-      for(int i=0;i<strlen(tmpcmd);i++) {
+      for(int i=0;i<strlen(tmpcmd)&&index<sizeof(cmd)-1;i++) {
         cmd[index] = tmpcmd[i];
         index++;
       }
