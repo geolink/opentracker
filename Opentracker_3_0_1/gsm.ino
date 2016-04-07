@@ -459,46 +459,46 @@ int gsm_connect()  {
 
   //try to connect multiple times
   for(int i=0;i<CONNECT_RETRY;i++) {
-    gsm_get_modem_status(); // diagnostic only
-    
-    // check if connected from previous attempts
-    gsm_port.print("AT+QISTAT\r");
-    gsm_wait_for_reply(0,0);
-    
-    if(strstr(modem_reply, "CONNECT OK") == NULL) {
-  
-      debug_print(F("Connecting to remote server..."));
-      debug_print(i);
-  
-      //open socket connection to remote host
-      //opening connection
-      gsm_port.print("AT+QIOPEN=\"");
-      gsm_port.print(PROTO);
-      gsm_port.print("\",\"");
-      gsm_port.print(HOSTNAME);
-      gsm_port.print("\",\"");
-      gsm_port.print(HTTP_PORT);
-      gsm_port.print("\"");
-      gsm_port.print("\r");
-  
+    // connect only when modem is ready
+    if (gsm_get_modem_status() == 0) {
+      // check if connected from previous attempts
+      gsm_port.print("AT+QISTAT\r");
       gsm_wait_for_reply(0,0);
-    }
+      
+      if(strstr(modem_reply, "CONNECT OK") == NULL) {
     
-    char *tmp = strstr(modem_reply, "CONNECT OK");
-    if(tmp!=NULL) {
-      debug_print(F("Connected to remote server: "));
-      debug_print(HOSTNAME);
-
-      ret = 1;
-      break;
-    } else {
-      debug_print(F("Can not connect to remote server: "));
-      debug_print(HOSTNAME);
+        debug_print(F("Connecting to remote server..."));
+        debug_print(i);
+    
+        //open socket connection to remote host
+        //opening connection
+        gsm_port.print("AT+QIOPEN=\"");
+        gsm_port.print(PROTO);
+        gsm_port.print("\",\"");
+        gsm_port.print(HOSTNAME);
+        gsm_port.print("\",\"");
+        gsm_port.print(HTTP_PORT);
+        gsm_port.print("\"");
+        gsm_port.print("\r");
+    
+        gsm_wait_for_reply(0,0);
+      }
+      
+      char *tmp = strstr(modem_reply, "CONNECT OK");
+      if(tmp!=NULL) {
+        debug_print(F("Connected to remote server: "));
+        debug_print(HOSTNAME);
+  
+        ret = 1;
+        break;
+      } else {
+        debug_print(F("Can not connect to remote server: "));
+        debug_print(HOSTNAME);
+      }
     }
 
     addon_delay(2000); // wait 2s before retrying
   }
-
   debug_print(F("gsm_connect() completed"));
   return ret;
 }
