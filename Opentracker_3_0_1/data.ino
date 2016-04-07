@@ -43,7 +43,9 @@ void collect_all_data(int ignitionState) {
     if(DATA_INCLUDE_BATTERY_LEVEL) {
       data_current[data_index++] = ',';
     }
-    if(ignitionState == 0) {
+    if(ignitionState == -1) {
+      data_current[data_index++] = '2'; // backup source
+    } else if(ignitionState == 0) {
       data_current[data_index++] = '1';
     } else {
       data_current[data_index++] = '0';
