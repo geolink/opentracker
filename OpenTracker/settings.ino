@@ -33,13 +33,13 @@ void settings_load() {
     config.powersave = POWERSAVE;
     config.alarm_on =  DEFAULT_ALARM_ON;
 
-    strlcpy(config.key, KEY, 12);
-    strlcpy(config.sms_key, SMS_KEY, 12);
-    strlcpy(config.sim_pin, SIM_PIN, 5);
-    strlcpy(config.apn, DEFAULT_APN, 64);
-    strlcpy(config.user, DEFAULT_USER, 20);
-    strlcpy(config.pwd, DEFAULT_PASS, 20);
-    strlcpy(config.alarm_phone, DEFAULT_ALARM_SMS, 20);
+    strlcpy(config.key, KEY, sizeof(config.key));
+    strlcpy(config.sms_key, SMS_KEY, sizeof(config.sms_key));
+    strlcpy(config.sim_pin, SIM_PIN, sizeof(config.sim_pin));
+    strlcpy(config.apn, DEFAULT_APN, sizeof(config.apn));
+    strlcpy(config.user, DEFAULT_USER, sizeof(config.user));
+    strlcpy(config.pwd, DEFAULT_PASS, sizeof(config.pwd));
+    strlcpy(config.alarm_phone, DEFAULT_ALARM_SMS, sizeof(config.alarm_phone));
 
     debug_print(F("settings_load(): set config.interval:"));
     debug_print(config.interval);
@@ -97,39 +97,45 @@ void settings_load() {
   tmp = config.key[0];
   if(tmp == 255) { //this check is not sufficient
     debug_print(F("settings_load(): key not found, setting default"));
-    strlcpy(config.key, KEY, 12);
+    strlcpy(config.key, KEY, sizeof(config.key));
   }
 
   tmp = config.sms_key[0];
   if(tmp == 255) { //this check is not sufficient
     debug_print("settings_load(): SMS key not found, setting default");
-    strlcpy(config.sms_key, SMS_KEY, 12);
+    strlcpy(config.sms_key, SMS_KEY, sizeof(config.sms_key));
   }
 
   tmp = config.sim_pin[0];
   if(tmp == 255) { //this check is not sufficient
-    debug_print("settings_load(): SMS key not found, setting default");
-    strlcpy(config.sim_pin, SIM_PIN, 5);
+    debug_print("settings_load(): SIM pin not found, setting default");
+    strlcpy(config.sim_pin, SIM_PIN, sizeof(config.sim_pin));
   }
 
   tmp = config.apn[0];
   if(tmp == 255) {
     debug_print("settings_load(): APN not set, setting default");
-    strlcpy(config.apn, DEFAULT_APN, 20);
+    strlcpy(config.apn, DEFAULT_APN, sizeof(config.apn));
   }
 
   tmp = config.user[0];
   if(tmp == 255) {
     debug_print("settings_load(): APN user not set, setting default");
-    strlcpy(config.user, DEFAULT_USER, 20);
+    strlcpy(config.user, DEFAULT_USER, sizeof(config.user));
   }
 
   tmp = config.pwd[0];
   if(tmp == 255) {
     debug_print("settings_load(): APN password not set, setting default");
-    strlcpy(config.pwd, DEFAULT_PASS, 20);
+    strlcpy(config.pwd, DEFAULT_PASS, sizeof(config.pwd));
   }
 
+  tmp = config.alarm_phone[0];
+  if(tmp == 255) {
+    debug_print("settings_load(): Alarm SMS number not set, setting default");
+    strlcpy(config.alarm_phone, DEFAULT_ALARM_SMS, sizeof(config.alarm_phone));
+  }
+  
   debug_print(F("settings_load() finished"));
 }
 
