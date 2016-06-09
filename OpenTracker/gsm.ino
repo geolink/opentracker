@@ -187,8 +187,6 @@ void gsm_config() {
 }
 
 void gsm_set_time() {
-  int i;
-
   debug_print(F("gsm_set_time() started"));
 
   //setting modems clock from current time var
@@ -254,8 +252,6 @@ void gsm_set_pin() {
 }
 
 void gsm_get_time() {
-  int i;
-
   debug_print(F("gsm_get_time() started"));
 
   //clean any serial data
@@ -386,26 +382,24 @@ int gsm_get_modem_status() {
   return pas;
 }
 
-int gsm_disconnect(int waitForReply) {
-  //close connection, if previous attempts left it open
-  gsm_port.print("AT+QICLOSE");
-  gsm_port.print("\r");
-  gsm_wait_for_reply(0,0);
-
-  #if GSM_STAY_ONLINE
-    debug_print(F("gsm_disconnect() Disabled"));
-    return 1;
-  #else
+int gsm_disconnect() {
     int ret = 0;
+  #if GSM_STAY_ONLINE
+    debug_print(F("gsm_disconnect() disabled"));
+    
+    //close connection, if previous attempts left it open
+    gsm_port.print("AT+QICLOSE");
+    gsm_port.print("\r");
+    gsm_wait_for_reply(0,0);
+  
+    ret = 1;
+  #else
     debug_print(F("gsm_disconnect() started"));
 
     //disconnect GSM
     gsm_port.print("AT+QIDEACT");
     gsm_port.print("\r");
-
-    if(waitForReply) {
-      gsm_wait_for_reply(0,0);
-    }
+    gsm_wait_for_reply(0,0);
 
     //check if result contains DEACT OK
     char *tmp = strstr(modem_reply, "DEACT OK");
@@ -416,10 +410,10 @@ int gsm_disconnect(int waitForReply) {
     } else {
       debug_print(F("gsm_disconnect(): DEACT OK not found."));
     }
-
-    debug_print(F("gsm_disconnect() completed"));
-    return ret;
   #endif
+
+  debug_print(F("gsm_disconnect() completed"));
+  return ret;
 }
 
 int gsm_set_apn()  {
@@ -717,13 +711,8 @@ int gsm_send_data() {
   //send 2 ATs
   gsm_send_at();
 
-  //disconnect GSM
-  ret_tmp = gsm_disconnect(1);
-  if(ret_tmp == 1) {
-    debug_print(F("GPRS deactivated."));
-  } else {
-    debug_print(F("Error deactivating GPRS."));
-  }
+  //make sure there is no connection
+  gsm_disconnect();
 
   addon_event(ON_SEND_STARTED);
     
@@ -737,15 +726,15 @@ int gsm_send_data() {
       // send data, if ok then parse reply
       ret_tmp = gsm_send_http_current() && parse_receive_reply();
     }
-    gsm_disconnect(0);
   }
+  gsm_disconnect(); // always
+  
   if(ret_tmp) {
     gsm_send_failures = 0;
 
     addon_event(ON_SEND_COMPLETED);
   } else {
-    debug_print(F("Error, can not send data, no connection."));
-    gsm_disconnect(0);
+    debug_print(F("Error, can not send data or no connection."));
 
     gsm_send_failures++;
     addon_event(ON_SEND_FAILED);
@@ -855,6 +844,9 @@ int gsm_is_final_result(int allowOK) {
         return true;
       }
       if(strcmp(&modem_reply[1], "LOSED\r\n") == 0) {
+        return true;
+      }
+      if(strcmp(&modem_reply[1], "LOSE OK\r\n") == 0) {
         return true;
       }
       return false;
