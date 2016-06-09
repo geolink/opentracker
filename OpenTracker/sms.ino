@@ -2,7 +2,7 @@
 //check SMS
 void sms_check() {
   char index;
-  byte cmd;
+  byte cmd = 0;
   int reply_index = 0;
   char *tmp = NULL, *tmpcmd = NULL;
   char phone[32];
