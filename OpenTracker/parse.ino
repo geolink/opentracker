@@ -6,7 +6,6 @@ int parse_receive_reply() {
   byte index = 0;
   byte header = 0;
 
-  char inChar=-1; // Where to store the character read
   char *tmp;
   char *tmpcmd;
   char cmd[100];  //remote commands stored here
