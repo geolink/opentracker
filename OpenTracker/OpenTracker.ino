@@ -32,7 +32,7 @@ int interval_count = 0;         //current interval count (increased on each data
 
 char data_current[DATA_LIMIT];  //data collected in one go, max 2500 chars
 int data_index = 0;             //current data index (where last data record stopped)
-char time_char[20];             //time attached to every data line
+char time_char[24];             //time attached to every data line
 char modem_reply[200];          //data received from modem, max 200 chars
 uint32_t logindex = STORAGE_DATA_START;
 bool save_config = 0;           //flag to save config to flash
@@ -123,7 +123,7 @@ void setup() {
 
 void loop() {
   int IGNT_STAT;
-
+    
   //start counting time
   time_start = millis();
 
@@ -265,10 +265,12 @@ void device_init() {
 // when DEBUG is defined >= 2 then serial monitor accepts test commands
 void debug_check_input() {
 #if DEBUG > 1
+#warning Do not use DEBUG=2 in production code!
+
   if(!debug_enable)
     return;
     
-  if(debug_port.available()) {
+  while(debug_port.available()) {
     int c = debug_port.read();
     debug_port.print(F("debug_check_input() got: "));
     debug_port.println((char)c);
@@ -281,6 +283,10 @@ void debug_check_input() {
       enter_low_power();
       addon_delay(15000);
       exit_low_power();
+      break;
+    case 'd':
+      storage_dump();
+      storage_send_logs(0);
       break;
     }
   }
