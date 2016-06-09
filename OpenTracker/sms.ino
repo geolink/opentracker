@@ -48,7 +48,7 @@ void sms_check() {
             tmp += 9;
             tmpcmd = strtok(tmp, "\",\"");
             if(tmpcmd!=NULL) {
-              strlcpy(phone, tmpcmd, 32);
+              strlcpy(phone, tmpcmd, sizeof(phone));
               debug_print(F("Phone:"));
               debug_print(phone);
             }
@@ -111,7 +111,7 @@ void sms_cmd(char *cmd, char *phone) {
 
   debug_print(F("sms_cmd() started"));
   // make a local copy (since this is coming from modem_reply, it will be overwritten)
-  strlcpy(msg, cmd, 160);
+  strlcpy(msg, cmd, sizeof(msg));
 
   //command separated by "," format: password,command=value
   tmp = strtok_r(msg, ",", &cmd);
