@@ -302,9 +302,6 @@ void gsm_startup_cmd() {
 }
 
 void gsm_get_imei() {
-  int i;
-  char preimei[20];             //IMEI number
-
   debug_print(F("gsm_get_imei() started"));
 
   //get modem's imei
@@ -320,19 +317,10 @@ void gsm_get_imei() {
   char *tmpval = strtok(tmp, "\r");
 
   //copy data to main IMEI var
-  for(i=0; i<strlen(tmpval); i++) {
-    preimei[i] = tmpval[i];
-    if(i > 17) { //imei can not exceed 20 chars
-      break;
-    }
-  }
-
-  //null terminate imei
-  preimei[i+1] = '\0';
+  strlcpy(config.imei, tmpval, sizeof(config.imei));
 
   debug_print(F("gsm_get_imei() result:"));
-  debug_print(preimei);
-  memcpy( config.imei, preimei, 20 );
+  debug_print(config.imei);
 
   debug_print(F("gsm_get_imei() completed"));
 }
