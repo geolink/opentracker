@@ -273,15 +273,7 @@ void gsm_get_time() {
   char *tmpval = strtok(tmp, "\"");
 
   //copy data to main time var
-  for(i=0; i<strlen(tmpval); i++) {
-    time_char[i] = tmpval[i];
-
-    if(i > 17) { //time can not exceed 20 chars
-      break;
-    }
-  }
-  //null terminate time
-  time_char[i+1] = '\0';
+  strlcpy(time_char, tmpval, sizeof(time_char));
 
   debug_print(F("gsm_get_time() result:"));
   debug_print(time_char);
