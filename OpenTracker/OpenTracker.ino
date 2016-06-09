@@ -247,8 +247,10 @@ void device_init() {
   pinMode(PIN_POWER_LED, OUTPUT);
   digitalWrite(PIN_POWER_LED, LOW);
 
+#ifdef PIN_C_REBOOT
   pinMode(PIN_C_REBOOT, OUTPUT);
-  digitalWrite(PIN_C_REBOOT, LOW);  //this is required
+  digitalWrite(PIN_C_REBOOT, LOW);  //this is required for HW rev 2.3 and earlier
+#endif
 
   //setup ignition detection
   pinMode(PIN_S_DETECT, INPUT);
