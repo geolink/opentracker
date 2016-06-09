@@ -91,7 +91,7 @@ void storage_send_logs(int really_send) {
       debug_print(sent_position);
       
       // read current block
-      strlcpy(data_current, (char*)dueFlashStorage.readAddress(sent_position), DATA_LIMIT);
+      strlcpy(data_current, (char*)dueFlashStorage.readAddress(sent_position), sizeof(data_current));
       int data_len = strlen(data_current) + 1;
 
       debug_print(F("Log data:"));
@@ -133,15 +133,27 @@ void storage_send_logs(int really_send) {
 }
 
 void storage_dump() {
+  debug_print(F("storage_dump() started"));
+  debug_port.print(F("start = "));
+  debug_print(STORAGE_DATA_START);
+  debug_port.print(F("end = "));
+  debug_print(STORAGE_DATA_END);
+  debug_port.print(F("logindex = "));
+  debug_print(logindex);
   byte *tmp = dueFlashStorage.readAddress(STORAGE_DATA_START);
   byte *tmpend = dueFlashStorage.readAddress(STORAGE_DATA_END);
   int k=0;
+  char buf[10];
   while (tmp < tmpend) {
     if ((k & 31) == 0)
       debug_port.println();
-    debug_port.print(*tmp, HEX);
+    snprintf(buf, 10, "%02X", *tmp);
+    debug_port.print(buf);
     ++k;
     ++tmp;
   }
+  debug_port.println();
+
+  debug_print(F("storage_dump() ended"));
 }
 
