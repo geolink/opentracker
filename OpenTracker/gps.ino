@@ -195,104 +195,88 @@ void collect_gps_data() {
 
         if(DATA_INCLUDE_GPS_DATE) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           //converting date to data packet
           ltoa(date_gps, tmp, 10);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index] = tmp[i];
-            data_index++;
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_GPS_TIME) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           //time
           ltoa(time_gps, tmp, 10);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index] = tmp[i];
-            data_index++;
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_LATITUDE) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           dtostrf(flat,1,6,tmp);
           dtostrf(flat,1,6,lat_current);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_LONGITUDE) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           dtostrf(flon,1,6,tmp);
           dtostrf(flon,1,6,lon_current);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_SPEED) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           dtostrf(fkmph,1,2,tmp);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_ALTITUDE) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           dtostrf(falt,1,2,tmp);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_HEADING) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
 
           dtostrf(fc,1,2,tmp);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_HDOP) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
@@ -300,14 +284,12 @@ void collect_gps_data() {
           long hdop = gps.hdop(); //hdop
 
           ltoa(hdop, tmp, 10);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_SATELLITES) {
           if(first_gps_item) {
-            data_current[data_index++] = ',';
+            data_append_char(',');
           } else {
             first_gps_item = 1;
           }
@@ -315,9 +297,7 @@ void collect_gps_data() {
           long sats = gps.satellites(); //satellites
 
           ltoa(sats, tmp, 10);
-          for(int i=0;i<strlen(tmp);i++) {
-            data_current[data_index++] = tmp[i];
-          }
+          data_append_string(tmp);
         }
 
         //save last gps data date/time
