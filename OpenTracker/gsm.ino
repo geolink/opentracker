@@ -112,6 +112,7 @@ void gsm_off(int emergency) {
 
     gsm_flags &= ~(GSM_F_POWER|GSM_F_AWAKE|GSM_F_CONFIG);
   }
+  gsm_get_reply(1);
 
   debug_print(F("gsm_off() finished"));
 }
@@ -460,8 +461,8 @@ int gsm_connect()  {
       gsm_port.print("AT+QISTAT\r");
       gsm_wait_for_reply(0,0);
       
-      if(strstr(modem_reply, "CONNECT OK") == NULL) {
-    
+      char *tmp = strstr(modem_reply, "CONNECT OK");
+      if (tmp == NULL) {
         debug_print(F("Connecting to remote server..."));
         debug_print(i);
     
@@ -476,10 +477,17 @@ int gsm_connect()  {
         gsm_port.print("\"");
         gsm_port.print("\r");
     
-        gsm_wait_for_reply(0,0);
+        gsm_wait_for_reply(1, 0); // OK sent first
+
+        long timer = millis();
+        do {
+          gsm_get_reply(1);
+          tmp = strstr(modem_reply, "CONNECT OK");
+          if(tmp!=NULL) break;
+          addon_delay(100);
+        } while (millis() - timer < 10000);
       }
       
-      char *tmp = strstr(modem_reply, "CONNECT OK");
       if(tmp!=NULL) {
         debug_print(F("Connected to remote server: "));
         debug_print(HOSTNAME);
@@ -489,7 +497,7 @@ int gsm_connect()  {
       } else {
         debug_print(F("Can not connect to remote server: "));
         debug_print(HOSTNAME);
-        
+        // debug only:
         gsm_port.print("AT+CEER\r");
         gsm_wait_for_reply(1,0);
       }
@@ -549,7 +557,7 @@ int gsm_send_http_current() {
   //send HTTP request, after connection if fully opened
   //this will send Current data
 
-  debug_print(F("gsm_send_http(): sending data."));
+  debug_print(F("gsm_send_http(): sending current data."));
   debug_print(data_current);
 
   //getting length of data full package
