@@ -778,16 +778,18 @@ void gsm_get_reply(int fullBuffer) {
 // use allowOK = 0 if OK comes before the end of the modem reply
 void gsm_wait_for_reply(int allowOK, int fullBuffer) {
   unsigned long timeout = millis();
-
+  
   modem_reply[0] = '\0';
 
-  while (!gsm_is_final_result(allowOK)) {
-    if((millis() - timeout) >= (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
-      debug_print(F("Warning: timed out waiting for last modem reply"));
-      break;
-    }
+  while((millis() - timeout) < (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
     gsm_get_reply(fullBuffer);
+    if (gsm_is_final_result(allowOK))
+      break;
     delay(50);
+  }
+  
+  if (modem_reply[0] == 0) {
+    debug_print(F("Warning: timed out waiting for last modem reply"));
   }
 }
 
