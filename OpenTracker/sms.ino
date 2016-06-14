@@ -278,14 +278,10 @@ void sms_cmd_run(char *cmd, char *phone) {
       config.alarm_on = 1;
     }
     //updating alarm phone
-    for(k = 0; k < strlen(phone); k++) {
-      config.alarm_phone[k] = phone[k];
-    }
-    config.alarm_phone[k] = '\0';  //null terminate
+    strlcpy(config.alarm_phone, phone, sizeof(config.alarm_phone));
     debug_print(F("New alarm_phone configured:"));
     debug_print(config.alarm_phone);
     save_config = 1;
-    power_reboot = 1;
     //send SMS reply
     if(config.alarm_on) {
       sms_send_msg("Alarm set ON", phone);
@@ -303,17 +299,13 @@ void sms_cmd_run(char *cmd, char *phone) {
     val = atol(tmp);
 
     if(val > 0) {
-      //updating interval in config
-      config.interval = val;
-
-      //convert back to milliseconds
-      config.interval = config.interval*1000;
+      //updating interval in config (convert to milliseconds)
+      config.interval = val*1000;
 
       debug_print(F("New interval configured:"));
       debug_print(config.interval);
 
       save_config=1;
-      power_reboot=1;
 
       //send SMS reply
       sms_send_msg("Interval saved", phone);
