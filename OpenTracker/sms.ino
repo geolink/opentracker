@@ -1,7 +1,7 @@
 
 //check SMS
 void sms_check() {
-  char index;
+  char inChar;
   byte cmd = 0;
   int reply_index = 0;
   char *tmp = NULL, *tmpcmd = NULL;
@@ -11,21 +11,20 @@ void sms_check() {
 
   modem_reply[0] = '\0';
 
-  gsm_port.print("AT+CMGL=\"REC UNREAD\"");
-  // gsm_port.print("AT+CMGL=\"ALL\"");
-  gsm_port.print("\r");
+  gsm_port.print("AT+CMGL=\"REC UNREAD\"\r");
+  //gsm_port.print("AT+CMGL=\"ALL\"\r");
 
   gsm_wait_at();
 
   for(int i=0;i<30;i++) {
     while(gsm_port.available()) {
-      index = gsm_port.read();
+      inChar = gsm_port.read();
 
       #ifdef DEBUG
-        debug_port.print(index);
+        debug_port.print(inChar);
       #endif
 
-      if(index == '#') {
+      if(inChar == '#') {
         //next data is probably command till \r
         //all data before "," is sms password, the rest is command
         debug_print(F("SMS command found"));
@@ -43,9 +42,9 @@ void sms_check() {
           debug_print(reply_index);
           debug_print(modem_reply);
 
-          tmp = strstr(modem_reply, "UNREAD\",\"");
+          tmp = strstr(modem_reply, "READ\",\"");
           if(tmp!=NULL) {
-            tmp += 9;
+            tmp += 7;
             tmpcmd = strtok(tmp, "\",\"");
             if(tmpcmd!=NULL) {
               strlcpy(phone, tmpcmd, sizeof(phone));
@@ -56,7 +55,7 @@ void sms_check() {
         }
 
         reply_index = 0;
-      } else if(index == '\r') {
+      } else if(inChar == '\r') {
         if(cmd == 1) {
           debug_print(F("\nSMS command received:"));
 
@@ -71,11 +70,11 @@ void sms_check() {
         }
       } else {
         if(cmd == 1) {
-          modem_reply[reply_index] = index;
+          modem_reply[reply_index] = inChar;
           reply_index++;
         } else {
-          if(reply_index < 200) {
-            modem_reply[reply_index] = index;
+          if(reply_index < sizeof(modem_reply)-1) {
+            modem_reply[reply_index] = inChar;
             reply_index++;
           } else {
             reply_index = 0;
@@ -84,7 +83,7 @@ void sms_check() {
       }
     }
 
-    delay(150);
+    delay(20);
   }
 
   debug_print(F("Deleting READ and SENT SMS"));
