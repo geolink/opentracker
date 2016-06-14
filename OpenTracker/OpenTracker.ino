@@ -288,6 +288,20 @@ void debug_check_input() {
       storage_dump();
       storage_send_logs(0);
       break;
+    case '^':
+      debug_port.print(F("Started GSM terminal"));
+      audio_switch_on();
+      for(;;) {
+        c = debug_port.read();
+        if (c == '^') break;
+        if (c > 0)
+          gsm_port.write(c);
+        c = gsm_port.read();
+        if (c > 0)
+          debug_port.write(c);
+      }
+      debug_port.print(F("Exited GSM terminal"));
+      break;
     }
   }
 #endif
