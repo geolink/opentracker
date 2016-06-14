@@ -746,24 +746,28 @@ int gsm_send_data() {
 // use fullBuffer != 0 if you want to read multiple lines
 void gsm_get_reply(int fullBuffer) {
   //get reply from the modem
-  byte index = 0;
-  char inChar=-1; // Where to store the character read
+  int index = 0;
+  char inChar = 0; // Where to store the character read
+  long last = millis();
 
-  while(gsm_port.available()) {
-    if(index < 200) { // One less than the size of the array
-      inChar = gsm_port.read(); // Read a character
-      modem_reply[index] = inChar; // Store it
-      index++; // Increment where to write next
-
-      if(index == 200 || (!fullBuffer && inChar == '\n')) { //some data still available, keep it in serial buffer
-        break;
+  while(millis() - last < 10) { // allow some inter-character delay
+    if(gsm_port.available()) {
+      inChar = gsm_port.read(); // always read if available
+      last = millis();
+      if(index < sizeof(modem_reply)-1) { // One less than the size of the array
+        modem_reply[index] = inChar; // Store it
+        index++; // Increment where to write next
+  
+        if(index == sizeof(modem_reply)-1 || (!fullBuffer && inChar == '\n')) { //some data still available, keep it in serial buffer
+          break;
+        }
       }
     }
   }
 
   modem_reply[index] = '\0'; // Null terminate the string
 
-  if(strlen(modem_reply) >0) {
+  if(index > 0) {
     debug_print(F("Modem Reply:"));
     debug_print(modem_reply);
 
