@@ -441,6 +441,11 @@ int gsm_set_apn()  {
     if(modem_reply[0] != 0) break;
   }
   while (millis() - t < 60000);
+
+  gsm_port.print("AT+QILOCIP\r"); // diagnostic only
+  delay(500);
+  gsm_get_reply(0);
+
   gsm_send_at();
 
   debug_print(F("gsm_set_apn() completed"));
@@ -448,7 +453,31 @@ int gsm_set_apn()  {
   return 1;
 }
 
-int gsm_connect()  {
+int gsm_get_connection_status() {
+  debug_print(F("gsm_get_connection_status() started"));
+  
+  gsm_port.print("AT+QISTAT\r");
+  gsm_wait_for_reply(0,0);
+
+  int ret = -1; //unknown
+
+  if (strstr(modem_reply, "IP INITIAL") != NULL ||
+    strstr(modem_reply, "IP STATUS") != NULL ||
+    strstr(modem_reply, "IP CLOSE") != NULL)
+    ret = 0; // ready to connect
+
+  if (strstr(modem_reply, "CONNECT OK") != NULL)
+    ret = 1; // already connected
+
+  if (strstr(modem_reply, "TCP CONNECTING") != NULL)
+    ret = 2; // previous connection failed, should close
+
+  debug_print(F("gsm_get_connection_status() returned:"));
+  debug_print(ret);
+  return ret;
+}
+
+int gsm_connect() {
   int ret = 0;
 
   debug_print(F("gsm_connect() started"));
@@ -458,11 +487,21 @@ int gsm_connect()  {
     // connect only when modem is ready
     if (gsm_get_modem_status() == 0) {
       // check if connected from previous attempts
-      gsm_port.print("AT+QISTAT\r");
-      gsm_wait_for_reply(0,0);
-      
-      char *tmp = strstr(modem_reply, "CONNECT OK");
-      if (tmp == NULL) {
+      int ipstat = gsm_get_connection_status();  
+
+      if (ipstat > 1) {
+        //close connection, if previous attempts failed
+        gsm_port.print("AT+QICLOSE");
+        gsm_port.print("\r");
+        gsm_wait_for_reply(0,0);
+      }
+      if (ipstat < 0) {
+        //deactivate required
+        gsm_port.print("AT+QIDEACT");
+        gsm_port.print("\r");
+        gsm_wait_for_reply(0,0);
+      }
+      if (ipstat == 0) {
         debug_print(F("Connecting to remote server..."));
         debug_print(i);
     
@@ -482,13 +521,16 @@ int gsm_connect()  {
         long timer = millis();
         do {
           gsm_get_reply(1);
-          tmp = strstr(modem_reply, "CONNECT OK");
-          if(tmp!=NULL) break;
+          char* tmp = strstr(modem_reply, "CONNECT OK");
+          if(tmp!=NULL) {
+            ipstat = 1;
+            break;
+          }
           addon_delay(100);
         } while (millis() - timer < 10000);
       }
       
-      if(tmp!=NULL) {
+      if(ipstat == 1) {
         debug_print(F("Connected to remote server: "));
         debug_print(HOSTNAME);
   
