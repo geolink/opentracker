@@ -105,7 +105,7 @@ void sms_check() {
 
 void sms_cmd(char *cmd, char *phone) {
   char msg[160];
-  char *tmp;
+  char *tmp, *tmp1;
   int i=0;
 
   debug_print(F("sms_cmd() started"));
@@ -116,8 +116,20 @@ void sms_cmd(char *cmd, char *phone) {
   tmp = strtok_r(msg, ",", &cmd);
   while (tmp != NULL && i < 10) {
     if(i == 0) {
+      bool auth = true;
+#if SMS_CHECK_INCLUDE_IMEI
+      //check IMEI
+      tmp1 = strtok(tmp, "@");
+      if(tmp1 != NULL)
+        tmp1 = strtok(NULL, ",");
+      if(tmp1 == NULL || strcmp(tmp1, config.imei) != 0)
+        auth = false;
+      else
+#endif
       //checking password
-      if(strcmp(tmp, config.sms_key)  == 0) {
+      if(strcmp(tmp, config.sms_key) != 0)
+        auth = false;
+      if(auth) {
         debug_print(F("sms_cmd(): SMS password accepted, executing commands from"));
         debug_print(phone);
       } else {

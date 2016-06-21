@@ -16,8 +16,10 @@ int SEND_DATA = 1;
 #define KEY "cSQ88qShwC3"    //key for connection, will be sent with every data transmission - max 12 chars
 #define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
 #define SMS_KEY "pass"       //default password for SMS auth
+#define SIM_PIN ""           //default SIM PIN (none)
 
 #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // don't check for sms commands when the engine is running
+#define SMS_CHECK_INCLUDE_IMEI  1 // 0=check only password, 1=also check IMEI (format: #pass@imei,command=value)
 
 #define LOCATE_COMMAND_FORMAT_IOS 1 // if 1 google maps links will be sent as comgooglemaps://, if 0 they will be normal https://maps.google links
 
@@ -81,4 +83,3 @@ const char HTTP_HEADER2[ ] =        //HTTP header line after length
 #define STORAGE_DATA_END 131071       //the last possible flash index (max 131072, one last byte must be reserved for marker)
 //#define STORAGE_DATA_END 2048       //the last possible flash index (max 131072, one last byte must be reserved for marker)
 
-#define WEBSOCKET 1         //use websockets instead of traditional sending (real time updates and two ways comms) - todo
