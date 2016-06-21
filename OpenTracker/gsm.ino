@@ -989,3 +989,122 @@ void gsm_debug() {
   delay(6000);
   gsm_get_reply(0);
 }
+
+#ifdef KNOWN_APN_LIST
+
+#if KNOWN_APN_SCAN_MODE < 0 || KNOWN_APN_SCAN_MODE > 2
+#error Invalid option KNOWN_APN_SCAN_MODE in tracker.h
+#endif
+
+// Use automatic APN configuration
+int gsm_scan_known_apn()
+{
+  typedef struct
+  {
+    const char *apnname;
+    const char *user;
+    const char *pass;
+    //const char *servicename;  // not required, for further expansion and requirement
+    //const char *value_str;  // not required, for further expansion and requirement
+  } APNSET;
+  
+  #define KNOWN_APN(apn,usr,pwd,isp,nul) { apn, usr, pwd/*, isp, nul*/ },
+  static const APNSET apnlist[] =
+  {
+    KNOWN_APN_LIST
+    // last element must be the default APN config
+    KNOWN_APN(DEFAULT_APN, DEFAULT_USER, DEFAULT_PASS, "", NULL)
+  };
+  #undef KNOWN_APN
+  
+  enum { KNOWN_APN_COUNT = sizeof(apnlist)/sizeof(*apnlist) };
+  
+  int ret = 0;
+
+  debug_print(F("gsm_scan_known_apn() started"));
+
+  //try to connect multiple times
+  for (int apn_num = 0; apn_num < KNOWN_APN_COUNT; ++apn_num)
+  {
+    debug_port.print(F("Testing APN: "));
+    debug_print(config.apn);
+
+    gsm_port.print("AT+QISTAT\r");
+    gsm_wait_for_reply(0,0);
+
+#if KNOWN_APN_SCAN_MODE < 2
+    if (strstr(modem_reply, "IP GPRSACT") != NULL ||
+      strstr(modem_reply, "IP STATUS") != NULL)
+#endif
+    {
+#if KNOWN_APN_SCAN_MODE > 0
+      ret = gsm_connect();
+      /*
+      for (int i = 0; i < 5; i++)
+      {
+        debug_print(F("Connecting to remote server..."));
+        debug_print(i);
+  
+        //open socket connection to remote host
+        //opening connection
+        gsm_port.print("AT+QIOPEN=\"");
+        gsm_port.print(PROTO); // tcp
+        gsm_port.print("\",\"");
+        gsm_port.print(HOSTNAME);
+        gsm_port.print("\",\"");
+        gsm_port.print(HTTP_PORT);
+        gsm_port.print("\"");
+        gsm_port.print("\r");
+  
+        gsm_wait_for_reply(0, 0);
+  
+        char *tmp = strstr(modem_reply, "CONNECT OK");
+        if (tmp != NULL)
+        {
+          debug_print(F("Connected to remote server: "));
+          debug_print(HOSTNAME);
+  
+          ret = 1;
+          break;
+        }
+        else
+        {
+          debug_print(F("Can not connect to remote server: "));
+          debug_print(HOSTNAME);
+        }
+      }
+      */
+#else
+      ret = 1;
+#endif
+    }
+    if (ret == 1) {
+      debug_print(F("gsm_scan_known_apn(): found valid APN settings"));
+      break;
+    }
+    
+    // try next APN on the list
+    strlcpy(config.apn, apnlist[apn_num].apnname, sizeof(config.apn));
+    strlcpy(config.user, apnlist[apn_num].user, sizeof(config.user));
+    strlcpy(config.pwd, apnlist[apn_num].pass, sizeof(config.pwd));
+
+#if KNOWN_APN_SCAN_USE_RESET
+    //restart GSM with new config
+    gsm_off(0);
+    gsm_setup();
+#else
+    // apply new config
+    gsm_port.print("AT+QIDEACT\r");
+    gsm_wait_for_reply(0,0);
+
+    gsm_set_apn();
+#endif    
+  }
+  // the last APN in the array is not tested and it's applied only as default
+
+  debug_print(F("gsm_scan_known_apn() completed"));
+  return ret;
+}
+
+#endif // KNOWN_APN_LIST
+

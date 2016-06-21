@@ -111,6 +111,14 @@ void setup() {
   //set to connect once started
   interval_count = config.interval_send;
 
+#ifdef KNOWN_APN_LIST
+  // auto scanning of apn details configuration
+  int ap = gsm_scan_known_apn();
+  if (ap) {
+    save_config = 1; // found good APN, save it as default
+  }
+#endif
+
   if(config.alarm_on) {
     sms_send_msg("Alarm Activated", config.alarm_phone);
   }

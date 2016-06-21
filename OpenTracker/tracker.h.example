@@ -83,3 +83,15 @@ const char HTTP_HEADER2[ ] =        //HTTP header line after length
 #define STORAGE_DATA_END 131071       //the last possible flash index (max 131072, one last byte must be reserved for marker)
 //#define STORAGE_DATA_END 2048       //the last possible flash index (max 131072, one last byte must be reserved for marker)
 
+#define WEBSOCKET 0         //use websockets instead of traditional sending (real time updates and two ways comms) - todo
+
+// List of APN configurations to scan at power-on/reset
+// (undefine to use the default APN only)
+//#define KNOWN_APN_LIST \
+  //KNOWN_APN("example.apn", "user", "pass", "ISP name", NULL) \
+  //RECORD FORMAT (ISP and NULL are not used) - INSERT ABOVE
+  //KNOWN_APN("APN", "USERNAME", "PASSWORD", "ISP", NULL) \
+
+#define KNOWN_APN_SCAN_MODE 1       // 0=check GPRS context only, 2=attempt only server connection, 1=use both in sequence
+#define KNOWN_APN_SCAN_USE_RESET 0  // 1=reset modem to change APN, 0=change APN without reset
+
