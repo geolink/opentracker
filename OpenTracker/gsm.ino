@@ -595,6 +595,25 @@ int gsm_validate_tcp() {
   return ret;
 }
 
+int gsm_send_begin(int data_len) {
+  //sending header packet to remote host
+  gsm_port.print("AT+QISEND=");
+  gsm_port.print(data_len);
+  gsm_port.print("\r");
+
+  gsm_wait_for_reply(1,0);
+  if (strncmp(modem_reply, "> ", 2) == 0)
+    return 1; // accepted, can send data
+  return 0; // error, cannot send data
+}
+
+int gsm_send_done() {
+  gsm_wait_for_reply(1,0);
+  if (strncmp(modem_reply, "SEND OK", 7) == 0)
+    return 1; // send successful
+  return 0; // error
+}
+
 int gsm_send_http_current() {
   //send HTTP request, after connection if fully opened
   //this will send Current data
@@ -621,18 +640,20 @@ int gsm_send_http_current() {
   debug_print(tmp_len);
 
   //sending header packet to remote host
-  gsm_port.print("AT+QISEND=");
-  gsm_port.print(tmp_len);
-  gsm_port.print("\r");
-
-  gsm_wait_for_reply(1,0);
+  if (!gsm_send_begin(tmp_len)) {
+    debug_print(F("gsm_send_http(): send refused"));
+    return 0; // abort
+  }
 
   //sending header
   gsm_port.print(HTTP_HEADER1);
   gsm_port.print(tmp_http_len);
   gsm_port.print(HTTP_HEADER2);
 
-  gsm_wait_for_reply(1,0);
+  if (!gsm_send_done()) {
+    debug_print(F("gsm_send_http(): send error"));
+    return 0; // abort
+  }
 
   //validate header delivery
   gsm_validate_tcp();
@@ -644,11 +665,10 @@ int gsm_send_http_current() {
   // don't disclose the key
 
   //sending imei and key first
-  gsm_port.print("AT+QISEND=");
-  gsm_port.print(13+strlen(config.imei)+strlen(config.key));
-  gsm_port.print("\r");
-
-  gsm_wait_for_reply(1,0);
+  if (!gsm_send_begin(13+strlen(config.imei)+strlen(config.key))) {
+    debug_print(F("gsm_send_http(): send refused"));
+    return 0; // abort
+  }
 
   gsm_port.print("imei=");
   gsm_port.print(config.imei);
@@ -656,7 +676,10 @@ int gsm_send_http_current() {
   gsm_port.print(config.key);
   gsm_port.print("&d=");
 
-  gsm_wait_for_reply(1,0);
+  if (!gsm_send_done()) {
+    debug_print(F("gsm_send_http(): send error"));
+    return 0; // abort
+  }
 
   debug_print(F("gsm_send_http(): Sending body"));
 
@@ -693,11 +716,9 @@ int gsm_send_data_current() {
       debug_print(chunk_pos);
 
       if(chunk_pos >= PACKET_SIZE) {
-        gsm_wait_for_reply(1,0);
-
-        if (strstr(modem_reply, "SEND OK\r\n") == NULL) {
-          tmp_ret = 0;
-          break;
+        if (!gsm_send_done()) {
+          debug_print(F("gsm_send_data_current(): send error"));
+          return 0; // abort
         }
 
         //validate previous transmission
@@ -722,21 +743,21 @@ int gsm_send_data_current() {
       debug_print(chunk_len);
 
       //sending chunk
-      gsm_port.print("AT+QISEND=");
-      gsm_port.print(chunk_len);
-      gsm_port.print("\r");
-
-      gsm_wait_for_reply(1,0);
+      if (!gsm_send_begin(chunk_len)) {
+        debug_print(F("gsm_send_data_current(): send refused"));
+        return 0; // abort
+      }
     }
 
     //sending data
     gsm_port.print(data_current[i]);
     chunk_pos++;
   }
-  gsm_wait_for_reply(1,0);
   
-  if (strstr(modem_reply, "SEND OK\r\n") == NULL)
-    tmp_ret = 0;
+  if (!gsm_send_done()) {
+    debug_print(F("gsm_send_data_current(): send error"));
+    return 0; // abort
+  }
 
   debug_print(F("gsm_send_data_current(): returned"));
   debug_print(tmp_ret);
