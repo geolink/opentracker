@@ -172,11 +172,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(tmp);
 
     //updating APN in config
-    for(k=0;k<strlen(tmp);k++) {
-      config.apn[k] = tmp[k];
-    }
-
-    config.apn[k] = '\0';  //null terminate APN
+    strlcpy(config.apn, tmp, sizeof(config.apn));
 
     debug_print(F("New APN configured:"));
     debug_print(config.apn);
@@ -195,11 +191,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(tmp);
 
     //updating in config
-    for(k=0;k<strlen(tmp);k++) {
-      config.pwd[k] = tmp[k];
-    }
-
-    config.pwd[k] = '\0';  //null terminate
+    strlcpy(config.pwd, tmp, sizeof(config.pwd));
 
     debug_print(F("New APN pass configured:"));
     debug_print(config.pwd);
@@ -218,11 +210,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(tmp);
 
     //updating APN in config
-    for(k=0;k<strlen(tmp);k++) {
-      config.user[k] = tmp[k];
-    }
-
-    config.user[k] = '\0';  //null terminate APN
+    strlcpy(config.user, tmp, sizeof(config.user));
 
     debug_print(F("New APN user configured:"));
     debug_print(config.user);
@@ -241,11 +229,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(tmp);
 
     //updating APN in config
-    for(k=0;k<strlen(tmp);k++) {
-      config.sms_key[k] = tmp[k];
-    }
-
-    config.sms_key[k] = '\0';  //null terminate APN
+    strlcpy(config.sms_key, tmp, sizeof(config.sms_key));
 
     debug_print(F("New sms_key configured:"));
     debug_print(config.sms_key);
@@ -263,11 +247,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(tmp);
 
     //updating pin in config
-    for(k=0;k<strlen(tmp);k++) {
-      config.sim_pin[k] = tmp[k];
-    }
-
-    config.sim_pin[k] = '\0';  //null terminate
+    strlcpy(config.sim_pin, tmp, sizeof(config.sim_pin));
 
     debug_print(F("New sim_pin configured:"));
     debug_print(config.sim_pin);
