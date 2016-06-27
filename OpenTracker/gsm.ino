@@ -494,12 +494,14 @@ int gsm_connect() {
         gsm_port.print("AT+QICLOSE");
         gsm_port.print("\r");
         gsm_wait_for_reply(0,0);
+        ipstat = 0;
       }
       if (ipstat < 0) {
         //deactivate required
         gsm_port.print("AT+QIDEACT");
         gsm_port.print("\r");
         gsm_wait_for_reply(0,0);
+        ipstat = 0;
       }
       if (ipstat == 0) {
         debug_print(F("Connecting to remote server..."));
