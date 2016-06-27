@@ -11,6 +11,7 @@ int parse_receive_reply() {
   char cmd[100];  //remote commands stored here
 
   debug_print(F("parse_receive_reply() started"));
+  cmd[index] = '\0';
 
   addon_event(ON_RECEIVE_STARTED);
   if (gsm_get_modem_status() == 4) {
