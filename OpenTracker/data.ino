@@ -99,18 +99,14 @@ void collect_all_data_raw(int ignitionState) {
     if(data_index > 0) {
       data_append_char(',');
     }
-    for(int i=0;i<strlen(config.key);i++) {
-      data_current[data_index++] = config.key[i];
-    }
+    data_append_string(config.key);
   }
 
   if(SEND_RAW_INCLUDE_TIMESTAMP) {
     if(data_index >0) {
       data_append_char(',');
     }
-    for(int i=0;i<strlen(time_char);i++) {
-      data_current[data_index++] = time_char[i];
-    }
+    data_append_string(time_char);
   }
 
   if(SEND_RAW_INCLUDE_KEY || SEND_RAW_INCLUDE_TIMESTAMP) {
@@ -130,9 +126,7 @@ void collect_all_data_raw(int ignitionState) {
     char batteryLevel[20];
     snprintf(batteryLevel,20,"%.2f",outputValue);
 
-    for(int i=0; i<strlen(batteryLevel); i++) {
-      data_current[data_index++] = batteryLevel[i];
-    }
+    data_append_string(batteryLevel);
   }
 
   // ignition state
