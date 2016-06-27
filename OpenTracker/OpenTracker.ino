@@ -298,7 +298,6 @@ void debug_check_input() {
       break;
     case '^':
       debug_port.print(F("Started GSM terminal"));
-      audio_switch_on();
       for(;;) {
         c = debug_port.read();
         if (c == '^') break;
