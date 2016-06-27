@@ -13,6 +13,10 @@ int parse_receive_reply() {
   debug_print(F("parse_receive_reply() started"));
 
   addon_event(ON_RECEIVE_STARTED);
+  if (gsm_get_modem_status() == 4) {
+    debug_print(F("parse_receive_reply(): call interrupted"));
+    return 0; // abort
+  }
 
   for(int i=0;i<30;i++) {
     gsm_port.print("AT+QIRD=0,1,0,100");
@@ -64,6 +68,10 @@ int parse_receive_reply() {
     }
     
     addon_event(ON_RECEIVE_DATA);
+    if (gsm_get_modem_status() == 4) {
+      debug_print(F("parse_receive_reply(): call interrupted"));
+      return 0; // abort
+    }
   }
 
   if(SEND_RAW) {

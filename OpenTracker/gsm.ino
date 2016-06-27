@@ -635,6 +635,10 @@ int gsm_send_http_current() {
   int tmp_len = strlen(HTTP_HEADER1)+strlen(tmp_http_len)+strlen(HTTP_HEADER2);
 
   addon_event(ON_SEND_DATA);
+  if (gsm_get_modem_status() == 4) {
+    debug_print(F("gsm_send_http(): call interrupted"));
+    return 0; // abort
+  }
 
   debug_print(F("gsm_send_http(): Length of header packet:"));
   debug_print(tmp_len);
@@ -659,6 +663,10 @@ int gsm_send_http_current() {
   gsm_validate_tcp();
 
   addon_event(ON_SEND_DATA);
+  if (gsm_get_modem_status() == 4) {
+    debug_print(F("gsm_send_http(): call interrupted"));
+    return 0; // abort
+  }
 
   debug_print(F("gsm_send_http(): Sending IMEI and Key"));
   debug_print(config.imei);
@@ -738,6 +746,10 @@ int gsm_send_data_current() {
       }
 
       addon_event(ON_SEND_DATA);
+      if (gsm_get_modem_status() == 4) {
+        debug_print(F("gsm_send_data_current(): call interrupted"));
+        return 0; // abort
+      }
 
       debug_print(F("gsm_send_data_current(): chunk length:"));
       debug_print(chunk_len);
