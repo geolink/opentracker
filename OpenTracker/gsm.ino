@@ -1067,7 +1067,8 @@ int gsm_scan_known_apn()
 
 #if KNOWN_APN_SCAN_MODE < 2
     if (strstr(modem_reply, "IP GPRSACT") != NULL ||
-      strstr(modem_reply, "IP STATUS") != NULL)
+      strstr(modem_reply, "IP STATUS") != NULL ||
+      strstr(modem_reply, "CONNECT OK") != NULL)
 #endif
     {
 #if KNOWN_APN_SCAN_MODE > 0
