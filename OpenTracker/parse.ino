@@ -114,11 +114,7 @@ void parse_cmd(char *cmd) {
       debug_print(F("Valid time string found."));
 
       //setting current time
-      for(int i=0;i<strlen(tmpcmd);i++) {
-        time_char[i] = tmpcmd[i];
-      }
-
-      time_char[20] = '\0';
+      strlcpy(time_char, tmpcmd, sizeof(time_char));
 
       gsm_set_time();
     }
