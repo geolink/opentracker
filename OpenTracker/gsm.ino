@@ -400,6 +400,11 @@ int gsm_disconnect() {
 int gsm_set_apn()  {
   debug_print(F("gsm_set_apn() started"));
 
+  //disconnect GSM
+  gsm_port.print("AT+QIDEACT");
+  gsm_port.print("\r");
+  gsm_wait_for_reply(0,0);
+
   addon_event(ON_MODEM_ACTIVATION);
   
   //set all APN data, dns, etc
@@ -1125,9 +1130,6 @@ int gsm_scan_known_apn()
     gsm_setup();
 #else
     // apply new config
-    gsm_port.print("AT+QIDEACT\r");
-    gsm_wait_for_reply(0,0);
-
     gsm_set_apn();
 #endif    
   }
