@@ -321,7 +321,7 @@ void collect_gps_data() {
       break;
     } else {
       //  debug_print(F("collect_gps_data(): fix not acquired, retrying"));
-      addon_delay(0);
+      addon_delay(10);
     }
   }
 
