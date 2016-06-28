@@ -1,3 +1,0 @@
-
-void websocket_connect() {
-}
