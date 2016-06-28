@@ -142,6 +142,9 @@ void gsm_wakeup() {
 void gsm_setup() {
   debug_print(F("gsm_setup() started"));
 
+  //turn off modem
+  gsm_off(1);
+
   //blink modem restart
   blink_start();
 
@@ -520,9 +523,14 @@ int gsm_connect() {
         long timer = millis();
         do {
           gsm_get_reply(1);
-          char* tmp = strstr(modem_reply, "CONNECT OK");
-          if(tmp!=NULL) {
+          
+          if(strstr(modem_reply, "CONNECT OK")!=NULL) {
             ipstat = 1;
+            break;
+          }
+          if(strstr(modem_reply, "CONNECT FAIL")!=NULL ||
+            strstr(modem_reply, "ERROR")!=NULL) {
+            ipstat = 0;
             break;
           }
           addon_delay(100);
