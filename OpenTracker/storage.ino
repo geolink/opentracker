@@ -51,6 +51,8 @@ void storage_get_index() {
 }
 
 void storage_send_logs(int really_send) {
+  int num_sent = 0;
+  
   debug_print(F("storage_send_logs() started"));
 
   //check if some logs were saved
@@ -109,6 +111,12 @@ void storage_send_logs(int really_send) {
             dueFlashStorage.write(sent_position + k, STORAGE_FREE_CHAR);
           }
           sent_position += data_len;
+          // apply send limit
+          num_sent++;
+          if (num_sent >= STORAGE_MAX_SEND_OLD) {
+            debug_print(F("storage_send_logs(): reached send limit"));
+            break;
+          }
         } else {
           err = true;
           break;
