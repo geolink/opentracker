@@ -321,17 +321,7 @@ void collect_gps_data() {
       break;
     } else {
       //  debug_print(F("collect_gps_data(): fix not acquired, retrying"));
-
-      //blink GPS activity
-      if(ledState == LOW)
-        ledState = HIGH;
-      else
-        ledState = LOW;
-
-      // set the LED with the ledState of the variable:
-      digitalWrite(PIN_POWER_LED, ledState);
-
-      addon_delay(12);
+      addon_delay(0);
     }
   }
 

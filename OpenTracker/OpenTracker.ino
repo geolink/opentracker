@@ -26,6 +26,7 @@ bool debug_enable = true; // runtime flag to disable debug console
 int ledState = LOW;             // ledState used to set the LED
 long previousMillis = 0;        // will store last time LED was updated
 long watchdogMillis = 0;        // will store last time modem watchdog was reset
+int SEND_DATA = 1;
 
 long time_start, time_stop, time_diff;             //count execution time to trigger interval
 int interval_count = 0;         //current interval count (increased on each data collection and reset after sending)
@@ -245,8 +246,9 @@ void loop() {
       */
     } else {
       debug_print(F("Error: negative sleep time."));
-      addon_delay(1000);
     }
+  } else {
+    addon_delay(1000); // minimal wait to let addon code execute
   }
 }
 

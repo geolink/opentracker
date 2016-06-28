@@ -83,7 +83,7 @@ void sms_check() {
       }
     }
 
-    delay(20);
+    status_delay(20);
   }
 
   debug_print(F("Deleting READ and SENT SMS"));
@@ -150,7 +150,6 @@ void sms_cmd_run(char *cmd, char *phone) {
   char *tmp = NULL;
   char *tmpcmd = NULL;
   long val;
-  int k=0;
 
   char msg[160];
 

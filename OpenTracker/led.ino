@@ -1,6 +1,8 @@
 
 //blink led
 
+int led_interval = 1000; //interval at which to blink status led (milliseconds)
+
 void status_led() {
   //blink led
   unsigned long currentMillis = millis();
@@ -14,9 +16,23 @@ void status_led() {
     else
       ledState = LOW;
 
-    // set the LED with the ledState of the variable:
-    digitalWrite(PIN_POWER_LED, ledState);   // set the LED on
+    // set the LED with the ledState of the variable
+    digitalWrite(PIN_POWER_LED, ledState);
   }
+}
+
+void status_delay(long ms) {
+  // delay and update status led
+  status_led();
+  if (ms <= 0)
+    return;
+  long n = ms & 63;
+  ms >>= 6;
+  while (ms--) {
+    delay(64);
+    status_led();
+  }
+  delay(n);
 }
 
 void blink_start() {

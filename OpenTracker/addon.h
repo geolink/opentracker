@@ -4,8 +4,9 @@
 
 void addon_delay(long ms) {
   // called for delays that can run addon code
-  // default implementation just calls delay()
-  delay(ms);
+  // default implementation just calls status_delay()
+  void status_delay(long ms);
+  status_delay(ms);
 }
 
 void addon_init() {

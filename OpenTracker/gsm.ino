@@ -85,7 +85,7 @@ void gsm_on() {
     gsm_off(0);
     gsm_off(1);
 
-    delay(1000);
+    status_delay(1000);
 
     debug_print(F("gsm_on(): try again"));
     debug_print(k);
@@ -143,15 +143,7 @@ void gsm_setup() {
   debug_print(F("gsm_setup() started"));
 
   //blink modem restart
-  for(int i = 0; i < 5; i++) {
-    if(ledState == LOW)
-      ledState = HIGH;
-    else
-      ledState = LOW;
-
-    digitalWrite(PIN_POWER_LED, ledState);   // set the LED on
-    delay(200);
-  }
+  blink_start();
 
   //turn on modem
   gsm_on();
@@ -171,7 +163,7 @@ void gsm_config() {
   do {
     int pas = gsm_get_modem_status();
     if(pas==0 || pas==3 || pas==4) break;
-    delay(3000);
+    status_delay(3000);
   }
   while (millis() - t < 60000);
 
@@ -246,7 +238,7 @@ void gsm_set_pin() {
       debug_print(F("gsm_set_pin(): PIN is not required"));
       break;
     }
-    delay(2000);
+    status_delay(2000);
   }
   
   debug_print(F("gsm_set_pin() completed"));
@@ -309,7 +301,7 @@ void gsm_get_imei() {
   gsm_port.print("AT+GSN");
   gsm_port.print("\r");
 
-  delay(1000);
+  status_delay(1000);
   gsm_get_reply(1);
 
   //reply data stored to modem_reply[200]
@@ -333,14 +325,14 @@ int gsm_send_at() {
   for (int k=0; k<5; ++k) {
     gsm_port.print("AT");
     gsm_port.print("\r");
-    delay(50);
+    status_delay(50);
   
     gsm_get_reply(1);
     ret = (strstr(modem_reply, "AT") != NULL)
       && (strstr(modem_reply, "OK") != NULL);
     if (ret) break;
 
-    delay(1000);
+    status_delay(1000);
   }
   debug_print(F("gsm_send_at() completed"));
   debug_print(ret);
@@ -355,7 +347,7 @@ int gsm_get_modem_status() {
 
   int pas = -1; // unexpected reply
   for (int k=0; k<10; ++k) {
-    delay(50);
+    status_delay(50);
     gsm_get_reply(0);
   
     char *tmp = strstr(modem_reply, "+CPAS:");
@@ -443,7 +435,7 @@ int gsm_set_apn()  {
   while (millis() - t < 60000);
 
   gsm_port.print("AT+QILOCIP\r"); // diagnostic only
-  delay(500);
+  status_delay(500);
   gsm_get_reply(0);
 
   gsm_send_at();
@@ -529,7 +521,7 @@ int gsm_connect() {
             break;
           }
           addon_delay(100);
-        } while (millis() - timer < 10000);
+        } while (millis() - timer < CONNECT_TIMEOUT);
       }
       
       if(ipstat == 1) {
@@ -827,7 +819,7 @@ void gsm_get_reply(int fullBuffer) {
   char inChar = 0; // Where to store the character read
   long last = millis();
 
-  while(millis() - last < 10) { // allow some inter-character delay
+  do {
     if(gsm_port.available()) {
       inChar = gsm_port.read(); // always read if available
       last = millis();
@@ -840,7 +832,7 @@ void gsm_get_reply(int fullBuffer) {
         }
       }
     }
-  }
+  } while(millis() - last < 10); // allow some inter-character delay
 
   modem_reply[index] = '\0'; // Null terminate the string
 
@@ -862,7 +854,7 @@ void gsm_wait_for_reply(int allowOK, int fullBuffer) {
     gsm_get_reply(fullBuffer);
     if (gsm_is_final_result(allowOK))
       break;
-    delay(50);
+    status_delay(50);
   }
   
   if (modem_reply[0] == 0) {
@@ -882,7 +874,7 @@ void gsm_wait_at() {
     }
     gsm_get_reply(0);
 
-    delay(50);
+    status_delay(50);
   }
 }
 
@@ -971,57 +963,57 @@ int gsm_is_final_result(int allowOK) {
 void gsm_debug() {
   gsm_port.print("AT+QLOCKF=?");
   gsm_port.print("\r");
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+QBAND?");
   gsm_port.print("\r");
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+CGMR");
   gsm_port.print("\r");
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+CGMM");
   gsm_port.print("\r");
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+CGSN");
   gsm_port.print("\r");
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+CREG?");
   gsm_port.print("\r");
 
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+CSQ");
   gsm_port.print("\r");
 
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+QENG?");
   gsm_port.print("\r");
 
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+COPS?");
   gsm_port.print("\r");
 
-  delay(2000);
+  status_delay(2000);
   gsm_get_reply(0);
 
   gsm_port.print("AT+COPS=?");
   gsm_port.print("\r");
 
-  delay(6000);
+  status_delay(6000);
   gsm_get_reply(0);
 }
 
