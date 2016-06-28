@@ -891,6 +891,9 @@ int gsm_is_final_result(int allowOK) {
       if(STARTS_WITH(&modem_reply[1], "CMS ERROR:")) {
         return true;
       }
+      if(STARTS_WITH(&modem_reply[1], "QIRD:")) {
+        return true;
+      }
       return false;
     case '>':
       if(strcmp(&modem_reply[1], " ") == 0) {

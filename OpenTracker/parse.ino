@@ -3,6 +3,7 @@
 int parse_receive_reply() {
   //receive reply from modem and parse it
   int ret = 0;
+  int len = 0;
   byte index = 0;
   byte header = 0;
 
@@ -23,16 +24,33 @@ int parse_receive_reply() {
     gsm_port.print("AT+QIRD=0,1,0,100");
     gsm_port.print("\r");
 
-    status_delay(1000);
-    gsm_get_reply(1);
+    gsm_wait_for_reply(1,0);
 
-    //check if no more data
+    //do we have data?
     tmp = strstr(modem_reply, "ERROR");
     if(tmp!=NULL) {
       debug_print(F("No more data available."));
       break;
     }
+    
+    tmp = strstr(modem_reply, "+QIRD:");
+    if(tmp!=NULL) {
+      tmp = strstr(modem_reply, PROTO ","); //get data length
+    }
+    if(tmp==NULL) {
+      // no data yet, keep looking
+      addon_delay(500);
+      continue;
+    }
 
+    // read data length
+    tmp += strlen(PROTO ",");
+    len = atoi(tmp);
+    debug_print(len);
+
+    // read full buffer
+    gsm_get_reply(1);
+    
     if(header != 1) {
       tmp = strstr(modem_reply, "close\r\n");
       if(tmp!=NULL) {
