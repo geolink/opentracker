@@ -147,7 +147,7 @@ void loop() {
   
   addon_loop();
 
-  if(!SMS_DONT_CHECK_WITH_ENGINE_RUNNING) {
+  if(!SMS_DONT_CHECK_WITH_ENGINE_RUNNING || engineRunning == 1) {
     sms_check();
   }
   
@@ -208,8 +208,7 @@ void loop() {
     data_index = 0;
   } else {
     debug_print(F("Ignition is OFF!"));
-   // Insert here only code that should be processed when Ignition is OFF
-
+    // Insert here only code that should be processed when Ignition is OFF
   }
 
   if(power_reboot == 1) {
