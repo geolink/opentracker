@@ -1,18 +1,18 @@
-#define ADDON_INTERFACE 0   //non-zero if you have custom addon implementation
+#define ADDON_INTERFACE 0     //non-zero if you have custom addon implementation
 
 //OpenTracker config
-#define DEBUG 1          //debug console (0=disabled, 1=send diangostic messages, 2=also accept test commands)
+#define DEBUG 1               //debug console (0=disabled, 1=send diangostic messages, 2=also accept test commands)
 
-#define ALWAYS_ON 0      //set to 1 to make the tracker log even with the ignition off
+#define ALWAYS_ON 0           //set to 1 to make the tracker log even with the ignition off
 
 //default settings (can be overwritten and stored in EEPRom)
-#define INTERVAL 10000       //how often to collect data (milli sec, 600000 - 10 mins)
-#define INTERVAL_SEND 1      //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
-#define POWERSAVE 0          //enable powersaving (turn off modem, gps on every loop)
-#define KEY "cSQ88qShwC3"    //key for connection, will be sent with every data transmission - max 12 chars
-#define DATA_LIMIT 2500      //current data limit, data collected before sending to remote server can not exceed this
-#define SMS_KEY "pass"       //default password for SMS auth
-#define SIM_PIN ""           //default SIM PIN (none)
+#define INTERVAL 10000        //how often to collect data (milli sec, 600000 - 10 mins)
+#define INTERVAL_SEND 1       //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
+#define POWERSAVE 0           //enable powersaving (turn off modem, gps on every loop)
+#define KEY "cSQ88qShwC3"     //key for connection, will be sent with every data transmission - max 12 chars
+#define DATA_LIMIT 2500       //current data limit, data collected before sending to remote server can not exceed this
+#define SMS_KEY "pass"        //default password for SMS auth
+#define SIM_PIN ""            //default SIM PIN (none)
 
 #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // 1=disable sms commands when the engine is running
 #define SMS_CHECK_INCLUDE_IMEI  0           // 0=check only password, 1=also check IMEI (format: #pass@imei,command=value)
@@ -25,49 +25,49 @@
 
 #define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 0 // 1=when the engine is running send interval is ignored
 
-#define SEND_RAW 0 // enable to use the new raw tcp send method to minimise data use
+#define SEND_RAW 0                          // enable to use the new raw tcp send method to minimise data use
 #define SEND_RAW_INCLUDE_IMEI 1
 #define SEND_RAW_INCLUDE_KEY 1
 #define SEND_RAW_INCLUDE_TIMESTAMP 0
 
-#define DATA_INCLUDE_GPS_DATE 1 // enable to include the GPS date in the POST string
-#define DATA_INCLUDE_GPS_TIME 1 // enable to include the GPS time in the POST string
-#define DATA_INCLUDE_LATITUDE 1 // enable to include latitude
-#define DATA_INCLUDE_LONGITUDE 1 // enable to include longitude
-#define DATA_INCLUDE_SPEED 1 // enable to include speed (km/h)
-#define DATA_INCLUDE_ALTITUDE 1 // enable to include altitude
-#define DATA_INCLUDE_HEADING 1 // enable to include heading
-#define DATA_INCLUDE_HDOP 1 // enable to include hdop
-#define DATA_INCLUDE_SATELLITES 1 // enable to include satellites
-#define DATA_INCLUDE_BATTERY_LEVEL 0  // enable to include the battery level in the POST string
-#define DATA_INCLUDE_IGNITION_STATE 0 // enable to include the ignition state in the POST string
-#define DATA_INCLUDE_ENGINE_RUNNING_TIME 0 // enable to include the engine running time (in seconds) in the POST string
+#define DATA_INCLUDE_GPS_DATE 1             // enable to include the GPS date in the POST string
+#define DATA_INCLUDE_GPS_TIME 1             // enable to include the GPS time in the POST string
+#define DATA_INCLUDE_LATITUDE 1             // enable to include latitude
+#define DATA_INCLUDE_LONGITUDE 1            // enable to include longitude
+#define DATA_INCLUDE_SPEED 1                // enable to include speed (km/h)
+#define DATA_INCLUDE_ALTITUDE 1             // enable to include altitude
+#define DATA_INCLUDE_HEADING 1              // enable to include heading
+#define DATA_INCLUDE_HDOP 1                 // enable to include hdop
+#define DATA_INCLUDE_SATELLITES 1           // enable to include satellites
+#define DATA_INCLUDE_BATTERY_LEVEL 0        // enable to include the battery level in the POST string
+#define DATA_INCLUDE_IGNITION_STATE 0       // enable to include the ignition state in the POST string
+#define DATA_INCLUDE_ENGINE_RUNNING_TIME 0  // enable to include the engine running time (in seconds) in the POST string
 
 #define PROTO "TCP"
 #define HOSTNAME "updates.geolink.io"
 #define HTTP_PORT "80"
 #define URL "/index.php"
 
-#define DEFAULT_APN "internet"  //default APN
-#define DEFAULT_USER ""  //default APN user
-#define DEFAULT_PASS ""  //default APN pass
+#define DEFAULT_APN   "internet"      //default APN
+#define DEFAULT_USER  ""              //default APN user
+#define DEFAULT_PASS  ""              //default APN pass
 
-#define DEFAULT_ALARM_ON   0  //if active SMS will be sent on Ignition ON/OFF
+#define DEFAULT_ALARM_ON   0          //if active SMS will be sent on Ignition ON/OFF
 #define DEFAULT_ALARM_SMS  ""         //default SMS text for alarm
 
-const char HTTP_HEADER1[ ] =        //HTTP header line before length
+const char HTTP_HEADER1[ ] =          //HTTP header line before length
   "POST " URL " HTTP/1.0\r\n"
   "Host: " HOSTNAME "\r\n"
   "Content-type: application/x-www-form-urlencoded\r\n"
   "Content-length: ";
-const char HTTP_HEADER2[ ] =        //HTTP header line after length
+const char HTTP_HEADER2[ ] =          //HTTP header line after length
   "\r\n"
   "User-Agent: OpenTracker 3.1\r\n"
   "Connection: close\r\n"
   "\r\n";
 
-#define PACKET_SIZE 1400    //TCP data chunk size, modem accept max 1460 bytes per send
-#define PACKET_SIZE_DELIVERY 3000    //in case modem has this number of bytes undelivered, wait till sending new data (3000 bytes default, max sending TCP buffer is 7300)
+#define PACKET_SIZE 1400              //TCP data chunk size, modem accept max 1460 bytes per send
+#define PACKET_SIZE_DELIVERY 3000     //in case modem has this number of bytes undelivered, wait till sending new data (3000 bytes default, max sending TCP buffer is 7300)
 
 #define CONNECT_RETRY 3               //how many times to retry connecting to remote server
 #define CONNECT_TIMEOUT 15000         //how much time to wait for each connection attempt
