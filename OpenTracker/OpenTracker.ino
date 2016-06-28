@@ -157,6 +157,12 @@ void loop() {
     save_config = 0;
   }
 
+  if(power_reboot == 1) {
+    //reboot unit
+    reboot();
+    power_reboot = 0;
+  }
+
   // Check if ignition is turned on
   IGNT_STAT = digitalRead(PIN_S_DETECT);
   debug_print(F("Ignition status:"));
@@ -209,12 +215,6 @@ void loop() {
   } else {
     debug_print(F("Ignition is OFF!"));
     // Insert here only code that should be processed when Ignition is OFF
-  }
-
-  if(power_reboot == 1) {
-    //reboot unit
-    reboot();
-    power_reboot = 0;
   }
 
   if(!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
