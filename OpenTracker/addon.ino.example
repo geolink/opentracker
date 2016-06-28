@@ -13,7 +13,7 @@ void addon_delay(long ms) {
   long start = (long)millis();
   while ((long)millis() - start < ms) {
     addon_loop();
-    delay(100);
+    status_delay(100);
   }
 }
 
