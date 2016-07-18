@@ -29,6 +29,19 @@ void gsm_close() {
   gsm_port.end();
 }
 
+bool gsm_power_status() {
+  // help discharge floating pin, by temporarily setting as output low
+  PIO_Configure(
+    g_APinDescription[PIN_STATUS_GSM].pPort,
+    PIO_OUTPUT_0,
+    g_APinDescription[PIN_STATUS_GSM].ulPin,
+    g_APinDescription[PIN_STATUS_GSM].ulPinConfiguration);
+  pinMode(PIN_STATUS_GSM, INPUT);
+  delay(1);
+  // read modem power status
+  return digitalRead(PIN_STATUS_GSM) != LOW;
+}
+
 void gsm_on() {
   //turn on the modem
   debug_print(F("gsm_on() started"));
@@ -37,12 +50,12 @@ void gsm_on() {
   for (;;) {
     unsigned long t = millis();
   
-    if(digitalRead(PIN_STATUS_GSM) == LOW) { // now off, turn on
+    if(!gsm_power_status()) { // now off, turn on
       digitalWrite(PIN_C_PWR_GSM, HIGH);
-      while ((digitalRead(PIN_STATUS_GSM) == LOW) && (millis() - t < 5000))
+      while (!gsm_power_status() && (millis() - t < 5000))
         delay(100);
       digitalWrite(PIN_C_PWR_GSM, LOW);
-      delay(1000);
+      status_delay(1000);
     }
   
     // auto-baudrate
@@ -74,12 +87,12 @@ void gsm_off(int emergency) {
 
   unsigned long t = millis();
 
-  if(digitalRead(PIN_STATUS_GSM) == HIGH) { // now on, turn off
+  if(gsm_power_status()) { // now on, turn off
     digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, HIGH);
-    while ((digitalRead(PIN_STATUS_GSM) == HIGH) && (millis() - t < 5000))
+    while (gsm_power_status() && (millis() - t < 5000))
       delay(100);
     digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, LOW);
-    delay(1000);
+    status_delay(1000);
   }
   gsm_get_reply(1);
 
