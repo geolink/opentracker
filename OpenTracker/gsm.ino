@@ -798,12 +798,12 @@ int gsm_send_data() {
   ret_tmp = gsm_connect();
   if(ret_tmp == 1) {
     //connection opened, just send data
-    if(SEND_RAW) {
+#if SEND_RAW
       ret_tmp = gsm_send_data_current();
-    } else {
+#else
       // send data, if ok then parse reply
       ret_tmp = gsm_send_http_current() && parse_receive_reply();
-    }
+#endif
   }
   gsm_disconnect(); // always
   
