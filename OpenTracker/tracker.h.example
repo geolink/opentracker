@@ -43,6 +43,11 @@
 #define DATA_INCLUDE_IGNITION_STATE 0       // enable to include the ignition state in the POST string
 #define DATA_INCLUDE_ENGINE_RUNNING_TIME 0  // enable to include the engine running time (in seconds) in the POST string
 
+#define PARSE_IGNORE_EOF 0        // 0=consider transmission successful if "eof" included in response body (default)
+#define PARSE_IGNORE_COMMANDS 0   // 0=parse commands included in response body (default)
+// define this macro to accept only certain HTTP response codes (default is any)
+//#define PARSE_ACCEPTED_RESPONSE_CODES RESP_CODE(200)
+
 #define PROTO "TCP"
 #define HOSTNAME "updates.geolink.io"
 #define HTTP_PORT "80"

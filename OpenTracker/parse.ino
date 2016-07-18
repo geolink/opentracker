@@ -6,6 +6,7 @@ int parse_receive_reply() {
   int len = 0;
   byte index = 0;
   byte header = 0;
+  int resp_code = 0;
 
   char *tmp;
   char *tmpcmd;
@@ -52,6 +53,17 @@ int parse_receive_reply() {
     gsm_get_reply(1);
     
     if(header != 1) {
+      tmp = strstr(modem_reply, "HTTP/1.");
+      if(tmp!=NULL) {
+        debug_print(F("Found response"));
+        resp_code = atoi(&tmp[9]);
+        debug_print(resp_code);
+#if PARSE_IGNORE_COMMANDS && PARSE_IGNORE_EOF
+        // optimize and close connection earlier (without reading whole reply)
+        header = 1;
+        break;
+#endif
+      }
       tmp = strstr(modem_reply, "close\r\n");
       if(tmp!=NULL) {
         debug_print(F("Found header packet"));
@@ -93,23 +105,45 @@ int parse_receive_reply() {
     }
   }
 
-  if(SEND_RAW) {
+#if SEND_RAW
     debug_print(F("RAW data mode enabled, not checking whether the packet was received or not."));
     ret = 1;
-  } else {
+
+#else // HTTP
+
+  // any http reply is valid by default
+  if (header != 0)
+    ret = 1;
+
+#ifdef PARSE_ACCEPTED_RESPONSE_CODES
+#define RESP_CODE(x) && (resp_code != (x))
+  // apply restrictions to response code
+  if (1 PARSE_ACCEPTED_RESPONSE_CODES)
+    ret = 0;
+#undef RESP_CODE(x)
+#endif
+
+#if !PARSE_IGNORE_EOF
+  // valid only if "eof" received
     tmp = strstr((cmd), "eof");
-    if(tmp!=NULL) {
+  if(tmp==NULL)
+    ret = 0;
+#endif
+
+#if !PARSE_IGNORE_COMMANDS
+  parse_cmd(cmd);
+#endif
+
+#endif // SEND_RAW
+  
+  if (ret) {
       //all data was received by server
       debug_print(F("Data was fully received by the server."));
-      ret = 1;
       addon_event(ON_RECEIVE_COMPLETED);
     } else {
       debug_print(F("Data was not received by the server."));
       addon_event(ON_RECEIVE_FAILED);
     }
-  }
-
-  parse_cmd(cmd);
   debug_print(F("parse_receive_reply() completed"));
 
   return ret;
