@@ -1,30 +1,4 @@
-
 //gsm functions
-#ifndef GSM_STAY_ONLINE
-  #define GSM_STAY_ONLINE 0   // 0 == Disconnect Session after each send of data (Default). 1 == Stay Online to keep session active
-#endif
-
-enum { 
-  GSM_F_POWER = 0x01,
-  GSM_F_OPEN = 0x02,
-  GSM_F_CONFIG = 0x04,
-  GSM_F_AWAKE = 0x08,
-  GSM_F_COMMAND_READY = (GSM_F_POWER|GSM_F_OPEN|GSM_F_CONFIG|GSM_F_AWAKE),
-};
-
-int gsm_flags = 0;
-
-bool gsm_is_command_ready() {
-  return (gsm_flags & GSM_F_COMMAND_READY) == GSM_F_COMMAND_READY;
-}
-
-void gsm_force_command_ready() {
-  if(!(gsm_flags & GSM_F_OPEN))
-    gsm_open();
-  gsm_on(); //make sure it's on and awake
-  if(!(gsm_flags & GSM_F_CONFIG))
-    gsm_config();
-}
 
 void gsm_init() {
   //setup modem pins
@@ -49,12 +23,10 @@ void gsm_init() {
 
 void gsm_open() {
   gsm_port.begin(115200);
-  gsm_flags |= GSM_F_OPEN;
 }
 
 void gsm_close() {
   gsm_port.end();
-  gsm_flags &= ~GSM_F_OPEN;
 }
 
 void gsm_on() {
@@ -72,7 +44,6 @@ void gsm_on() {
       digitalWrite(PIN_C_PWR_GSM, LOW);
       delay(1000);
     }
-    gsm_flags |= GSM_F_POWER;
   
     // auto-baudrate
     if (gsm_send_at())
@@ -109,8 +80,6 @@ void gsm_off(int emergency) {
       delay(100);
     digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, LOW);
     delay(1000);
-
-    gsm_flags &= ~(GSM_F_POWER|GSM_F_AWAKE|GSM_F_CONFIG);
   }
   gsm_get_reply(1);
 
@@ -125,7 +94,6 @@ void gsm_standby() {
   gsm_wait_for_reply(1,0);
   gsm_port.print("AT+QSCLK=1\r");
   gsm_wait_for_reply(1,0);
-  gsm_flags &= ~GSM_F_AWAKE;
 }
 
 void gsm_wakeup() {
@@ -136,7 +104,6 @@ void gsm_wakeup() {
   gsm_wait_for_reply(1,0);
   gsm_port.print("AT+CFUN=1\r");
   gsm_wait_for_reply(1,0);
-  gsm_flags |= GSM_F_AWAKE;
 }
 
 void gsm_setup() {
@@ -178,8 +145,6 @@ void gsm_config() {
 
   //set GSM APN
   gsm_set_apn();
-
-  gsm_flags |= GSM_F_CONFIG;
 }
 
 void gsm_set_time() {
