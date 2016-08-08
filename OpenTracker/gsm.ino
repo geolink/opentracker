@@ -345,14 +345,33 @@ int gsm_get_modem_status() {
 }
 
 int gsm_disconnect() {
-  debug_print(F("gsm_disconnect() started"));
+    int ret = 0;
+    debug_print(F("gsm_disconnect() started"));
+  #if GSM_DISCONNECT_AFTER_SEND
+    //disconnect GSM
+    gsm_port.print("AT+QIDEACT\r");
+    gsm_wait_for_reply(0,0);
 
-  //close connection, if previous attempts left it open
-  gsm_port.print("AT+QICLOSE\r");
-  gsm_wait_for_reply(0,0);
-  
+    //check if result contains DEACT OK
+    char *tmp = strstr(modem_reply, "DEACT OK");
+
+    if(tmp!=NULL) {
+      debug_print(F("gsm_disconnect(): DEACT OK found"));
+      ret = 1;
+    } else {
+      debug_print(F("gsm_disconnect(): DEACT OK not found."));
+    }
+  #else
+    //close connection, if previous attempts left it open
+    gsm_port.print("AT+QICLOSE\r");
+    gsm_wait_for_reply(0,0);
+    
+    //ignore errors (will be taken care during connect)
+    ret = 1;
+  #endif
+
   debug_print(F("gsm_disconnect() completed"));
-  return 1;
+  return ret;
 }
 
 int gsm_set_apn()  {

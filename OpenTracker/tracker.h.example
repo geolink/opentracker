@@ -21,6 +21,7 @@
 
 #define GSM_MODEM_COMMAND_TIMEOUT 10
 #define GSM_SEND_FAILURES_REBOOT 30         // 0=disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
+#define GSM_DISCONNECT_AFTER_SEND 0         // 0=keep modem data session active, only close TCP connection (default), 1=close data session after each send
 
 #define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 0 // 1=when the engine is running send interval is ignored
 
