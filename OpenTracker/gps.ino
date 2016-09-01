@@ -159,14 +159,14 @@ void collect_gps_data() {
           //update current time var - format 04/12/98,00:35:45+00
           // Add 1000000 to ensure the position of the digits
           ltoa(date_gps + 1000000, tmp, 10);  //1ddmmyy
-          time_char[0] = tmp[1];
-          time_char[1] = tmp[2];
+          time_char[0] = tmp[5];
+          time_char[1] = tmp[6];
           time_char[2] = '/';
           time_char[3] = tmp[3];
           time_char[4] = tmp[4];
           time_char[5] = '/';
-          time_char[6] = tmp[5];
-          time_char[7] = tmp[6];
+          time_char[6] = tmp[1];
+          time_char[7] = tmp[2];
           time_char[8] = ',';
 
           // Add 1000000 to ensure the position of the digits
@@ -201,8 +201,8 @@ void collect_gps_data() {
           }
 
           //converting date to data packet
-          ltoa(date_gps, tmp, 10);
-          data_append_string(tmp);
+          ltoa(date_gps + 1000000, tmp, 10);
+          data_append_string(tmp + 1);
         }
 
         if(DATA_INCLUDE_GPS_TIME) {
@@ -213,8 +213,8 @@ void collect_gps_data() {
           }
 
           //time
-          ltoa(time_gps, tmp, 10);
-          data_append_string(tmp);
+          ltoa(time_gps + 100000000, tmp, 10);
+          data_append_string(tmp + 1);
         }
 
         if(DATA_INCLUDE_LATITUDE) {
