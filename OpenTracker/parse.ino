@@ -4,16 +4,14 @@ int parse_receive_reply() {
   //receive reply from modem and parse it
   int ret = 0;
   int len = 0;
-  byte index = 0;
   byte header = 0;
   int resp_code = 0;
 
   char *tmp;
   char *tmpcmd;
-  char cmd[100];  //remote commands stored here
+  char cmd[100] = "";  //remote commands stored here
 
   debug_print(F("parse_receive_reply() started"));
-  cmd[index] = '\0';
 
   addon_event(ON_RECEIVE_STARTED);
   if (gsm_get_modem_status() == 4) {
@@ -49,55 +47,54 @@ int parse_receive_reply() {
     len = atoi(tmp);
     debug_print(len);
 
-    // read full buffer
+    // read full buffer (data)
     gsm_get_reply(1);
-    
-    if(header != 1) {
+
+    if(len==0) {
+      // no data yet, keep looking
+      addon_delay(500);
+      continue;
+    }
+
+    // remove trailing modem response (OK)
+    if (len < sizeof(modem_reply) - 1)
+      modem_reply[len] = '\0';
+    else
+      debug_print(F("Warning: data exceeds modem receive buffer!"));
+
+    debug_print(header);
+    if (header == 0) {
       tmp = strstr(modem_reply, "HTTP/1.");
       if(tmp!=NULL) {
         debug_print(F("Found response"));
+        header = 1;
+
         resp_code = atoi(&tmp[9]);
         debug_print(resp_code);
 #if PARSE_IGNORE_COMMANDS && PARSE_IGNORE_EOF
         // optimize and close connection earlier (without reading whole reply)
-        header = 1;
         break;
 #endif
+      } else {
+        debug_print(F("Not and HTTP response!"));
+        break;
       }
-      tmp = strstr(modem_reply, "close\r\n");
+    } else if (header == 1) {
+      // looking for end of headers
+      tmp = strstr(modem_reply, "\r\n\r\n");
       if(tmp!=NULL) {
-        debug_print(F("Found header packet"));
-        header = 1;
+        debug_print(F("End of header found!"));
+        header = 2;
 
         //all data from this packet and all next packets can be commands
-        tmp = strstr(modem_reply, "\r\n\r\n");
         tmp += strlen("\r\n\r\n");
-        tmpcmd = strtok(tmp, "OK");
-
-        for(index=0;index<strlen(tmpcmd)-2&&index<sizeof(cmd)-1;index++) {
-          cmd[index] = tmpcmd[index];
-        }
-
-        cmd[index] = '\0';
+        strlcpy(cmd, tmp, sizeof(cmd));
       }
     } else {
-      //not header packet, get data from +QIRD ... \r\n till OK
-      tmp = strstr(modem_reply, "\r\n");
-      tmp += strlen("\r\n");
-      tmpcmd = strtok(tmp, "OK");
-
-      tmp = strstr(tmp, "\r\n");
-      tmp += strlen("\r\n");
-      tmpcmd = strtok(tmp, "\r\nOK");
-
-      for(int i=0;i<strlen(tmpcmd)&&index<sizeof(cmd)-1;i++) {
-        cmd[index] = tmpcmd[i];
-        index++;
-      }
-
-      cmd[index] = '\0';
+      // packet contains only response body
+      strlcat(cmd, modem_reply, sizeof(cmd));
     }
-    
+	
     addon_event(ON_RECEIVE_DATA);
     if (gsm_get_modem_status() == 4) {
       debug_print(F("parse_receive_reply(): call interrupted"));
@@ -106,8 +103,8 @@ int parse_receive_reply() {
   }
 
 #if SEND_RAW
-    debug_print(F("RAW data mode enabled, not checking whether the packet was received or not."));
-    ret = 1;
+  debug_print(F("RAW data mode enabled, not checking whether the packet was received or not."));
+  ret = 1;
 
 #else // HTTP
 
@@ -124,8 +121,8 @@ int parse_receive_reply() {
 #endif
 
 #if !PARSE_IGNORE_EOF
-  // valid only if "eof" received
-    tmp = strstr((cmd), "eof");
+  // valid only if "#eof" received
+  tmp = strstr(cmd, "#eof");
   if(tmp==NULL)
     ret = 0;
 #endif
@@ -137,13 +134,13 @@ int parse_receive_reply() {
 #endif // SEND_RAW
   
   if (ret) {
-      //all data was received by server
-      debug_print(F("Data was fully received by the server."));
-      addon_event(ON_RECEIVE_COMPLETED);
-    } else {
-      debug_print(F("Data was not received by the server."));
-      addon_event(ON_RECEIVE_FAILED);
-    }
+    //all data was received by server
+    debug_print(F("Data was fully received by the server."));
+    addon_event(ON_RECEIVE_COMPLETED);
+  } else {
+    debug_print(F("Data was not received by the server."));
+    addon_event(ON_RECEIVE_FAILED);
+  }
   debug_print(F("parse_receive_reply() completed"));
 
   return ret;
