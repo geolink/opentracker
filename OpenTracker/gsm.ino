@@ -1,5 +1,29 @@
 //gsm functions
 
+#if MODEM_UG96
+#define AT_CONTEXT "AT+QICSGP=1,1,"
+#define AT_ACTIVATE "AT+QIACT=1\r"
+#define AT_DEACTIVATE "AT+QIDEACT=1\r"
+#define AT_CONFIGDNS "AT+QIDNSCFG=1,"
+#define AT_LOCALIP "AT+QIACT?\r"
+#define AT_OPEN "AT+QIOPEN=1,0,"
+#define AT_CLOSE "AT+QICLOSE=0\r"
+#define AT_SEND "AT+QISEND=0,"
+#define AT_RECEIVE "AT+QIRD=0,"
+#define AT_STAT "AT+QISTATE=1,0\r"
+#else
+#define AT_CONTEXT "AT+QIREGAPP="
+#define AT_ACTIVATE "AT+QIACT\r"
+#define AT_DEACTIVATE "AT+QIDEACT\r"
+#define AT_CONFIGDNS "AT+QIDNSCFG="
+#define AT_LOCALIP "AT+QILOCIP\r"
+#define AT_OPEN "AT+QIOPEN="
+#define AT_CLOSE "AT+QICLOSE\r"
+#define AT_SEND "AT+QISEND="
+#define AT_RECEIVE "AT+QIRD=0,1,0,"
+#define AT_STAT "AT+QISTAT\r"
+#endif
+
 void gsm_init() {
   //setup modem pins
   debug_print(F("gsm_init() started"));
@@ -30,6 +54,10 @@ void gsm_close() {
 }
 
 bool gsm_power_status() {
+#if MODEM_UG96
+  // inverted status signal
+  return digitalRead(PIN_STATUS_GSM) != HIGH;
+#else
   // help discharge floating pin, by temporarily setting as output low
   PIO_Configure(
     g_APinDescription[PIN_STATUS_GSM].pPort,
@@ -40,6 +68,7 @@ bool gsm_power_status() {
   delay(1);
   // read modem power status
   return digitalRead(PIN_STATUS_GSM) != LOW;
+#endif
 }
 
 void gsm_on() {
@@ -87,11 +116,25 @@ void gsm_off(int emergency) {
 
   unsigned long t = millis();
 
-  if(gsm_power_status()) { // now on, turn off
-    digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, HIGH);
+  if(emergency) {
+    digitalWrite(PIN_C_KILL_GSM, HIGH);
     while (gsm_power_status() && (millis() - t < 5000))
       delay(100);
-    digitalWrite(emergency ? PIN_C_KILL_GSM : PIN_C_PWR_GSM, LOW);
+    digitalWrite(PIN_C_KILL_GSM, LOW);
+    status_delay(1000);
+  }
+  else
+  if(gsm_power_status()) { // now on, turn off
+#if MODEM_UG96
+    // 3G modem, normal power down
+    gsm_port.print("AT+QPOWD=1\r");
+    gsm_wait_for_reply(1,0);
+#else
+    digitalWrite(PIN_C_PWR_GSM, HIGH);
+    while (gsm_power_status() && (millis() - t < 5000))
+      delay(100);
+    digitalWrite(PIN_C_PWR_GSM, LOW);
+#endif
     status_delay(1000);
   }
   gsm_get_reply(1);
@@ -260,11 +303,13 @@ void gsm_startup_cmd() {
 
   gsm_wait_for_reply(1,0);
 
+#if MODEM_M95
   //set receiving TCP data by command
   gsm_port.print("AT+QINDI=1");
   gsm_port.print("\r");
 
   gsm_wait_for_reply(1,0);
+#endif
 
   //set SMS as text format
   gsm_port.print("AT+CMGF=1");
@@ -349,11 +394,16 @@ int gsm_disconnect() {
     debug_print(F("gsm_disconnect() started"));
   #if GSM_DISCONNECT_AFTER_SEND
     //disconnect GSM
-    gsm_port.print("AT+QIDEACT\r");
-    gsm_wait_for_reply(0,0);
+    gsm_port.print(AT_DEACTIVATE);
+    gsm_wait_for_reply(MODEM_UG96,0);
 
+#if MODEM_UG96
+    //check if result contains OK
+    char *tmp = strstr(modem_reply, "OK");
+#else
     //check if result contains DEACT OK
     char *tmp = strstr(modem_reply, "DEACT OK");
+#endif
 
     if(tmp!=NULL) {
       debug_print(F("gsm_disconnect(): DEACT OK found"));
@@ -363,8 +413,8 @@ int gsm_disconnect() {
     }
   #else
     //close connection, if previous attempts left it open
-    gsm_port.print("AT+QICLOSE\r");
-    gsm_wait_for_reply(0,0);
+    gsm_port.print(AT_CLOSE);
+    gsm_wait_for_reply(MODEM_UG96,0);
     
     //ignore errors (will be taken care during connect)
     ret = 1;
@@ -378,14 +428,13 @@ int gsm_set_apn()  {
   debug_print(F("gsm_set_apn() started"));
 
   //disconnect GSM
-  gsm_port.print("AT+QIDEACT");
-  gsm_port.print("\r");
-  gsm_wait_for_reply(0,0);
+  gsm_port.print(AT_DEACTIVATE);
+  gsm_wait_for_reply(MODEM_UG96,0);
 
   addon_event(ON_MODEM_ACTIVATION);
   
   //set all APN data, dns, etc
-  gsm_port.print("AT+QIREGAPP=\"");
+  gsm_port.print(AT_CONTEXT "\"");
   gsm_port.print(config.apn);
   gsm_port.print("\",\"");
   gsm_port.print(config.user);
@@ -396,17 +445,14 @@ int gsm_set_apn()  {
 
   gsm_wait_for_reply(1,0);
 
-  gsm_port.print("AT+QIDNSCFG=\"8.8.8.8\"");
-  gsm_port.print("\r");
-
-  gsm_wait_for_reply(1,0);
-
+#if MODEM_M95
   gsm_port.print("AT+QIDNSIP=1");
   gsm_port.print("\r");
 
   gsm_wait_for_reply(1,0);
+#endif
 
-  gsm_port.print("AT+QIACT\r");
+  gsm_port.print(AT_ACTIVATE);
 
   // wait for GPRS contex activation (first time)
   unsigned long t = millis();
@@ -416,11 +462,16 @@ int gsm_set_apn()  {
   }
   while (millis() - t < 60000);
 
-  gsm_port.print("AT+QILOCIP\r"); // diagnostic only
+  gsm_port.print(AT_LOCALIP); // diagnostic only
   status_delay(500);
   gsm_get_reply(0);
 
   gsm_send_at();
+
+  gsm_port.print(AT_CONFIGDNS "\"8.8.8.8\"");
+  gsm_port.print("\r");
+
+  gsm_wait_for_reply(1,0);
 
   debug_print(F("gsm_set_apn() completed"));
 
@@ -430,10 +481,35 @@ int gsm_set_apn()  {
 int gsm_get_connection_status() {
   debug_print(F("gsm_get_connection_status() started"));
   
-  gsm_port.print("AT+QISTAT\r");
-  gsm_wait_for_reply(0,0);
-
   int ret = -1; //unknown
+
+  gsm_get_reply(1); //flush buffer
+  gsm_port.print(AT_STAT);
+
+#if MODEM_UG96
+  gsm_wait_for_reply(1,0);
+
+  char *tmp = strtok(modem_reply, ",");
+  if (tmp != NULL && strstr(modem_reply, "+QISTATE:") != NULL) {
+    for (int k=0; k<5; ++k) {
+      tmp = strtok(NULL, ",");
+    }
+    if (tmp != NULL) {
+      ret = atoi(tmp);
+      debug_print(ret);
+      if (ret == 3)
+        ret = 1; // already connected
+      else if (ret > 0)
+        ret = 2; // previous connection failed, should close
+    }
+    
+    gsm_wait_for_reply(1,0); // catch OK
+  }
+  else if (strstr(modem_reply, "OK") != NULL)
+    ret = 0; // ready to connect
+
+#else
+  gsm_wait_for_reply(0,0);
 
   if (strstr(modem_reply, "IP INITIAL") != NULL ||
     strstr(modem_reply, "IP STATUS") != NULL ||
@@ -445,6 +521,7 @@ int gsm_get_connection_status() {
 
   if (strstr(modem_reply, "TCP CONNECTING") != NULL)
     ret = 2; // previous connection failed, should close
+#endif
 
   debug_print(F("gsm_get_connection_status() returned:"));
   debug_print(ret);
@@ -465,17 +542,26 @@ int gsm_connect() {
 
       if (ipstat > 1) {
         //close connection, if previous attempts failed
-        gsm_port.print("AT+QICLOSE");
-        gsm_port.print("\r");
-        gsm_wait_for_reply(0,0);
+        gsm_port.print(AT_CLOSE);
+        gsm_wait_for_reply(MODEM_UG96,0);
         ipstat = 0;
       }
       if (ipstat < 0) {
         //deactivate required
-        gsm_port.print("AT+QIDEACT");
-        gsm_port.print("\r");
-        gsm_wait_for_reply(0,0);
+        gsm_port.print(AT_DEACTIVATE);
+        gsm_wait_for_reply(MODEM_UG96,0);
         ipstat = 0;
+
+#if MODEM_UG96
+        gsm_port.print(AT_ACTIVATE);
+        
+        gsm_wait_for_reply(1,0);
+
+        gsm_port.print(AT_CONFIGDNS "\"8.8.8.8\"");
+        gsm_port.print("\r");
+      
+        gsm_wait_for_reply(1,0);
+#endif
       }
       if (ipstat == 0) {
         debug_print(F("Connecting to remote server..."));
@@ -483,21 +569,40 @@ int gsm_connect() {
     
         //open socket connection to remote host
         //opening connection
-        gsm_port.print("AT+QIOPEN=\"");
+        gsm_port.print(AT_OPEN "\"");
         gsm_port.print(PROTO);
         gsm_port.print("\",\"");
         gsm_port.print(HOSTNAME);
-        gsm_port.print("\",\"");
-        gsm_port.print(HTTP_PORT);
+        gsm_port.print("\",");
+#if MODEM_M95
         gsm_port.print("\"");
+#endif
+        gsm_port.print(HTTP_PORT);
+#if MODEM_M95
+        gsm_port.print("\"");
+#endif
         gsm_port.print("\r");
     
         gsm_wait_for_reply(1, 0); // OK sent first
 
         long timer = millis();
+        if(strstr(modem_reply, "OK")==NULL)
+          ipstat = 0;
+        else
         do {
           gsm_get_reply(1);
-          
+
+#if MODEM_UG96
+          char *tmp = strstr(modem_reply, "+QIOPEN: 0,");
+          if(tmp!=NULL) {
+            tmp += strlen("+QIOPEN: 0,");
+            if (atoi(tmp)==0)
+              ipstat = 1;
+            else
+              ipstat = 0;
+            break;
+          }
+#else
           if(strstr(modem_reply, "CONNECT OK")!=NULL) {
             ipstat = 1;
             break;
@@ -507,6 +612,7 @@ int gsm_connect() {
             ipstat = 0;
             break;
           }
+#endif
           addon_delay(100);
         } while (millis() - timer < CONNECT_TIMEOUT);
       }
@@ -533,6 +639,9 @@ int gsm_connect() {
 }
 
 int gsm_validate_tcp() {
+#if MODEM_UG96
+  return 1;
+#else
   char *str;
   int nonacked = 0;
   int ret = 0;
@@ -574,11 +683,12 @@ int gsm_validate_tcp() {
 
   debug_print(F("gsm_validate_tcp() completed."));
   return ret;
+#endif
 }
 
 int gsm_send_begin(int data_len) {
   //sending header packet to remote host
-  gsm_port.print("AT+QISEND=");
+  gsm_port.print(AT_SEND);
   gsm_port.print(data_len);
   gsm_port.print("\r");
 
@@ -881,6 +991,15 @@ int gsm_is_final_result(int allowOK) {
       if(STARTS_WITH(&modem_reply[1], "QIRD:")) {
         return true;
       }
+      if(STARTS_WITH(&modem_reply[1], "QISTATE:")) {
+        return true;
+      }
+      if(STARTS_WITH(&modem_reply[1], "QIOPEN:")) {
+        return true;
+      }
+      if(STARTS_WITH(&modem_reply[1], "QICLOSE:")) {
+        return true;
+      }
       return false;
     case '>':
       if(strcmp(&modem_reply[1], " ") == 0) {
@@ -1046,7 +1165,7 @@ int gsm_scan_known_apn()
     debug_port.print(F("Testing APN: "));
     debug_print(config.apn);
 
-    gsm_port.print("AT+QISTAT\r");
+    gsm_port.print(AT_STAT");
     gsm_wait_for_reply(0,0);
 
 #if KNOWN_APN_SCAN_MODE < 2
@@ -1057,41 +1176,6 @@ int gsm_scan_known_apn()
     {
 #if KNOWN_APN_SCAN_MODE > 0
       ret = gsm_connect();
-      /*
-      for (int i = 0; i < 5; i++)
-      {
-        debug_print(F("Connecting to remote server..."));
-        debug_print(i);
-  
-        //open socket connection to remote host
-        //opening connection
-        gsm_port.print("AT+QIOPEN=\"");
-        gsm_port.print(PROTO); // tcp
-        gsm_port.print("\",\"");
-        gsm_port.print(HOSTNAME);
-        gsm_port.print("\",\"");
-        gsm_port.print(HTTP_PORT);
-        gsm_port.print("\"");
-        gsm_port.print("\r");
-  
-        gsm_wait_for_reply(0, 0);
-  
-        char *tmp = strstr(modem_reply, "CONNECT OK");
-        if (tmp != NULL)
-        {
-          debug_print(F("Connected to remote server: "));
-          debug_print(HOSTNAME);
-  
-          ret = 1;
-          break;
-        }
-        else
-        {
-          debug_print(F("Can not connect to remote server: "));
-          debug_print(HOSTNAME);
-        }
-      }
-      */
 #else
       ret = 1;
 #endif

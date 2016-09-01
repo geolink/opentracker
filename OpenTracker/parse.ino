@@ -21,8 +21,31 @@ int parse_receive_reply() {
     return 0; // abort
   }
 
-  for(int i=0;i<30;i++) {
-    gsm_port.print("AT+QIRD=0,1,0,100");
+  for(int i=0;i<50;i++) {
+#if MODEM_UG96
+    gsm_get_reply(1); //flush buffer
+
+    // query unread length
+    gsm_port.print(AT_RECEIVE "0\r");
+    gsm_wait_for_reply(1,0);
+
+    tmp = strstr(modem_reply, "+QIRD:");
+    if(tmp!=NULL) {
+      tmp = strtok(modem_reply, ",");
+      for (int k=0; k<2; ++k) {
+        tmp = strtok(NULL, ",");
+      }
+      if (tmp != NULL && atoi(tmp) == 0) {
+        // no more data to read
+        if (gsm_get_connection_status() != 1)
+          break; // exit if no more connected
+      }
+    }
+#endif
+    gsm_get_reply(1); //flush buffer
+
+    // read server reply
+    gsm_port.print(AT_RECEIVE "100");
     gsm_port.print("\r");
 
     gsm_wait_for_reply(1,0);
@@ -36,7 +59,13 @@ int parse_receive_reply() {
     
     tmp = strstr(modem_reply, "+QIRD:");
     if(tmp!=NULL) {
+#if MODEM_UG96
+      tmp += strlen("+QIRD:");
+#else
       tmp = strstr(modem_reply, PROTO ","); //get data length
+      if(tmp!=NULL)
+        tmp += strlen(PROTO ",");
+#endif
     }
     if(tmp==NULL) {
       // no data yet, keep looking
@@ -45,13 +74,18 @@ int parse_receive_reply() {
     }
 
     // read data length
-    tmp += strlen(PROTO ",");
     len = atoi(tmp);
     debug_print(len);
 
-    // read full buffer
+    // read full buffer (data)
     gsm_get_reply(1);
     
+    if(len==0) {
+      // no data yet, keep looking
+      addon_delay(500);
+      continue;
+    }
+
     if(header != 1) {
       tmp = strstr(modem_reply, "HTTP/1.");
       if(tmp!=NULL) {
