@@ -4,9 +4,10 @@
 
 //External libraries
 #include <TinyGPS.h>
-#include <avr/dtostrf.h>
-
 #include <DueFlashStorage.h>
+
+//optimization
+#define dtostrf(val, width, prec, sout) (void) sprintf(sout, "%" #width "." #prec "f", val)
 
 bool debug_enable = true; // runtime flag to disable debug console
 
