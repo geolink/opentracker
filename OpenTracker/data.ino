@@ -73,6 +73,8 @@ void collect_all_data(int ignitionState) {
     data_append_string(runningTimeString);
   }
 
+  addon_collect_data();
+
   //end of data packet
   data_append_char('\n');
 

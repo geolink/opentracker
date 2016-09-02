@@ -31,6 +31,10 @@ void addon_sms_command(char *cmd, char *arg, const char *phone) {
   // called to handle unknown SMS commands
 }
 
+void addon_collect_data() {
+  // called inside collect_all_data() to append custom data
+}
+
 #endif
 
 struct addon_settings;
