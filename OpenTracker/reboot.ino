@@ -28,39 +28,38 @@ void reboot() {
 
 bool restore_console = false;
 
-// override for lower power consumption (wait for interrupt)
-void yield(void) {
-  pmc_enable_sleepmode(0);
-}
-
 void usb_console_disable() {
-  if (USBD_Connected()) {
-    // disable USB console only if not opened on the PC
-    debug_enable = false;
-    // debug_port.end() does nothing, manually disable USB serial console
-    USBDevice.detach(); // detach from Host
-    restore_console = true;
-  } else {
-    restore_console = false;
-  }
+  cpu_irq_disable();
+  
+  // disable USB console
+  restore_console = true;
+  // debug_port.end() does nothing, manually disable USB serial console
+  UDD_Detach(); // detach from Host
   // de-init procedure (reverses UDD_Init)
   otg_freeze_clock();
+  otg_disable_pad();
+  otg_disable();
   pmc_disable_udpck();
   pmc_disable_upll_clock();
   pmc_disable_periph_clk(ID_UOTGHS);
   NVIC_DisableIRQ((IRQn_Type) ID_UOTGHS);
+  NVIC_ClearPendingIRQ((IRQn_Type) ID_UOTGHS);
+
+  cpu_irq_enable();
 }
 
 void usb_console_restore() {
-  // re-initialize USB
-  UDD_Init();
-
   if (restore_console) {
     restore_console = false;
-    
-    USBDevice.attach(); // re-attach to Host
-    debug_enable = true;
+    // re-initialize USB
+    UDD_Init();
+    UDD_Attach();
   }
+}
+
+// override for lower power consumption (wait for interrupt)
+void yield(void) {
+  pmc_enable_sleepmode(0);
 }
 
 void enter_low_power() {
@@ -80,14 +79,9 @@ void enter_low_power() {
 
   usb_console_disable();
 
-  // switch to low-power mode with interrupts disabled
-  cpu_irq_disable();
-
   // slow down CPU
   pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
   pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
-
-  cpu_irq_enable();
 
   // update timer settings
   SystemCoreClockUpdate();
