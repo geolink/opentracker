@@ -4,7 +4,6 @@ void reboot() {
 
   //reset GPS
   gps_off();
-
   //emergency power off GSM
   gsm_off(1);
 
@@ -16,7 +15,6 @@ void reboot() {
   USBDevice.detach(); // detach from Host
 
   cpu_irq_disable();
-
   rstc_start_software_reset(RSTC);
   for (;;)
   {
@@ -29,6 +27,41 @@ void reboot() {
 }
 
 bool restore_console = false;
+
+// override for lower power consumption (wait for interrupt)
+void yield(void) {
+  pmc_enable_sleepmode(0);
+}
+
+void usb_console_disable() {
+  if (USBD_Connected()) {
+    // disable USB console only if not opened on the PC
+    debug_enable = false;
+    // debug_port.end() does nothing, manually disable USB serial console
+    USBDevice.detach(); // detach from Host
+    restore_console = true;
+  } else {
+    restore_console = false;
+  }
+  // de-init procedure (reverses UDD_Init)
+  otg_freeze_clock();
+  pmc_disable_udpck();
+  pmc_disable_upll_clock();
+  pmc_disable_periph_clk(ID_UOTGHS);
+  NVIC_DisableIRQ((IRQn_Type) ID_UOTGHS);
+}
+
+void usb_console_restore() {
+  // re-initialize USB
+  UDD_Init();
+
+  if (restore_console) {
+    restore_console = false;
+    
+    USBDevice.attach(); // re-attach to Host
+    debug_enable = true;
+  }
+}
 
 void enter_low_power() {
   debug_print(F("enter_low_power() started"));
@@ -43,40 +76,24 @@ void enter_low_power() {
   gsm_standby();
   gsm_close();
 
-  if (!USBDevice.configured()) {
-    addon_event(ON_CLOCK_PAUSE);
+  addon_event(ON_CLOCK_PAUSE);
 
-    // switch to low-power mode with interrupts disabled
-    cpu_irq_disable();
+  usb_console_disable();
 
-    // disable USB console only if not opened on the PC
-    debug_enable = false;
-    // debug_port.end() does nothing, manually disable USB serial console
-    USBDevice.detach(); // detach from Host
-    restore_console = true;
+  // switch to low-power mode with interrupts disabled
+  cpu_irq_disable();
 
-    // de-init procedure (reverses UDD_Init)
-    otg_freeze_clock();
-    pmc_disable_udpck();
-    pmc_disable_upll_clock();
-    pmc_disable_periph_clk(ID_UOTGHS);
-    NVIC_DisableIRQ((IRQn_Type) ID_UOTGHS);
+  // slow down CPU
+  pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
+  pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
 
-    // slow down CPU
-    pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
-    pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
+  cpu_irq_enable();
 
-    cpu_irq_enable();
+  // update timer settings
+  SystemCoreClockUpdate();
+  SysTick_Config(SystemCoreClock / 1000);
 
-    // update timer settings
-    SystemCoreClockUpdate();
-    SysTick_Config(SystemCoreClock / 1000);
-
-    addon_event(ON_CLOCK_RESUME);
-
-  } else {
-    restore_console = false;
-  }
+  addon_event(ON_CLOCK_RESUME);
 
   debug_print(F("enter_low_power() completed"));
 }
@@ -84,22 +101,15 @@ void enter_low_power() {
 void exit_low_power() {
   debug_print(F("exit_low_power() started"));
 
-  if (restore_console) {
-    restore_console = false;
-    
-    addon_event(ON_CLOCK_PAUSE);
+  addon_event(ON_CLOCK_PAUSE);
 
-    // re-init clocks to full speed
-    SystemInit();
-    SysTick_Config(SystemCoreClock / 1000);
+  // re-init clocks to full speed
+  SystemInit();
+  SysTick_Config(SystemCoreClock / 1000);
 
-    // re-initialize USB
-    UDD_Init();
-    USBDevice.attach(); // re-attach to Host
-    debug_enable = true;
-
-    addon_event(ON_CLOCK_RESUME);
-  }
+  usb_console_restore();
+  
+  addon_event(ON_CLOCK_RESUME);
 
   // enable serial ports
   gsm_open();
