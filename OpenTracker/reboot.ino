@@ -26,13 +26,9 @@ void reboot() {
   debug_print(F("reboot() failed"));
 }
 
-bool restore_console = false;
-
 void usb_console_disable() {
   cpu_irq_disable();
   
-  // disable USB console
-  restore_console = true;
   // debug_port.end() does nothing, manually disable USB serial console
   UDD_Detach(); // detach from Host
   // de-init procedure (reverses UDD_Init)
@@ -49,8 +45,7 @@ void usb_console_disable() {
 }
 
 void usb_console_restore() {
-  if (restore_console) {
-    restore_console = false;
+  if (!Is_otg_enabled()) {
     // re-initialize USB
     UDD_Init();
     UDD_Attach();
@@ -60,6 +55,31 @@ void usb_console_restore() {
 // override for lower power consumption (wait for interrupt)
 void yield(void) {
   pmc_enable_sleepmode(0);
+}
+
+void cpu_slow_down() {
+  addon_event(ON_CLOCK_PAUSE);
+
+  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temp disable interrupt
+  
+  // slow down CPU
+  pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_64); // master clock prescaler
+
+  // update timer settings
+  SystemCoreClockUpdate();
+  SysTick_Config(SystemCoreClock / 1000);
+
+  addon_event(ON_CLOCK_RESUME);
+}
+
+void cpu_full_speed() {
+  addon_event(ON_CLOCK_PAUSE);
+
+  // re-init clocks to full speed
+  SystemInit();
+  SysTick_Config(SystemCoreClock / 1000);
+
+  addon_event(ON_CLOCK_RESUME);
 }
 
 void enter_low_power() {
@@ -75,36 +95,18 @@ void enter_low_power() {
   gsm_standby();
   gsm_close();
 
-  addon_event(ON_CLOCK_PAUSE);
-
   usb_console_disable();
 
-  // slow down CPU
-  pmc_mck_set_prescaler(PMC_MCKR_PRES_CLK_16); // master clock prescaler
-  pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
-
-  // update timer settings
-  SystemCoreClockUpdate();
-  SysTick_Config(SystemCoreClock / 1000);
-
-  addon_event(ON_CLOCK_RESUME);
-
+  cpu_slow_down();
+  
   debug_print(F("enter_low_power() completed"));
 }
 
 void exit_low_power() {
   debug_print(F("exit_low_power() started"));
 
-  addon_event(ON_CLOCK_PAUSE);
-
-  // re-init clocks to full speed
-  SystemInit();
-  SysTick_Config(SystemCoreClock / 1000);
-
   usb_console_restore();
   
-  addon_event(ON_CLOCK_RESUME);
-
   // enable serial ports
   gsm_open();
   gsm_wakeup();
