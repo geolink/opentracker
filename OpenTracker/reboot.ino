@@ -11,8 +11,8 @@ void reboot() {
   //serial monitor on the PC won't work anymore if you don't close it before reset completes
   //otherwise, close the serial monitor, detach the USB cable and connect it again
 
-  // Console.end() does nothing, manually disable USB
-  USBDevice.detach(); // detach from Host
+  // debug_port.end() does nothing, manually disable USB
+  UDD_Detach(); // detach from Host
 
   cpu_irq_disable();
   rstc_start_software_reset(RSTC);
@@ -22,8 +22,6 @@ void reboot() {
     // the reset reason will be wrong when the board starts the next time around.
     WDT_Restart(WDT);
   }
-
-  debug_print(F("reboot() failed"));
 }
 
 void usb_console_disable() {
@@ -105,6 +103,8 @@ void enter_low_power() {
 void exit_low_power() {
   debug_print(F("exit_low_power() started"));
 
+  cpu_full_speed();
+  
   usb_console_restore();
   
   // enable serial ports
