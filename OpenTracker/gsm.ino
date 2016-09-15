@@ -181,7 +181,6 @@ void gsm_set_pin() {
     gsm_port.print("AT+CPIN?");
     gsm_port.print("\r");
   
-    gsm_wait_at();
     gsm_wait_for_reply(1,1);
   
     char *tmp = strstr(modem_reply, "SIM PIN");
@@ -595,6 +594,26 @@ int gsm_send_done() {
   return 0; // error
 }
 
+#ifdef HTTP_USE_GET
+const char HTTP_HEADER0[ ] =        //HTTP header line before GET params
+  "GET " URL "?";
+const char HTTP_HEADER1[ ] =        //HTTP header line before length
+  " HTTP/1.0\r\n"
+  "Host: " HOSTNAME "\r\n"
+  "Content-length: 0";
+#else
+const char HTTP_HEADER1[ ] =        //HTTP header line before length
+  "POST " URL " HTTP/1.0\r\n"
+  "Host: " HOSTNAME "\r\n"
+  "Content-type: application/x-www-form-urlencoded\r\n"
+  "Content-length: ";
+#endif
+const char HTTP_HEADER2[ ] =          //HTTP header line after length
+  "\r\n"
+  "User-Agent: " HTTP_USER_AGENT "\r\n"
+  "Connection: close\r\n"
+  "\r\n";
+
 int gsm_send_http_current() {
   //send HTTP request, after connection if fully opened
   //this will send Current data
@@ -603,17 +622,25 @@ int gsm_send_http_current() {
   debug_print(data_current);
 
   //getting length of data full package
+#ifdef HTTP_USE_GET
+  int http_len = strlen(config.imei)+strlen(config.key);
+#else
   int http_len = strlen(config.imei)+strlen(config.key)+strlen(data_current);
-  http_len = http_len+13;    //imei= &key= &d=
+#endif
+  http_len += strlen(HTTP_PARAM_IMEI) + strlen(HTTP_PARAM_KEY) + strlen(HTTP_PARAM_DATA) + 5;    //imei= &key= &d=
 
   debug_print(F("gsm_send_http(): Length of data packet:"));
   debug_print(http_len);
 
+#ifdef HTTP_USE_GET
+  int tmp_len = strlen(HTTP_HEADER0)+http_len;
+#else
   //length of header package
   char tmp_http_len[7];
   itoa(http_len, tmp_http_len, 10);
 
   int tmp_len = strlen(HTTP_HEADER1)+strlen(tmp_http_len)+strlen(HTTP_HEADER2);
+#endif
 
   addon_event(ON_SEND_DATA);
   if (gsm_get_modem_status() == 4) {
@@ -631,6 +658,15 @@ int gsm_send_http_current() {
   }
 
   //sending header
+#ifdef HTTP_USE_GET
+  gsm_port.print(HTTP_HEADER0);
+
+  debug_print(F("gsm_send_http(): Sending GET params"));
+  debug_print(F("gsm_send_http(): Sending IMEI and Key"));
+  debug_print(config.imei);
+  // don't disclose the key
+
+#else
   gsm_port.print(HTTP_HEADER1);
   gsm_port.print(tmp_http_len);
   gsm_port.print(HTTP_HEADER2);
@@ -658,12 +694,13 @@ int gsm_send_http_current() {
     debug_print(F("gsm_send_http(): send refused"));
     return 0; // abort
   }
+#endif
 
-  gsm_port.print("imei=");
+  gsm_port.print(HTTP_PARAM_IMEI "=");
   gsm_port.print(config.imei);
-  gsm_port.print("&key=");
+  gsm_port.print("&" HTTP_PARAM_KEY "=");
   gsm_port.print(config.key);
-  gsm_port.print("&d=");
+  gsm_port.print("&" HTTP_PARAM_DATA "=");
 
   if (!gsm_send_done()) {
     debug_print(F("gsm_send_http(): send error"));
@@ -671,9 +708,39 @@ int gsm_send_http_current() {
   }
 
   debug_print(F("gsm_send_http(): Sending body"));
-
   int tmp_ret = gsm_send_data_current();
+  
+#ifdef HTTP_USE_GET
+  if (tmp_ret) {
+    gsm_validate_tcp();
+    
+    // finish sending headers
+    tmp_len = strlen(HTTP_HEADER1)+strlen(HTTP_HEADER2);
+    
+    addon_event(ON_SEND_DATA);
+    if (gsm_get_modem_status() == 4) {
+      debug_print(F("gsm_send_http(): call interrupted"));
+      return 0; // abort
+    }
+    
+    debug_print(F("gsm_send_http(): Length of header packet:"));
+    debug_print(tmp_len);
 
+    //sending header packet to remote host
+    if (!gsm_send_begin(tmp_len)) {
+      debug_print(F("gsm_send_http(): send refused"));
+      return 0; // abort
+    }
+
+    gsm_port.print(HTTP_HEADER1);
+    gsm_port.print(HTTP_HEADER2);
+  
+    if (!gsm_send_done()) {
+      debug_print(F("gsm_send_http(): send error"));
+      return 0; // abort
+    }
+  }
+#endif
   debug_print(F("gsm_send_http(): data sent."));
   return tmp_ret;
 }
@@ -845,23 +912,13 @@ void gsm_wait_for_reply(int allowOK, int fullBuffer) {
   }
   
   if (modem_reply[0] == 0) {
+    gsm_reply_failures++;
     debug_print(F("Warning: timed out waiting for last modem reply"));
+  } else {
+    gsm_reply_failures = 0;
   }
-}
-
-void gsm_wait_at() {
-  unsigned long timeout = millis();
-
-  modem_reply[0] = '\0';
-
-  while (!strncmp(modem_reply,"AT+",3) == 0) {
-    if((millis() - timeout) >= (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
-      debug_print(F("Warning: timed out waiting for last modem reply"));
-      break;
-    }
-    gsm_get_reply(0);
-
-    status_delay(50);
+  if (GSM_REPLY_FAILURES_REBOOT > 0 && gsm_reply_failures >= GSM_REPLY_FAILURES_REBOOT) {
+    reboot(); // reboot immediately
   }
 }
 

@@ -54,6 +54,7 @@ TinyGPS gps;
 DueFlashStorage dueFlashStorage;
 
 int gsm_send_failures = 0;
+int gsm_reply_failures = 0;
 
 //settings structure
 struct settings {
