@@ -103,7 +103,7 @@ void gsm_standby() {
   // clear wake signal
   digitalWrite(PIN_WAKE_GSM, HIGH);
   // standby GSM
-  gsm_port.print("AT+CFUN=0\r");
+  gsm_port.print("AT+CFUN=4\r");
   gsm_wait_for_reply(1,0);
   gsm_port.print("AT+QSCLK=1\r");
   gsm_wait_for_reply(1,0);
