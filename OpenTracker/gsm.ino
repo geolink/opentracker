@@ -866,10 +866,8 @@ int gsm_send_data() {
   return ret_tmp;
 }
 
-// use fullBuffer != 0 if you want to read multiple lines
-void gsm_get_reply(int fullBuffer) {
-  //get reply from the modem
-  int index = 0;
+// update and return index to modem_reply buffer
+int gsm_read_line(int index = 0) {
   char inChar = 0; // Where to store the character read
   long last = millis();
 
@@ -881,15 +879,30 @@ void gsm_get_reply(int fullBuffer) {
         modem_reply[index] = inChar; // Store it
         index++; // Increment where to write next
   
-        if(index == sizeof(modem_reply)-1 || (!fullBuffer && inChar == '\n')) { //some data still available, keep it in serial buffer
+        if(index == sizeof(modem_reply)-1 || (inChar == '\n')) { //some data still available, keep it in serial buffer
           break;
         }
       }
     }
-  } while(millis() - last < 10); // allow some inter-character delay
+  } while((signed long)(millis() - last) < 10); // allow some inter-character delay
 
   modem_reply[index] = '\0'; // Null terminate the string
+  return index;
+}
 
+// use fullBuffer != 0 if you want to read multiple lines
+void gsm_get_reply(int fullBuffer) {
+  //get reply from the modem
+  int index = 0, end = 0;
+
+  do {
+    end = gsm_read_line(index);
+    if (end > index)
+      index = end;
+    else
+      break;
+  } while(fullBuffer && index < sizeof(modem_reply)-1);
+  
   if(index > 0) {
     debug_print(F("Modem Reply:"));
     debug_print(modem_reply);
@@ -903,17 +916,49 @@ void gsm_wait_for_reply(int allowOK, int fullBuffer) {
   unsigned long timeout = millis();
   
   modem_reply[0] = '\0';
+  int ret = 0;
 
-  while((millis() - timeout) < (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
-    gsm_get_reply(fullBuffer);
-    if (gsm_is_final_result(allowOK))
-      break;
-    status_delay(50);
-  }
+  //get reply from the modem
+  int index = 0, end = 0;
+
+  do {
+    if (fullBuffer) //keep past lines
+      index = end;
+    else // overwrite
+      index = 0;
+    end = gsm_read_line(index);
   
-  if (modem_reply[0] == 0) {
-    gsm_reply_failures++;
+    if(end > index) {
+      debug_print(F("Modem Line:"));
+      debug_print(&modem_reply[index]);
+      
+      addon_event(ON_MODEM_REPLY);
+  
+      if (gsm_is_final_result(&modem_reply[index], allowOK)) {
+        ret = 1;
+        break;
+      }
+    } else if ((signed long)(millis() - timeout) > (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
+      break;
+    } else {
+      status_delay(50);
+    }
+  } while(index < sizeof(modem_reply)-1);
+  
+  if (ret == 0) {
     debug_print(F("Warning: timed out waiting for last modem reply"));
+  }
+
+  if(index > 0) {
+    debug_print(F("Modem Reply:"));
+    debug_print(modem_reply);
+  }
+
+  // check that modem is actually alive and sending replies to commands
+  if (modem_reply[0] == 0) {
+    debug_print(F("Reply failure count:"));
+    gsm_reply_failures++;
+    debug_print(gsm_reply_failures);
   } else {
     gsm_reply_failures = 0;
   }
@@ -922,83 +967,86 @@ void gsm_wait_for_reply(int allowOK, int fullBuffer) {
   }
 }
 
-int gsm_is_final_result(int allowOK) {
-  if(allowOK && strcmp(&modem_reply[strlen(modem_reply)-6],"\r\nOK\r\n") == 0) {
+int gsm_is_final_result(const char* reply, int allowOK) {
+  if(allowOK && strcmp(&reply[strlen(reply)-6],"\r\nOK\r\n") == 0) {
     return true;
   }
   #define STARTS_WITH(a, b) ( strncmp((a), (b), strlen(b)) == 0)
-  switch (modem_reply[0]) {
+  switch (reply[0]) {
     case '+':
-      if(STARTS_WITH(&modem_reply[1], "CME ERROR:")) {
+      if(STARTS_WITH(&reply[1], "CME ERROR:")) {
         return true;
       }
-      if(STARTS_WITH(&modem_reply[1], "CMS ERROR:")) {
+      if(STARTS_WITH(&reply[1], "CMS ERROR:")) {
         return true;
       }
-      if(STARTS_WITH(&modem_reply[1], "QIRD:")) {
+      if(STARTS_WITH(&reply[1], "QIRD:")) {
         return true;
       }
       return false;
     case '>':
-      if(strcmp(&modem_reply[1], " ") == 0) {
+      if(strcmp(&reply[1], " ") == 0) {
         return true;
       }
       return false;
     case 'A':
-      if(strcmp(&modem_reply[1], "LREADY CONNECT\r\n") == 0) {
+      if(strcmp(&reply[1], "LREADY CONNECT\r\n") == 0) {
         return true;
       }
       return false;
     case 'B':
-      if(strcmp(&modem_reply[1], "USY\r\n") == 0) {
+      if(strcmp(&reply[1], "USY\r\n") == 0) {
         return true;
       }
       return false;
     case 'C':
-      if(strcmp(&modem_reply[1], "ONNECT OK\r\n") == 0) {
+      if(strcmp(&reply[1], "ONNECT\r\n") == 0) {
         return true;
       }
-      if(strcmp(&modem_reply[1], "ONNECT FAIL\r\n") == 0) {
+      if(strcmp(&reply[1], "ONNECT OK\r\n") == 0) {
         return true;
       }
-      if(strcmp(&modem_reply[1], "LOSED\r\n") == 0) {
+      if(strcmp(&reply[1], "ONNECT FAIL\r\n") == 0) {
         return true;
       }
-      if(strcmp(&modem_reply[1], "LOSE OK\r\n") == 0) {
+      if(strcmp(&reply[1], "LOSED\r\n") == 0) {
+        return true;
+      }
+      if(strcmp(&reply[1], "LOSE OK\r\n") == 0) {
         return true;
       }
       return false;
     case 'D':
-      if(strcmp(&modem_reply[1], "EACT OK\r\n") == 0) {
+      if(strcmp(&reply[1], "EACT OK\r\n") == 0) {
         return true;
       }
       return false;
     case 'E':
-      if(STARTS_WITH(&modem_reply[1], "RROR")) {
+      if(STARTS_WITH(&reply[1], "RROR")) {
         return true;
       }
       return false;
     case 'N':
-      if(strcmp(&modem_reply[1], "O ANSWER\r\n") == 0) {
+      if(strcmp(&reply[1], "O ANSWER\r\n") == 0) {
         return true;
       }
-      if(strcmp(&modem_reply[1], "O CARRIER\r\n") == 0) {
+      if(strcmp(&reply[1], "O CARRIER\r\n") == 0) {
         return true;
       }
-      if(strcmp(&modem_reply[1], "O DIALTONE\r\n") == 0) {
+      if(strcmp(&reply[1], "O DIALTONE\r\n") == 0) {
         return true;
       }
       return false;
     case 'O':
-      if(allowOK && strcmp(&modem_reply[1], "K\r\n") == 0) {
+      if(allowOK && strcmp(&reply[1], "K\r\n") == 0) {
         return true;
       }
       return false;
     case 'S':
-      if(STARTS_WITH(&modem_reply[1], "END ")) {
+      if(STARTS_WITH(&reply[1], "END ")) {
         return true;
       }
-      if(STARTS_WITH(&modem_reply[1], "TATE: ")) {
+      if(STARTS_WITH(&reply[1], "TATE: ")) {
         return true;
       }
       /* no break */
