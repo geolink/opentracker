@@ -265,6 +265,12 @@ void gsm_startup_cmd() {
 
   gsm_wait_for_reply(1,0);
 
+  //set receiving TCP data by command
+  gsm_port.print("AT+QIMUX=1");
+  gsm_port.print("\r");
+
+  gsm_wait_for_reply(1,0);
+
   //set SMS as text format
   gsm_port.print("AT+CMGF=1");
   gsm_port.print("\r");
@@ -284,7 +290,7 @@ void gsm_get_imei() {
   status_delay(1000);
   gsm_get_reply(1);
 
-  //reply data stored to modem_reply[200]
+  //reply data stored to modem_reply
   char *tmp = strstr(modem_reply, "AT+GSN\r\r\n");
   tmp += strlen("AT+GSN\r\r\n");
   char *tmpval = strtok(tmp, "\r");
@@ -362,9 +368,9 @@ int gsm_disconnect() {
     }
   #else
     //close connection, if previous attempts left it open
-    gsm_port.print("AT+QICLOSE\r");
+    gsm_port.print("AT+QICLOSE=0\r");
     gsm_wait_for_reply(0,0);
-    
+
     //ignore errors (will be taken care during connect)
     ret = 1;
   #endif
@@ -429,22 +435,30 @@ int gsm_set_apn()  {
 int gsm_get_connection_status() {
   debug_print(F("gsm_get_connection_status() started"));
   
-  gsm_port.print("AT+QISTAT\r");
-  gsm_wait_for_reply(0,0);
-
   int ret = -1; //unknown
 
-  if (strstr(modem_reply, "IP INITIAL") != NULL ||
-    strstr(modem_reply, "IP STATUS") != NULL ||
-    strstr(modem_reply, "IP CLOSE") != NULL)
-    ret = 0; // ready to connect
+  gsm_port.print("AT+QISTATE\r");
+  gsm_wait_for_reply(1,0);
 
-  if (strstr(modem_reply, "CONNECT OK") != NULL)
-    ret = 1; // already connected
-
-  if (strstr(modem_reply, "TCP CONNECTING") != NULL)
-    ret = 2; // previous connection failed, should close
-
+  if (strstr(modem_reply, "OK\r\n") != NULL) {
+    for (int i=0; i<6; ++i) {
+      gsm_wait_for_reply(0,0);
+  
+      if (strstr(modem_reply, "+QISTATE: 0,") == NULL)
+        continue;
+      
+      if (strstr(modem_reply, "INITIAL") != NULL ||
+        strstr(modem_reply, "CLOSE") != NULL)
+        ret = 0; // ready to connect
+    
+      if (strstr(modem_reply, "CONNECT OK") != NULL)
+        ret = 1; // already connected
+    
+      if (strstr(modem_reply, "TCP CONNECTING") != NULL)
+        ret = 2; // previous connection failed, should close
+    }  
+    gsm_wait_for_reply(1,0); // catch final OK
+  }
   debug_print(F("gsm_get_connection_status() returned:"));
   debug_print(ret);
   return ret;
@@ -464,7 +478,7 @@ int gsm_connect() {
 
       if (ipstat > 1) {
         //close connection, if previous attempts failed
-        gsm_port.print("AT+QICLOSE");
+        gsm_port.print("AT+QICLOSE=0");
         gsm_port.print("\r");
         gsm_wait_for_reply(0,0);
         ipstat = 0;
@@ -482,7 +496,7 @@ int gsm_connect() {
     
         //open socket connection to remote host
         //opening connection
-        gsm_port.print("AT+QIOPEN=\"");
+        gsm_port.print("AT+QIOPEN=0,\"");
         gsm_port.print(PROTO);
         gsm_port.print("\",\"");
         gsm_port.print(HOSTNAME);
@@ -543,7 +557,7 @@ int gsm_validate_tcp() {
 
   //todo check in the loop if everything delivered
   for(int k=0;k<10;k++) {
-    gsm_port.print("AT+QISACK");
+    gsm_port.print("AT+QISACK=0");
     gsm_port.print("\r");
 
     gsm_wait_for_reply(1,0);
@@ -577,7 +591,7 @@ int gsm_validate_tcp() {
 
 int gsm_send_begin(int data_len) {
   //sending header packet to remote host
-  gsm_port.print("AT+QISEND=");
+  gsm_port.print("AT+QISEND=0,");
   gsm_port.print(data_len);
   gsm_port.print("\r");
 
@@ -968,91 +982,81 @@ void gsm_wait_for_reply(int allowOK, int fullBuffer) {
 }
 
 int gsm_is_final_result(const char* reply, int allowOK) {
-  if(allowOK && strcmp(&reply[strlen(reply)-6],"\r\nOK\r\n") == 0) {
+  int reply_len = strlen(reply);
+  // debug_print(allowOK);
+  // debug_print(reply_len);
+    
+  #define STARTS_WITH(b) ( reply_len >= strlen(b) && strncmp(reply, (b), strlen(b)) == 0)
+  #define ENDS_WITH(b) ( reply_len >= strlen(b) && strcmp(reply + reply_len - strlen(b), (b)) == 0)
+  #define CONTAINS(b) ( reply_len >= strlen(b) && strstr(reply, (b)) != NULL)
+  
+  if(allowOK && ENDS_WITH("\r\nOK\r\n")) {
     return true;
   }
-  #define STARTS_WITH(a, b) ( strncmp((a), (b), strlen(b)) == 0)
-  switch (reply[0]) {
-    case '+':
-      if(STARTS_WITH(&reply[1], "CME ERROR:")) {
-        return true;
-      }
-      if(STARTS_WITH(&reply[1], "CMS ERROR:")) {
-        return true;
-      }
-      if(STARTS_WITH(&reply[1], "QIRD:")) {
-        return true;
-      }
-      return false;
-    case '>':
-      if(strcmp(&reply[1], " ") == 0) {
-        return true;
-      }
-      return false;
-    case 'A':
-      if(strcmp(&reply[1], "LREADY CONNECT\r\n") == 0) {
-        return true;
-      }
-      return false;
-    case 'B':
-      if(strcmp(&reply[1], "USY\r\n") == 0) {
-        return true;
-      }
-      return false;
-    case 'C':
-      if(strcmp(&reply[1], "ONNECT\r\n") == 0) {
-        return true;
-      }
-      if(strcmp(&reply[1], "ONNECT OK\r\n") == 0) {
-        return true;
-      }
-      if(strcmp(&reply[1], "ONNECT FAIL\r\n") == 0) {
-        return true;
-      }
-      if(strcmp(&reply[1], "LOSED\r\n") == 0) {
-        return true;
-      }
-      if(strcmp(&reply[1], "LOSE OK\r\n") == 0) {
-        return true;
-      }
-      return false;
-    case 'D':
-      if(strcmp(&reply[1], "EACT OK\r\n") == 0) {
-        return true;
-      }
-      return false;
-    case 'E':
-      if(STARTS_WITH(&reply[1], "RROR")) {
-        return true;
-      }
-      return false;
-    case 'N':
-      if(strcmp(&reply[1], "O ANSWER\r\n") == 0) {
-        return true;
-      }
-      if(strcmp(&reply[1], "O CARRIER\r\n") == 0) {
-        return true;
-      }
-      if(strcmp(&reply[1], "O DIALTONE\r\n") == 0) {
-        return true;
-      }
-      return false;
-    case 'O':
-      if(allowOK && strcmp(&reply[1], "K\r\n") == 0) {
-        return true;
-      }
-      return false;
-    case 'S':
-      if(STARTS_WITH(&reply[1], "END ")) {
-        return true;
-      }
-      if(STARTS_WITH(&reply[1], "TATE: ")) {
-        return true;
-      }
-      /* no break */
-      default:
-        return false;
+  if(allowOK && STARTS_WITH("OK\r\n")) {
+    return true;
   }
+  if(STARTS_WITH("+CME ERROR:")) {
+    return true;
+  }
+  if(STARTS_WITH("+CMS ERROR:")) {
+    return true;
+  }
+  if(STARTS_WITH("+QIRD:")) {
+    return true;
+  }
+  if(STARTS_WITH("+QISTATE: ")) {
+    return true;
+  }
+  if(STARTS_WITH("> ")) {
+    return true;
+  }
+  if(STARTS_WITH("ALREADY CONNECT\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("BUSY\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("CONNECT\r\n")) {
+    return true;
+  }
+  if(ENDS_WITH("CONNECT OK\r\n")) {
+    return true;
+  }
+  if(ENDS_WITH("CONNECT FAIL\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("CLOSED\r\n")) {
+    return true;
+  }
+  if(ENDS_WITH("CLOSE OK\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("DEACT OK\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("ERROR")) {
+    return true;
+  }
+  if(STARTS_WITH("NO ANSWER\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("NO CARRIER\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("NO DIALTONE\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("SEND OK\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("SEND FAIL\r\n")) {
+    return true;
+  }
+  if(STARTS_WITH("STATE: ")) {
+    return true;
+  }
+  return false;
 }
 
 void gsm_debug() {
