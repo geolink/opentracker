@@ -308,13 +308,13 @@ void gsm_startup_cmd() {
   gsm_port.print("\r");
 
   gsm_wait_for_reply(1,0);
-#endif
 
-  //set receiving TCP data by command
+  //set multiple socket support
   gsm_port.print("AT+QIMUX=1");
   gsm_port.print("\r");
 
   gsm_wait_for_reply(1,0);
+#endif
 
   //set SMS as text format
   gsm_port.print("AT+CMGF=1");
@@ -395,35 +395,31 @@ int gsm_get_modem_status() {
 }
 
 int gsm_disconnect() {
-    int ret = 0;
-    debug_print(F("gsm_disconnect() started"));
-  #if GSM_DISCONNECT_AFTER_SEND
-    //disconnect GSM
-    gsm_port.print(AT_DEACTIVATE);
-    gsm_wait_for_reply(MODEM_UG96,0);
+  int ret = 0;
+  debug_print(F("gsm_disconnect() started"));
+#if GSM_DISCONNECT_AFTER_SEND
+  //disconnect GSM
+  gsm_port.print(AT_DEACTIVATE);
+  gsm_wait_for_reply(MODEM_UG96,0);
 
 #if MODEM_UG96
-    //check if result contains OK
-    char *tmp = strstr(modem_reply, "OK");
+  //check if result contains OK
+  char *tmp = strstr(modem_reply, "OK");
 #else
-    //check if result contains DEACT OK
-    char *tmp = strstr(modem_reply, "DEACT OK");
+  //check if result contains DEACT OK
+  char *tmp = strstr(modem_reply, "DEACT OK");
 #endif
 
-    if(tmp!=NULL) {
-      debug_print(F("gsm_disconnect(): DEACT OK found"));
-      ret = 1;
-    } else {
-      debug_print(F("gsm_disconnect(): DEACT OK not found."));
-    }
-  #else
-    //close connection, if previous attempts left it open
-    gsm_port.print(AT_CLOSE);
-    gsm_wait_for_reply(MODEM_UG96,0);
-
-    //ignore errors (will be taken care during connect)
+  if(tmp!=NULL)
     ret = 1;
-  #endif
+#else
+  //close connection, if previous attempts left it open
+  gsm_port.print(AT_CLOSE);
+  gsm_wait_for_reply(MODEM_UG96,0);
+
+  //ignore errors (will be taken care during connect)
+  ret = 1;
+#endif
 
   debug_print(F("gsm_disconnect() completed"));
   return ret;
@@ -491,9 +487,9 @@ int gsm_get_connection_status() {
   gsm_get_reply(1); //flush buffer
   gsm_port.print(AT_STAT);
 
-#if MODEM_UG96
   gsm_wait_for_reply(1,0);
 
+#if MODEM_UG96
   char *tmp = strtok(modem_reply, ",");
   if (tmp != NULL && strstr(modem_reply, "+QISTATE:") != NULL) {
     for (int k=0; k<5; ++k) {
@@ -514,11 +510,6 @@ int gsm_get_connection_status() {
     ret = 0; // ready to connect
 
 #else
-  gsm_wait_for_reply(0,0);
-
-  gsm_port.print("AT+QISTATE\r");
-  gsm_wait_for_reply(1,0);
-
   if (strstr(modem_reply, "OK\r\n") != NULL) {
     for (int i=0; i<6; ++i) {
       gsm_wait_for_reply(0,0);
@@ -530,14 +521,15 @@ int gsm_get_connection_status() {
         strstr(modem_reply, "CLOSE") != NULL)
         ret = 0; // ready to connect
     
-      if (strstr(modem_reply, "CONNECT OK") != NULL)
+      if (strstr(modem_reply, "CONNECTED") != NULL)
         ret = 1; // already connected
     
-      if (strstr(modem_reply, "TCP CONNECTING") != NULL)
+      if (strstr(modem_reply, "CONNECTING") != NULL)
         ret = 2; // previous connection failed, should close
     }  
     gsm_wait_for_reply(1,0); // catch final OK
   }
+#endif
   debug_print(F("gsm_get_connection_status() returned:"));
   debug_print(ret);
   return ret;
@@ -833,6 +825,9 @@ int gsm_send_http_current() {
     return 0; // abort
   }
 
+  //validate header delivery
+  gsm_validate_tcp();
+
   debug_print(F("gsm_send_http(): Sending body"));
   int tmp_ret = gsm_send_data_current();
   
@@ -867,6 +862,7 @@ int gsm_send_http_current() {
     }
   }
 #endif
+  
   debug_print(F("gsm_send_http(): data sent."));
   return tmp_ret;
 }
