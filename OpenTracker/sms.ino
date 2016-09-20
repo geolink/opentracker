@@ -1,119 +1,103 @@
 
 //check SMS
 void sms_check() {
-  char inChar;
-  byte cmd = 0;
-  int reply_index = 0;
+  int msg_count = 30; // default
   char *tmp = NULL, *tmpcmd = NULL;
-  char phone[32];
+  char phone[32] = "";
+  char msg[160];
 
   debug_print(F("sms_check() started"));
 
-  modem_reply[0] = '\0';
+  gsm_get_reply(1); // clear buffer
+  gsm_port.print("AT+CPMS?\r");
+  gsm_wait_for_reply(1,1);
 
-  gsm_port.print("AT+CMGL=\"REC UNREAD\"\r");
-  //gsm_port.print("AT+CMGL=\"ALL\"\r");
-
-  gsm_get_reply(0);
-
-  for(int i=0;i<30;i++) {
-    while(gsm_port.available()) {
-      inChar = gsm_port.read();
-
-      #ifdef DEBUG
-        debug_port.print(inChar);
-      #endif
-
-      if(inChar == '#') {
-        //next data is probably command till \r
-        //all data before "," is sms password, the rest is command
-        debug_print(F("SMS command found"));
-        cmd = 1;
-        phone[0] = '\0';
-
-        //get phone number
-        modem_reply[reply_index] = '\0';
-
-        //phone info will look like this: +CMGL: 10,"REC READ","+436601601234","","5 12:13:17+04"
-        //phone will start from ","+  and end with ",
-        tmp = strstr(modem_reply, "+CMGL:");
+  tmp = strstr(modem_reply, "+CPMS: ");
+  if(tmp!=NULL) {
+    tmp = strtok(tmp + 7, ",\"");
+    if(tmp!=NULL) {
+      tmp = strtok(NULL, ",\"");
+      if(tmp!=NULL) {
+        tmp = strtok(NULL, ",\"");
         if(tmp!=NULL) {
-          debug_print(F("Getting phone number:"));
-          debug_print(reply_index);
-          debug_print(modem_reply);
-
-          tmp = strstr(modem_reply, "READ\",\"");
-          if(tmp!=NULL) {
-            tmp += 7;
-            tmpcmd = strtok(tmp, "\",\"");
-            if(tmpcmd!=NULL) {
-              strlcpy(phone, tmpcmd, sizeof(phone));
-              debug_print(F("Phone:"));
-              debug_print(phone);
-            }
-          }
-        }
-
-        reply_index = 0;
-      } else if(inChar == '\r') {
-        if(cmd == 1) {
-          debug_print(F("\nSMS command received:"));
-
-          modem_reply[reply_index] = '\0';
-
-          debug_print(F("New line received after command"));
-          debug_print(modem_reply);
-
-          sms_cmd(modem_reply,phone);
-          reply_index = 0;
-          cmd = 0;
-        }
-      } else {
-        if(cmd == 1) {
-          modem_reply[reply_index] = inChar;
-          reply_index++;
-        } else {
-          if(reply_index < sizeof(modem_reply)-1) {
-            modem_reply[reply_index] = inChar;
-            reply_index++;
-          } else {
-            reply_index = 0;
-          }
+          msg_count = atoi(tmp);
+          debug_print(F("SMS storage total:"));
+          debug_print(msg_count);
         }
       }
+    }
+  }
+
+  for(int i=1;i<=msg_count;i++) {
+    gsm_get_reply(1); // clear buffer
+
+    gsm_port.print("AT+CMGR=");
+    gsm_port.print(i);
+    gsm_port.print("\r");
+  
+    gsm_get_reply(0); // eat echo
+  
+    gsm_get_reply(0);
+    if (strstr(modem_reply, "ERROR") != NULL)
+      break;
+    
+    //phone info will look like this: +CMGL: 10,"REC READ","+436601601234","","5 12:13:17+04"
+    //phone will start from ","+  and end with ",
+    tmp = strstr(modem_reply, "+CMGR:");
+    if(tmp!=NULL) {
+      tmp = strstr(modem_reply, "READ\",\"");
+      if(tmp!=NULL) {
+        tmp += 7;
+        tmpcmd = strtok(tmp, "\",\"");
+        if(tmpcmd!=NULL) {
+          strlcpy(phone, tmpcmd, sizeof(phone));
+          debug_print(F("Phone:"));
+          debug_print(phone);
+        }
+    
+        gsm_get_reply(0); // get message text
+    
+        tmp = strchr(modem_reply, '#');
+        if(tmp!=NULL) {
+          // make a local copy (since this is coming from modem_reply, it will be overwritten)
+          strlcpy(msg, tmp + 1, sizeof(msg));
+          
+          //next data is probably command till \r
+          //all data before "," is sms password, the rest is command
+          debug_print(F("SMS command found"));
+          debug_print(msg);
+
+          gsm_wait_for_reply(1,0); // catch OK, before we send SMS replies
+
+          sms_cmd(msg, phone);
+        }
+      }
+      
+      debug_print(F("Delete message"));
+    
+      gsm_get_reply(1); // clear buffer
+  
+      gsm_port.print("AT+CMGD=");
+      gsm_port.print(i);
+      gsm_port.print("\r");
+    
+      gsm_wait_for_reply(1,0);
     }
 
     status_delay(20);
   }
 
-  debug_print(F("Deleting READ and SENT SMS"));
-
-  //remove all READ and SENT sms
-
-  gsm_port.print("AT+QMGDA=\"DEL READ\"");
-  gsm_port.print("\r");
-
-  gsm_wait_for_reply(1,0);
-
-  gsm_port.print("AT+QMGDA=\"DEL SENT\"");
-  gsm_port.print("\r");
-
-  gsm_wait_for_reply(1,0);
-
   debug_print(F("sms_check() completed"));
 }
 
-void sms_cmd(char *cmd, char *phone) {
-  char msg[160];
+void sms_cmd(char *msg, char *phone) {
   char *tmp, *tmp1;
   int i=0;
 
   debug_print(F("sms_cmd() started"));
-  // make a local copy (since this is coming from modem_reply, it will be overwritten)
-  strlcpy(msg, cmd, sizeof(msg));
 
   //command separated by "," format: password,command=value
-  tmp = strtok_r(msg, ",", &cmd);
+  tmp = strtok(msg, ",");
   while (tmp != NULL && i < 10) {
     if(i == 0) {
       bool auth = true;
@@ -139,7 +123,7 @@ void sms_cmd(char *cmd, char *phone) {
     } else {
       sms_cmd_run(tmp, phone);
     }
-    tmp = strtok_r(NULL, ",\r", &cmd);
+    tmp = strtok(NULL, ",\r");
     i++;
   }
 
@@ -347,6 +331,8 @@ void sms_cmd_run(char *cmd, char *phone) {
 void sms_send_msg(const char *cmd, const char *phone) {
   //send SMS message to number
   debug_print(F("sms_send_msg() started"));
+
+  gsm_get_reply(1); // clear buffer
 
   debug_print(F("Sending SMS to:"));
   debug_print(phone);
