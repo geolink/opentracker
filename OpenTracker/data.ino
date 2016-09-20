@@ -73,8 +73,12 @@ void collect_all_data(int ignitionState) {
     data_append_string(runningTimeString);
   }
 
+  addon_collect_data();
+
+#ifndef HTTP_USE_GET
   //end of data packet
   data_append_char('\n');
+#endif
 
   //terminate data_current
   data_current[data_index] = '\0';

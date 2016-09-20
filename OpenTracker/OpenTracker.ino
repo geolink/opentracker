@@ -54,6 +54,7 @@ TinyGPS gps;
 DueFlashStorage dueFlashStorage;
 
 int gsm_send_failures = 0;
+int gsm_reply_failures = 0;
 
 //settings structure
 struct settings {
@@ -229,21 +230,27 @@ void loop() {
     debug_print(time_diff);
     debug_print(F("ms"));
   
-    //debug - no sleep
-    //debug_print(F("DEBUG: disable sleep."));
-    //time_diff = 1000;
-  
-    if(time_diff > 0) {
-      addon_delay(time_diff);
-      /*
-      if(time_diff > 4000) {
+    if(time_diff > 1000) {
+      if(config.powersave == 0 || time_diff < 6000) {
+        // not enough time to use power saving, or feature disabled
+        addon_delay(time_diff);
+      } else {
+        // use low power mode
         enter_low_power();
-      }
-      addon_delay(time_diff - 3000);
-      if(time_diff > 4000) {
+        
+        // recalculate sleep time
+        time_stop = millis();
+        time_diff = time_stop-time_start;
+        time_diff = config.interval-time_diff;
+
+        addon_delay(time_diff);
+
         exit_low_power();
+        
+        debug_print(F("Low power sleeping for:"));
+        debug_print(time_diff);
+        debug_print(F("ms"));
       }
-      */
     } else {
       debug_print(F("Error: negative sleep time."));
     }

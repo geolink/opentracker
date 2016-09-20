@@ -88,8 +88,15 @@ void collect_gps_data() {
   unsigned long chars;
   unsigned short sentences, failed_checksum;
 
-  //repeat many time before valid fix found
-  for(int i=0;i<1000;i++) {
+  // drain receive buffer and sync with end of sentence
+  while (gps_port.available() && gps_port.read() != '\r'
+    && gps_port.available() && gps_port.read() != '\n') {
+    status_led();
+  }
+
+  // looking for valid fix
+  long timer = millis();
+  do {
     while (gps_port.available()) {
       char c = gps_port.read();
       index++;
@@ -118,22 +125,19 @@ void collect_gps_data() {
 
         //retry to get fix in case no valid altitude or course supplied (max 10 times)
         if(retry < 10) {
-          if(falt == 1000000) {
+          if(falt == TinyGPS::GPS_INVALID_F_ALTITUDE) {
             debug_print(F("Invalid altitude, retrying."));
             retry++;
-            i=0; //reset main try counter
             continue;
           }
-          if(fc == 0) {
+          if(fc == TinyGPS::GPS_INVALID_F_ANGLE) {
             debug_print(F("Invalid course, retrying."));
             retry++;
-            i=0; //reset main try counter
             continue;
           }
-          if(date_gps == 0) {
+          if(date_gps == TinyGPS::GPS_INVALID_DATE) {
             debug_print(F("Invalid date, retrying."));
             retry++;
-            i=0; //reset main try counter
             continue;
           }
         }
@@ -323,7 +327,7 @@ void collect_gps_data() {
       //  debug_print(F("collect_gps_data(): fix not acquired, retrying"));
       addon_delay(5); 
     }
-  }
+  } while ((signed long)(millis() - timer) < GPS_COLLECT_TIMEOUT * 1000);
 
   gps.stats(&chars, &sentences, &failed_checksum);
   debug_print(F("Failed checksums:"));

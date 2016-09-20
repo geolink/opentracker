@@ -14,7 +14,7 @@ void sms_check() {
   gsm_port.print("AT+CMGL=\"REC UNREAD\"\r");
   //gsm_port.print("AT+CMGL=\"ALL\"\r");
 
-  gsm_wait_at();
+  gsm_get_reply(0);
 
   for(int i=0;i<30;i++) {
     while(gsm_port.available()) {

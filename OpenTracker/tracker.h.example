@@ -20,8 +20,11 @@
 #define LOCATE_COMMAND_FORMAT_IOS 1         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
 
 #define GSM_MODEM_COMMAND_TIMEOUT 10
-#define GSM_SEND_FAILURES_REBOOT 30         // 0=disabled, increase to set the number of GSM failures that will trigger a reboot of the opentracker device
+#define GSM_SEND_FAILURES_REBOOT 30         // 0=disabled, increase to set the number of GSM data send failures that will trigger a reboot of the opentracker device
+#define GSM_REPLY_FAILURES_REBOOT 10        // 0=disabled, increase to set the number of GSM reply failures that will trigger a reboot of the opentracker device
 #define GSM_DISCONNECT_AFTER_SEND 0         // 0=keep modem data session active, only close TCP connection (default), 1=close data session after each send
+
+#define GPS_COLLECT_TIMEOUT       4         // max time spent looking for a GPS fix (seconds)
 
 #define ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE 0 // 1=when the engine is running send interval is ignored
 
@@ -48,6 +51,13 @@
 // define this macro to accept only certain HTTP response codes (default is any)
 //#define PARSE_ACCEPTED_RESPONSE_CODES RESP_CODE(200)
 
+#define HTTP_USER_AGENT "OpenTracker 3.1"
+//#define HTTP_USE_GET                      // leave commented for POST, uncomment for GET request
+
+#define HTTP_PARAM_IMEI "imei"
+#define HTTP_PARAM_KEY  "key"
+#define HTTP_PARAM_DATA "d"
+
 #define PROTO "TCP"
 #define HOSTNAME "updates.geolink.io"
 #define HTTP_PORT "80"
@@ -59,17 +69,6 @@
 
 #define DEFAULT_ALARM_ON   0          //if active SMS will be sent on Ignition ON/OFF
 #define DEFAULT_ALARM_SMS  ""         //default SMS text for alarm
-
-const char HTTP_HEADER1[ ] =          //HTTP header line before length
-  "POST " URL " HTTP/1.0\r\n"
-  "Host: " HOSTNAME "\r\n"
-  "Content-type: application/x-www-form-urlencoded\r\n"
-  "Content-length: ";
-const char HTTP_HEADER2[ ] =          //HTTP header line after length
-  "\r\n"
-  "User-Agent: OpenTracker 3.1\r\n"
-  "Connection: close\r\n"
-  "\r\n";
 
 #define PACKET_SIZE 1400              //TCP data chunk size, modem accept max 1460 bytes per send
 #define PACKET_SIZE_DELIVERY 3000     //in case modem has this number of bytes undelivered, wait till sending new data (3000 bytes default, max sending TCP buffer is 7300)
