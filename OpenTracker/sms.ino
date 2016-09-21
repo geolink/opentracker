@@ -35,39 +35,37 @@ void sms_check() {
     gsm_port.print(i);
     gsm_port.print("\r");
   
-    gsm_get_reply(0); // eat echo
+    gsm_wait_for_reply(1,1);
   
-    gsm_get_reply(0);
-    if (strstr(modem_reply, "ERROR") != NULL)
-      break;
-    
-    //phone info will look like this: +CMGL: 10,"REC READ","+436601601234","","5 12:13:17+04"
+    //phone info will look like this: +CMGR: "REC READ","+436601601234","","5 12:13:17+04"
     //phone will start from ","+  and end with ",
     tmp = strstr(modem_reply, "+CMGR:");
     if(tmp!=NULL) {
       tmp = strstr(modem_reply, "READ\",\"");
       if(tmp!=NULL) {
+        // find start of commands
+        tmpcmd = strstr(modem_reply, "\r\n#");
+        
+        // get sender phone number
         tmp += 7;
-        tmpcmd = strtok(tmp, "\",\"");
-        if(tmpcmd!=NULL) {
-          strlcpy(phone, tmpcmd, sizeof(phone));
+        tmp = strtok(tmp, "\",\"");
+        if(tmp!=NULL) {
+          strlcpy(phone, tmp, sizeof(phone));
           debug_print(F("Phone:"));
           debug_print(phone);
         }
-    
-        gsm_get_reply(0); // get message text
-    
-        tmp = strchr(modem_reply, '#');
-        if(tmp!=NULL) {
+
+        // find end of commands
+        tmp = strstr(tmpcmd, "\r\nOK\r\n");
+        if(tmpcmd!=NULL && tmp!=NULL) {
           // make a local copy (since this is coming from modem_reply, it will be overwritten)
-          strlcpy(msg, tmp + 1, sizeof(msg));
+          *tmp = '\0';
+          strlcpy(msg, tmpcmd + 3, sizeof(msg));
           
           //next data is probably command till \r
           //all data before "," is sms password, the rest is command
           debug_print(F("SMS command found"));
           debug_print(msg);
-
-          gsm_wait_for_reply(1,0); // catch OK, before we send SMS replies
 
           sms_cmd(msg, phone);
         }
@@ -123,7 +121,7 @@ void sms_cmd(char *msg, char *phone) {
     } else {
       sms_cmd_run(tmp, phone);
     }
-    tmp = strtok(NULL, ",\r");
+    tmp = strtok(NULL, ",\r\n");
     i++;
   }
 
