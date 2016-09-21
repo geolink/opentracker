@@ -11,6 +11,8 @@
 #define AT_SEND "AT+QISEND=0,"
 #define AT_RECEIVE "AT+QIRD=0,"
 #define AT_STAT "AT+QISTATE=1,0\r"
+#define AT_QUERYACK "AT+QISEND=0,0\r"
+#define AT_ACKRESP "+QISEND: "
 #else
 #define AT_CONTEXT "AT+QIREGAPP="
 #define AT_ACTIVATE "AT+QIACT\r"
@@ -22,6 +24,8 @@
 #define AT_SEND "AT+QISEND=0,"
 #define AT_RECEIVE "AT+QIRD=0,1,0,"
 #define AT_STAT "AT+QISTATE\r"
+#define AT_QUERYACK "AT+QISACK=0\r"
+#define AT_ACKRESP "+QISACK: "
 #endif
 
 void gsm_init() {
@@ -587,9 +591,8 @@ int gsm_connect() {
 
 #if MODEM_UG96
         gsm_port.print(AT_ACTIVATE);
-        
         gsm_wait_for_reply(1,0);
-
+        
         gsm_port.print(AT_CONFIGDNS "\"8.8.8.8\"");
         gsm_port.print("\r");
       
@@ -672,37 +675,27 @@ int gsm_connect() {
 }
 
 int gsm_validate_tcp() {
-#if MODEM_UG96
-  return 1;
-#else
-  char *str;
   int nonacked = 0;
   int ret = 0;
-
-  char *tmp;
-  char *tmpval;
 
   debug_print(F("gsm_validate_tcp() started."));
 
   //todo check in the loop if everything delivered
   for(int k=0;k<10;k++) {
-    gsm_port.print("AT+QISACK=0");
-    gsm_port.print("\r");
-
-    gsm_wait_for_reply(1,0);
+    gsm_port.print(AT_QUERYACK);
+    gsm_wait_for_reply(1,1);
 
     //todo check if everything is delivered
-    tmp = strstr(modem_reply, "+QISACK: ");
-    tmp += strlen("+QISACK: ");
-    tmpval = strtok(tmp, "\r");
+    char *tmp = strstr(modem_reply, AT_ACKRESP);
+    tmp += strlen(AT_ACKRESP);
 
     //checking how many bytes NON-acked
-    str = strtok_r(tmpval, ", ", &tmpval);
-    str = strtok_r(NULL, ", ", &tmpval);
-    str = strtok_r(NULL, ", ", &tmpval);
+    tmp = strtok(tmp, ", \r\n");
+    tmp = strtok(NULL, ", \r\n");
+    tmp = strtok(NULL, ", \r\n");
 
     //non-acked value
-    nonacked = atoi(str);
+    nonacked = atoi(tmp);
 
     if(nonacked <= PACKET_SIZE_DELIVERY) {
       //all data has been delivered to the server , if not wait and check again
@@ -716,7 +709,6 @@ int gsm_validate_tcp() {
 
   debug_print(F("gsm_validate_tcp() completed."));
   return ret;
-#endif
 }
 
 int gsm_send_begin(int data_len) {
