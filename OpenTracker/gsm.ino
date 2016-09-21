@@ -509,24 +509,50 @@ int gsm_get_connection_status() {
   else if (strstr(modem_reply, "OK") != NULL)
     ret = 0; // ready to connect
 
+  // check also data packet connection is active
+  
+  gsm_get_reply(1); //flush buffer
+  gsm_port.print("AT+CGACT?\r");
+
+  gsm_wait_for_reply(1,1);
+
+  tmp = strstr(modem_reply, "+CGACT:");
+  if(tmp!=NULL) {
+    tmp = strtok(tmp + 7, ",");
+    if(tmp!=NULL) {
+      tmp = strtok(NULL, ",");
+      if(tmp!=NULL) {
+        if (atoi(tmp) != 1)
+          ret = -2; // force deactivation
+      }
+    }
+  }
+
 #else
   if (strstr(modem_reply, "OK\r\n") != NULL) {
-    for (int i=0; i<6; ++i) {
-      gsm_wait_for_reply(0,0);
-  
-      if (strstr(modem_reply, "+QISTATE: 0,") == NULL)
-        continue;
+    gsm_wait_for_reply(0,0);
+    if (strstr(modem_reply, "IP IND") != NULL ||
+      strstr(modem_reply, "PDP DEACT") != NULL) {
+      ret = -2; // force deactivation
+    } else {
+      // find socket status
+      for (int i=0; i<6; ++i) {
+        gsm_wait_for_reply(0,0);
+    
+        if (strstr(modem_reply, "+QISTATE: 0,") == NULL)
+          continue;
+        
+        if (strstr(modem_reply, "INITIAL") != NULL ||
+          strstr(modem_reply, "CLOSE") != NULL)
+          ret = 0; // ready to connect
       
-      if (strstr(modem_reply, "INITIAL") != NULL ||
-        strstr(modem_reply, "CLOSE") != NULL)
-        ret = 0; // ready to connect
-    
-      if (strstr(modem_reply, "CONNECTED") != NULL)
-        ret = 1; // already connected
-    
-      if (strstr(modem_reply, "CONNECTING") != NULL)
-        ret = 2; // previous connection failed, should close
-    }  
+        if (strstr(modem_reply, "CONNECTED") != NULL)
+          ret = 1; // already connected
+      
+        if (strstr(modem_reply, "CONNECTING") != NULL)
+          ret = 2; // previous connection failed, should close
+      }
+    }
     gsm_wait_for_reply(1,0); // catch final OK
   }
 #endif
