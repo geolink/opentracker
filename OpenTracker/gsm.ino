@@ -761,7 +761,7 @@ int gsm_send_http_current() {
 #ifdef HTTP_USE_GET
   int http_len = strlen(config.imei)+strlen(config.key);
 #else
-  int http_len = strlen(config.imei)+strlen(config.key)+strlen(data_current);
+  int http_len = strlen(config.imei)+strlen(config.key)+url_encoded_strlen(data_current);
 #endif
   http_len += strlen(HTTP_PARAM_IMEI) + strlen(HTTP_PARAM_KEY) + strlen(HTTP_PARAM_DATA) + 5;    //imei= &key= &d=
 
@@ -886,82 +886,61 @@ int gsm_send_http_current() {
 }
 
 int gsm_send_data_current() {
-  //this will send Current data
+  // avoid large buffer on the stack (not reentrant)
+  static char buf[PACKET_SIZE];
 
   debug_print(F("gsm_send_data_current(): sending data."));
   debug_print(data_current);
 
-  int tmp_ret = 1; // success
-  int tmp_len = strlen(data_current);
-  int chunk_len;
+  int data_len = strlen(data_current);
+  int chunk_len = 0;
   int chunk_pos = 0;
-  int chunk_check = 0;
-
-  if(tmp_len > PACKET_SIZE) {
-    chunk_len = PACKET_SIZE;
-  } else {
-    chunk_len = tmp_len;
-  }
 
   debug_print(F("gsm_send_data_current(): Body packet size:"));
   debug_print(chunk_len);
 
-  for(int i=0;i<tmp_len;i++) {
-    if((i == 0) || (chunk_pos >= PACKET_SIZE)) {
-      debug_print(F("gsm_send_data_current(): Sending data chunk:"));
-      debug_print(chunk_pos);
+  for(int i=0; i<data_len; ) {
+    int done = url_encoded_strlcpy(buf, sizeof(buf), &data_current[i]);
+    i += done;
+    chunk_len = strlen(buf);
+    
+    addon_event(ON_SEND_DATA);
+    if (gsm_get_modem_status() == 4) {
+      debug_print(F("gsm_send_data_current(): call interrupted"));
+      return 0; // abort
+    }
 
-      if(chunk_pos >= PACKET_SIZE) {
-        if (!gsm_send_done()) {
-          debug_print(F("gsm_send_data_current(): send error"));
-          return 0; // abort
-        }
+    // start chunk
+    debug_print(F("gsm_send_data_current(): Sending data chunk:"));
+    debug_print(chunk_pos);
 
-        //validate previous transmission
-        gsm_validate_tcp();
+    debug_print(F("gsm_send_data_current(): chunk length:"));
+    debug_print(chunk_len);
 
-        //next chunk, get chunk length, check if not the last one
-        chunk_check = tmp_len-i;
-
-        if(chunk_check > PACKET_SIZE) {
-          chunk_len = PACKET_SIZE;
-        } else {
-          //last packet
-          chunk_len = chunk_check;
-        }
-
-        chunk_pos = 0;
-      }
-
-      addon_event(ON_SEND_DATA);
-      if (gsm_get_modem_status() == 4) {
-        debug_print(F("gsm_send_data_current(): call interrupted"));
-        return 0; // abort
-      }
-
-      debug_print(F("gsm_send_data_current(): chunk length:"));
-      debug_print(chunk_len);
-
-      //sending chunk
-      if (!gsm_send_begin(chunk_len)) {
-        debug_print(F("gsm_send_data_current(): send refused"));
-        return 0; // abort
-      }
+    //sending chunk
+    if (!gsm_send_begin(chunk_len)) {
+      debug_print(F("gsm_send_data_current(): send refused"));
+      return 0; // abort
     }
 
     //sending data
-    gsm_port.print(data_current[i]);
-    chunk_pos++;
-  }
-  
-  if (!gsm_send_done()) {
-    debug_print(F("gsm_send_data_current(): send error"));
-    return 0; // abort
+    gsm_port.print(buf);
+    debug_print(buf);
+    
+    // end chunk
+    if (!gsm_send_done()) {
+      debug_print(F("gsm_send_data_current(): send error"));
+      return 0; // abort
+    }
+    
+    chunk_pos += chunk_len;
+
+    //validate previous transmission
+    gsm_validate_tcp();
   }
 
-  debug_print(F("gsm_send_data_current(): returned"));
-  debug_print(tmp_ret);
-  return tmp_ret;
+  debug_print(F("gsm_send_data_current(): completed"));
+  return 1;
 }
 
 int gsm_send_data() {

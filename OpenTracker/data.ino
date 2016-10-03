@@ -11,6 +11,51 @@ void data_append_string(const char *str) {
     data_current[data_index++] = str[i++];
 }
 
+// url encoding functions
+
+char to_hex(int nibble) {
+  static const char hex[] = "0123456789abcdef";
+  return hex[nibble & 15];
+}
+
+bool is_url_safe(char c) {
+  if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+    || c == '-' || c == '_' || c == '.' || c == '~' || c == '!' || c == '*' || c == '\'' || c == '(' || c == ')')
+    return true;
+  return false;
+}
+
+int url_encoded_strlen(const char* s) {
+  int len = strlen(s);
+  int ret = 0;
+  while (len--) {
+    ret += is_url_safe(*s++) ? 1 : 3;
+  }
+  return ret;
+}
+
+// return count of consumed source characters (that fit the buffer after encoding)
+int url_encoded_strlcpy(char* dst, int maxlen, const char* src) {
+  int len = strlen(src);
+  int count = 0;
+  while (len > 0 && maxlen > 4) {
+    char c = *src++;
+    ++count;
+    --len;
+    if (is_url_safe(c)) {
+      *dst++ = c;
+      --maxlen;
+    } else {
+      *dst++ = '%';
+      *dst++ = to_hex(c >> 4);
+      *dst++ = to_hex(c & 15);
+      maxlen -= 3;
+    }
+  }
+  *dst = '\0';
+  return count;
+}
+
 /**
 * This is default collect data function for HTTP
 */
