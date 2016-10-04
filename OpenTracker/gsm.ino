@@ -538,14 +538,12 @@ int gsm_get_connection_status() {
     if (strstr(modem_reply, "IP IND") != NULL ||
       strstr(modem_reply, "PDP DEACT") != NULL) {
       ret = -2; // force deactivation
-    } else {
-      // find socket status
-      for (int i=0; i<6; ++i) {
-        gsm_wait_for_reply(0,0);
-    
-        if (strstr(modem_reply, "+QISTATE: 0,") == NULL)
-          continue;
-        
+    }
+    // find socket status
+    for (int i=0; i<6; ++i) {
+      gsm_wait_for_reply(0,0);
+  
+      if (ret == -1 && strstr(modem_reply, "+QISTATE: 0,") != NULL) {
         if (strstr(modem_reply, "INITIAL") != NULL ||
           strstr(modem_reply, "CLOSE") != NULL)
           ret = 0; // ready to connect
