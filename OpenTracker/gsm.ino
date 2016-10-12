@@ -207,6 +207,8 @@ void gsm_config() {
   gsm_set_apn();
 }
 
+bool gsm_clock_was_set = false;
+
 void gsm_set_time() {
   debug_print(F("gsm_set_time() started"));
 
@@ -216,6 +218,7 @@ void gsm_set_time() {
   gsm_port.print("\"\r");
 
   gsm_wait_for_reply(1,0);
+  gsm_clock_was_set = true;
 
   debug_print(F("gsm_set_time() completed"));
 }
@@ -289,7 +292,8 @@ void gsm_get_time() {
   char *tmpval = strtok(tmp, "\"");
 
   //copy data to main time var
-  strlcpy(time_char, tmpval, sizeof(time_char));
+  if (gsm_clock_was_set)
+    strlcpy(time_char, tmpval, sizeof(time_char));
 
   debug_print(F("gsm_get_time() result:"));
   debug_print(time_char);
