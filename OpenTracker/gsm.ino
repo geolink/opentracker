@@ -1262,13 +1262,8 @@ int gsm_scan_known_apn()
     debug_port.print(F("Testing APN: "));
     debug_print(config.apn);
 
-    gsm_port.print(AT_STAT");
-    gsm_wait_for_reply(0,0);
-
 #if KNOWN_APN_SCAN_MODE < 2
-    if (strstr(modem_reply, "IP GPRSACT") != NULL ||
-      strstr(modem_reply, "IP STATUS") != NULL ||
-      strstr(modem_reply, "CONNECT OK") != NULL)
+    if (gsm_get_connection_status() >= 0)
 #endif
     {
 #if KNOWN_APN_SCAN_MODE > 0
