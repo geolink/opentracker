@@ -113,7 +113,7 @@ void storage_send_logs(int really_send) {
           sent_position += data_len;
           // apply send limit
           num_sent++;
-          if (num_sent >= STORAGE_MAX_SEND_OLD) {
+          if (STORAGE_MAX_SEND_OLD > 0 && num_sent >= STORAGE_MAX_SEND_OLD) {
             debug_print(F("storage_send_logs(): reached send limit"));
             break;
           }
