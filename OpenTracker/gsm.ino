@@ -1266,7 +1266,8 @@ int gsm_scan_known_apn()
 #endif
     {
 #if KNOWN_APN_SCAN_MODE > 0
-      ret = gsm_connect();
+      data_current[0] = 0;
+      ret = gsm_send_data();
 #else
       ret = 1;
 #endif
