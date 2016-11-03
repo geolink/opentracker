@@ -362,12 +362,11 @@ int gsm_send_at() {
 
   int ret = 0;
   for (int k=0; k<5; ++k) {
-    gsm_port.print("AT");
-    gsm_port.print("\r");
+    gsm_port.print("ATE1\r");
     status_delay(50);
   
     gsm_get_reply(1);
-    ret = (strstr(modem_reply, "AT") != NULL)
+    ret = (strstr(modem_reply, "ATE1") != NULL)
       && (strstr(modem_reply, "OK") != NULL);
     if (ret) break;
 
