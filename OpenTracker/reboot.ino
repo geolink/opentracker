@@ -119,3 +119,28 @@ void exit_low_power() {
   debug_print(F("exit_low_power() completed"));
 }
 
+void kill_power() {
+  debug_print(F("kill_power() called"));
+  addon_event(ON_DEVICE_KILL);
+  // save as much power as possible
+  gps_off();
+  gps_close();
+  gsm_off(1);
+  gsm_close();
+  usb_console_disable();
+  // slow down cpu even more
+  pmc_switch_mainck_to_fastrc(CKGR_MOR_MOSCRCF_4_MHz);
+  cpu_slow_down();
+  cpu_irq_disable();
+  // turn off LED and CAN
+  digitalWrite(PIN_POWER_LED, HIGH);
+  pinMode(PIN_CAN_RS, OUTPUT);
+  digitalWrite(PIN_CAN_RS, HIGH);
+  // disable peripherals and use wait mode
+  pmc_set_writeprotect(0);
+  pmc_disable_all_periph_clk();
+  pmc_enable_waitmode();
+  for(;;) // freeze in low power mode
+  reboot();
+}
+

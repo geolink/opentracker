@@ -43,6 +43,7 @@ struct addon_settings;
 enum {
   ON_DEVICE_STANDBY,      // before going to low power mode
   ON_DEVICE_WAKEUP,       // after going back to full power mode
+  ON_DEVICE_KILL,         // before killing power consumption (no more operational afterwards)
   ON_CLOCK_PAUSE,         // before changing system clock
   ON_CLOCK_RESUME,        // after changing system clock
   ON_SETTINGS_DEFAULT,    // when loading default settings in volatile memory

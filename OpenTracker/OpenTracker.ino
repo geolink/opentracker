@@ -39,6 +39,7 @@ char modem_reply[200];          //data received from modem, max 200 chars
 uint32_t logindex = STORAGE_DATA_START;
 bool save_config = 0;           //flag to save config to flash
 bool power_reboot = 0;          //flag to reboot everything (used after new settings have been saved)
+bool power_cutoff = 0;          //flag to cut-off power to avoid deep-discharge (no more operational afterwards)
 bool low_power = 0;             //flag for low power mode
 
 char lat_current[32];
@@ -217,6 +218,10 @@ void loop() {
   } else {
     debug_print(F("Ignition is OFF!"));
     // Insert here only code that should be processed when Ignition is OFF
+  }
+
+  if (power_cutoff) {
+    kill_power();
   }
 
   if(!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
