@@ -1239,13 +1239,21 @@ int gsm_scan_known_apn()
     //const char *servicename;  // not required, for further expansion and requirement
     //const char *value_str;  // not required, for further expansion and requirement
   } APNSET;
+
+  static char apn[sizeof(config.apn)];
+  static char user[sizeof(config.user)];
+  static char pwd[sizeof(config.pwd)];
+
+  strlcpy(apn, config.apn, sizeof(config.apn));
+  strlcpy(user, config.user, sizeof(config.user));
+  strlcpy(pwd, config.pwd, sizeof(config.pwd));
   
   #define KNOWN_APN(apn,usr,pwd,isp,nul) { apn, usr, pwd/*, isp, nul*/ },
   static const APNSET apnlist[] =
   {
     KNOWN_APN_LIST
-    // last element must be the default APN config
-    KNOWN_APN(DEFAULT_APN, DEFAULT_USER, DEFAULT_PASS, "", NULL)
+    // last element must be the current APN config
+    KNOWN_APN(apn, user, pwd, "", NULL)
   };
   #undef KNOWN_APN
   
