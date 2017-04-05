@@ -178,7 +178,6 @@ void parse_cmd(char *cmd) {
   //parse commands info received from the server
 
   char *tmp;
-  char *tmpcmd;
 
   debug_print(F("parse_cmd() started"));
 
@@ -190,17 +189,17 @@ void parse_cmd(char *cmd) {
   if(tmp!=NULL) {
     debug_print(F("Found settime command."));
 
-    tmp = strstr(cmd, "#t:");  //\r\n\r\n
-    tmp += strlen("#t:");
-    tmpcmd = strtok(tmp, "\n");   //all commands end with \n
+    tmp += 3; //strlen("#t:");
+    tmp = strtok(tmp, "\r\n");   //all commands end with \n
 
-    debug_print(tmpcmd);
+    debug_print(tmp);
 
-    if(strlen(tmpcmd) == 20) {
+    if(strlen(tmp) == 20 && tmp[2] == '/' && tmp[5] == '/' && tmp[8] == ','
+        && tmp[11] == ':' && tmp[14] == ':' && tmp[17] == '+') {
       debug_print(F("Valid time string found."));
 
       //setting current time
-      strlcpy(time_char, tmpcmd, sizeof(time_char));
+      strlcpy(time_char, tmp, sizeof(time_char));
 
       gsm_set_time();
     }
