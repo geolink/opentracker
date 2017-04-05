@@ -898,7 +898,7 @@ int gsm_send_data_current() {
   int chunk_pos = 0;
 
   debug_print(F("gsm_send_data_current(): Body packet size:"));
-  debug_print(chunk_len);
+  debug_print(data_len);
 
   for(int i=0; i<data_len; ) {
     int done = url_encoded_strlcpy(buf, sizeof(buf), &data_current[i]);
