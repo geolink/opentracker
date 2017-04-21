@@ -112,6 +112,10 @@ void setup() {
   //GSM setup
   gsm_setup();
 
+#if DEBUG == 10
+  debug_gsm_terminal();
+#endif
+
   //set to connect once started
   interval_count = config.interval_send;
 
@@ -311,20 +315,25 @@ void debug_check_input() {
       storage_send_logs(0);
       break;
     case '^':
-      debug_port.print(F("Started GSM terminal"));
-      for(;;) {
-        c = debug_port.read();
-        if (c == '^') break;
-        if (c > 0)
-          gsm_port.write(c);
-        c = gsm_port.read();
-        if (c > 0)
-          debug_port.write(c);
-      }
-      debug_port.print(F("Exited GSM terminal"));
+      debug_gsm_terminal();
       break;
     }
   }
 #endif
+}
+
+void debug_gsm_terminal()
+{
+  debug_port.print(F("Started GSM terminal"));
+  for(;;) {
+    int c = debug_port.read();
+    if (c == '^') break;
+    if (c > 0)
+      gsm_port.write(c);
+    c = gsm_port.read();
+    if (c > 0)
+      debug_port.write(c);
+  }
+  debug_port.print(F("Exited GSM terminal"));
 }
 
