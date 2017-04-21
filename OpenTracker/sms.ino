@@ -289,9 +289,9 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(F("sms_cmd_run(): Locate command detected"));
 
     if(LOCATE_COMMAND_FORMAT_IOS) {
-      snprintf(msg,160,"comgooglemaps://?q=%s,%s",lat_current,lon_current);
+      snprintf(msg,sizeof(msg),"comgooglemaps://?center=%s,%s",lat_current,lon_current);
     } else {
-      snprintf(msg,160,"https://maps.google.co.uk/maps/place/%s,%s",lat_current,lon_current);
+      snprintf(msg,sizeof(msg),"https://maps.google.com/maps/place/%s,%s",lat_current,lon_current);
     }
     sms_send_msg(msg, phone);
   }
