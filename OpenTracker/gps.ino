@@ -76,10 +76,7 @@ void gps_wakeup() {
 
 //collect GPS data from serial port
 void collect_gps_data() {
-  // String data = "";
-  byte index = 0;
-  byte fix = 0;
-  int retry = 0;
+  int fix = 0;
 
   char tmp[15];
 
@@ -88,7 +85,7 @@ void collect_gps_data() {
   unsigned long chars;
   unsigned short sentences, failed_checksum;
 
-  // drain receive buffer and sync with end of sentence
+  // drain receive buffer and sync with end of NMEA sentence
   while (gps_port.available() && gps_port.read() != '\r'
     && gps_port.available() && gps_port.read() != '\n') {
     status_led();
@@ -99,7 +96,6 @@ void collect_gps_data() {
   do {
     while (gps_port.available()) {
       char c = gps_port.read();
-      index++;
 
       //debug
       #ifdef DEBUG
@@ -113,7 +109,6 @@ void collect_gps_data() {
 
       if(gps.encode(c)) {
         // process new gps info here
-        //construct GPS line
 
         //check if altitude acquired, otherwise continue
         float falt = gps.f_altitude(); // +/- altitude in meters
@@ -123,78 +118,69 @@ void collect_gps_data() {
         // time in hhmmsscc, date in ddmmyy
         gps.get_datetime(&date_gps, &time_gps, &fix_age);
 
-        //retry to get fix in case no valid altitude or course supplied (max 10 times)
-        if(retry < 10) {
-          if(falt == TinyGPS::GPS_INVALID_F_ALTITUDE) {
-            debug_print(F("Invalid altitude, retrying."));
-            retry++;
-            continue;
-          }
-          if(fc == TinyGPS::GPS_INVALID_F_ANGLE) {
-            debug_print(F("Invalid course, retrying."));
-            retry++;
-            continue;
-          }
-          if(date_gps == TinyGPS::GPS_INVALID_DATE) {
-            debug_print(F("Invalid date, retrying."));
-            retry++;
-            continue;
-          }
+        //retry to get fix in case no valid altitude or course supplied
+        if(falt == TinyGPS::GPS_INVALID_F_ALTITUDE) {
+          debug_print(F("Invalid altitude, retrying."));
+          continue;
         }
-
-        debug_print(F("GPS fix received."));
-        gps.f_get_position(&flat, &flon, &fix_age);
-
+        if(fc == TinyGPS::GPS_INVALID_F_ANGLE) {
+          debug_print(F("Invalid course, retrying."));
+          continue;
+        }
+        if(date_gps == TinyGPS::GPS_INVALID_DATE) {
+          debug_print(F("Invalid date, retrying."));
+          continue;
+        }
+        if(fix_age == TinyGPS::GPS_INVALID_AGE || fix_age > GPS_COLLECT_TIMEOUT * 1000) {
+          debug_print(F("Invalid fix age, retrying."));
+          continue;
+        }
         //check if this fix is already received
         if((last_time_gps == time_gps) && (last_date_gps == date_gps)) {
           debug_print(F("Warning: this fix date/time already logged, retrying"));
           continue;
         }
 
+        debug_print(F("Valid GPS fix received."));
+        gps.f_get_position(&flat, &flon, &fix_age);
+
         fix = 1;
 
-        if(fix_age == TinyGPS::GPS_INVALID_AGE)
-          debug_print(F("No fresh fix detected"));
-        else if(fix_age > 1000)
-          debug_print(F("Warning: possible stale data!"));
-        else {
-          debug_print(F("Data is current."));
+        //update current time var - format 04/12/98,00:35:45+00
+        // Add 1000000 to ensure the position of the digits
+        ltoa(date_gps + 1000000, tmp, 10);  //1ddmmyy
+        time_char[0] = tmp[5];
+        time_char[1] = tmp[6];
+        time_char[2] = '/';
+        time_char[3] = tmp[3];
+        time_char[4] = tmp[4];
+        time_char[5] = '/';
+        time_char[6] = tmp[1];
+        time_char[7] = tmp[2];
+        time_char[8] = ',';
 
-          //update current time var - format 04/12/98,00:35:45+00
-          // Add 1000000 to ensure the position of the digits
-          ltoa(date_gps + 1000000, tmp, 10);  //1ddmmyy
-          time_char[0] = tmp[5];
-          time_char[1] = tmp[6];
-          time_char[2] = '/';
-          time_char[3] = tmp[3];
-          time_char[4] = tmp[4];
-          time_char[5] = '/';
-          time_char[6] = tmp[1];
-          time_char[7] = tmp[2];
-          time_char[8] = ',';
+        // Add 1000000 to ensure the position of the digits
+        ltoa(time_gps + 100000000, tmp, 10);  //1hhmmssms
+        time_char[9] = tmp[1];
+        time_char[10] = tmp[2];
+        time_char[11] = ':';
+        time_char[12] = tmp[3];
+        time_char[13] = tmp[4];
+        time_char[14] = ':';
+        time_char[15] = tmp[5];
+        time_char[16] = tmp[6];
+        time_char[17] = '+';
+        time_char[18] = '0';
+        time_char[19] = '0';
+        time_char[20] = '\0';
 
-          // Add 1000000 to ensure the position of the digits
-          ltoa(time_gps + 100000000, tmp, 10);  //1hhmmssms
-          time_char[9] = tmp[1];
-          time_char[10] = tmp[2];
-          time_char[11] = ':';
-          time_char[12] = tmp[3];
-          time_char[13] = tmp[4];
-          time_char[14] = ':';
-          time_char[15] = tmp[5];
-          time_char[16] = tmp[6];
-          time_char[17] = '+';
-          time_char[18] = '0';
-          time_char[19] = '0';
-          time_char[20] = '\0';
+        debug_print(F("Current time set from GPS time:"));
+        debug_print(time_char);
 
-          debug_print(F("Current time set from GPS time:"));
-          debug_print(time_char);
+        //set modem time from fresh fix
+        gsm_set_time();
 
-          //set modem time from fresh fix
-          gsm_set_time();
-        }
-
+        // construct GPS data packet
         int first_gps_item = 0;
 
         if(DATA_INCLUDE_GPS_DATE) {
@@ -310,12 +296,6 @@ void collect_gps_data() {
 
         blink_got_gps();
       }
-
-      //timeout
-      if(index > 10000) {
-        debug_print(F("collect_gps_data() timeout"));
-        break;
-      }
     }
 
     if(fix == 1) {
@@ -324,7 +304,7 @@ void collect_gps_data() {
       addon_event(ON_LOCATION_FIXED);
       break;
     } else {
-      //  debug_print(F("collect_gps_data(): fix not acquired, retrying"));
+      // allow some other processing
       addon_delay(5); 
     }
   } while ((signed long)(millis() - timer) < GPS_COLLECT_TIMEOUT * 1000);
