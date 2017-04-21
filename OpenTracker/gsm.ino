@@ -1323,6 +1323,8 @@ int gsm_scan_known_apn()
 int gsm_get_queclocator()
 {
 #if GSM_USE_QUECLOCATOR_TIMEOUT > 0
+  debug_print(F("gsm_get_queclocator() started"));
+
   gsm_port.print("AT+QCELLLOC=1\r");
 
   gsm_wait_for_reply(1,1,GSM_USE_QUECLOCATOR_TIMEOUT);
@@ -1341,6 +1343,36 @@ int gsm_get_queclocator()
     return 1;
   }
 #endif
+  debug_print(F("gsm_get_queclocator() completed"));
   return 0;
 }
+
+#ifdef GSM_USE_NTP_SERVER
+void gsm_ntp_update()
+{
+  debug_print(F("gsm_ntp_update() started"));
+
+  gsm_port.print("AT+QNTP=\"");
+  gsm_port.print(GSM_USE_NTP_SERVER);
+  gsm_port.print("\"\r");
+
+  gsm_wait_for_reply(1,0); // wait OK
+
+  // NOTE: default timeout does not guarantee we get result here
+  // but receiving it asynchronously later should not be a problem
+  long last = millis();
+  while (!gsm_port.available() && (signed long)(millis() - last) < GSM_NTP_COMMAND_TIMEOUT * 1000)
+   status_led();
+  
+  gsm_get_reply(1);
+  
+  char* tmp = strstr(modem_reply, "+QNTP:");
+  if (tmp != NULL)
+    tmp = strtok(tmp + 6, " \r");
+  if (tmp != NULL && *tmp == '0')
+    gsm_clock_was_set = true;
+  
+  debug_print(F("gsm_ntp_update() completed"));
+}
+#endif
 

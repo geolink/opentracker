@@ -42,8 +42,8 @@ bool power_reboot = 0;          //flag to reboot everything (used after new sett
 bool power_cutoff = 0;          //flag to cut-off power to avoid deep-discharge (no more operational afterwards)
 bool low_power = 0;             //flag for low power mode
 
-char lat_current[32];
-char lon_current[32];
+char lat_current[15];
+char lon_current[15];
 
 unsigned long last_time_gps, last_date_gps;
 
@@ -125,6 +125,10 @@ void setup() {
   if (ap) {
     save_config = 1; // found good APN, save it as default
   }
+#endif
+
+#ifdef GSM_USE_NTP_SERVER
+  gsm_ntp_update();
 #endif
 
   if(config.alarm_on) {

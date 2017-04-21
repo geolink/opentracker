@@ -20,6 +20,8 @@
 #define LOCATE_COMMAND_FORMAT_IOS 1         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
 
 #define GSM_USE_QUECLOCATOR_TIMEOUT 10      // 0=don't use QuecLocator, 1-300=timeout for server reply
+#define GSM_USE_NTP_SERVER "pool.ntp.org"   // use Network Time Protocol server for modem clock update (undefine to disable)
+#define GSM_NTP_COMMAND_TIMEOUT 30          // max seconds to wait for NTP synchronization result
 
 #define GSM_MODEM_COMMAND_TIMEOUT 10
 #define GSM_SEND_FAILURES_REBOOT 30         // 0=disabled, increase to set the number of GSM data send failures that will trigger a reboot of the opentracker device
