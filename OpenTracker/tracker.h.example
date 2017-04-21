@@ -19,6 +19,8 @@
 
 #define LOCATE_COMMAND_FORMAT_IOS 1         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
 
+#define GSM_USE_QUECLOCATOR_TIMEOUT 10      // 0=don't use QuecLocator, 1-300=timeout for server reply
+
 #define GSM_MODEM_COMMAND_TIMEOUT 10
 #define GSM_SEND_FAILURES_REBOOT 30         // 0=disabled, increase to set the number of GSM data send failures that will trigger a reboot of the opentracker device
 #define GSM_REPLY_FAILURES_REBOOT 10        // 0=disabled, increase to set the number of GSM reply failures that will trigger a reboot of the opentracker device

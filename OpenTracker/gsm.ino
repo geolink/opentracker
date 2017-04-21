@@ -330,6 +330,15 @@ void gsm_startup_cmd() {
 
   gsm_wait_for_reply(1,0);
 
+#if GSM_USE_QUECLOCATOR_TIMEOUT > 0
+  //set QuectLocator timeout
+  gsm_port.print("AT+QLOCCFG=\"timeout\",");
+  gsm_port.print(GSM_USE_QUECLOCATOR_TIMEOUT);
+  gsm_port.print("\r");
+
+  gsm_wait_for_reply(1,0);
+#endif
+
   debug_print(F("gsm_startup_cmd() completed"));
 }
 
@@ -1033,6 +1042,10 @@ void gsm_get_reply(int fullBuffer) {
 
 // use allowOK = 0 if OK comes before the end of the modem reply
 void gsm_wait_for_reply(int allowOK, int fullBuffer) {
+  gsm_wait_for_reply(allowOK, fullBuffer, GSM_MODEM_COMMAND_TIMEOUT);
+}
+
+void gsm_wait_for_reply(int allowOK, int fullBuffer, int maxseconds) {
   unsigned long timeout = millis();
   
   modem_reply[0] = '\0';
@@ -1058,7 +1071,7 @@ void gsm_wait_for_reply(int allowOK, int fullBuffer) {
         ret = 1;
         break;
       }
-    } else if ((signed long)(millis() - timeout) > (GSM_MODEM_COMMAND_TIMEOUT * 1000)) {
+    } else if ((signed long)(millis() - timeout) > (maxseconds * 1000)) {
       break;
     } else {
       status_delay(50);
@@ -1306,4 +1319,28 @@ int gsm_scan_known_apn()
 }
 
 #endif // KNOWN_APN_LIST
+
+int gsm_get_queclocator()
+{
+#if GSM_USE_QUECLOCATOR_TIMEOUT > 0
+  gsm_port.print("AT+QCELLLOC=1\r");
+
+  gsm_wait_for_reply(1,1,GSM_USE_QUECLOCATOR_TIMEOUT);
+
+  char* tmp = strstr(modem_reply, "+QCELLLOC:");
+  if (tmp == NULL)
+    return 0;
+  tmp += 10; //strlen("+QCELLLOC:");
+  char* lon = strtok(tmp, " ,\r");
+  char* lat = strtok(NULL, " ,\r");
+  
+  if (lon != NULL && lat != NULL)
+  {
+    strlcpy(lon_current, lon, sizeof(lon_current));
+    strlcpy(lat_current, lat, sizeof(lat_current));
+    return 1;
+  }
+#endif
+  return 0;
+}
 
