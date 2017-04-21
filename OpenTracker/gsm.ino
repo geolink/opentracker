@@ -13,6 +13,7 @@
 #define AT_STAT "AT+QISTATE=1,0\r"
 #define AT_QUERYACK "AT+QISEND=0,0\r"
 #define AT_ACKRESP "+QISEND: "
+#define AT_NTP "AT+QNTP=1,"
 #else
 #define AT_CONTEXT "AT+QIREGAPP="
 #define AT_ACTIVATE "AT+QIACT\r"
@@ -26,6 +27,7 @@
 #define AT_STAT "AT+QISTATE\r"
 #define AT_QUERYACK "AT+QISACK=0\r"
 #define AT_ACKRESP "+QISACK: "
+#define AT_NTP "AT+QNTP="
 #endif
 
 void gsm_init() {
@@ -1352,7 +1354,7 @@ void gsm_ntp_update()
 {
   debug_print(F("gsm_ntp_update() started"));
 
-  gsm_port.print("AT+QNTP=\"");
+  gsm_port.print(AT_NTP "\"");
   gsm_port.print(GSM_USE_NTP_SERVER);
   gsm_port.print("\"\r");
 
