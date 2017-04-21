@@ -181,111 +181,61 @@ void collect_gps_data() {
         gsm_set_time();
 
         // construct GPS data packet
-        int first_gps_item = 0;
 
         if(DATA_INCLUDE_GPS_DATE) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           //converting date to data packet
           ltoa(date_gps + 1000000, tmp, 10);
           data_append_string(tmp + 1);
         }
 
         if(DATA_INCLUDE_GPS_TIME) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           //time
           ltoa(time_gps + 100000000, tmp, 10);
           data_append_string(tmp + 1);
         }
 
         if(DATA_INCLUDE_LATITUDE) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           dtostrf(flat,1,6,tmp);
-          dtostrf(flat,1,6,lat_current);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_LONGITUDE) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           dtostrf(flon,1,6,tmp);
-          dtostrf(flon,1,6,lon_current);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_SPEED) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           dtostrf(fkmph,1,2,tmp);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_ALTITUDE) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           dtostrf(falt,1,2,tmp);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_HEADING) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           dtostrf(fc,1,2,tmp);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_HDOP) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           long hdop = gps.hdop(); //hdop
-
           ltoa(hdop, tmp, 10);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_SATELLITES) {
-          if(first_gps_item) {
-            data_append_char(',');
-          } else {
-            first_gps_item = 1;
-          }
-
+          data_field_separator(',');
           long sats = gps.satellites(); //satellites
-
           ltoa(sats, tmp, 10);
           data_append_string(tmp);
         }
@@ -293,6 +243,10 @@ void collect_gps_data() {
         //save last gps data date/time
         last_time_gps = time_gps;
         last_date_gps = date_gps;
+
+        //save current position
+        dtostrf(flat,1,6,lat_current);
+        dtostrf(flon,1,6,lon_current);
 
         blink_got_gps();
       }

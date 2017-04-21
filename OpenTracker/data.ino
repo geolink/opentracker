@@ -11,6 +11,18 @@ void data_append_string(const char *str) {
     data_current[data_index++] = str[i++];
 }
 
+bool data_sep_flag = false;
+
+void data_field_separator(char c) {
+  if (data_sep_flag)
+    data_append_char(c);
+  data_sep_flag = true;
+}
+
+void data_field_restart() {
+  data_sep_flag = false;
+}
+
 // url encoding functions
 
 char to_hex(int nibble) {
@@ -62,6 +74,8 @@ int url_encoded_strlcpy(char* dst, int maxlen, const char* src) {
 void collect_all_data(int ignitionState) {
   debug_print(F("collect_all_data() started"));
 
+  data_field_restart();
+  
   //get current time and add to this data packet
   gsm_get_time();
 
@@ -72,10 +86,14 @@ void collect_all_data(int ignitionState) {
   //indicate start of GPS data packet
   data_append_char('[');
 
-  collect_gps_data();
+  data_field_restart();
 
+  collect_gps_data();
+  
   //indicate stop of GPS data packet
   data_append_char(']');
+
+  data_field_restart();
 
   if(DATA_INCLUDE_BATTERY_LEVEL) {
     // append battery level to data packet
@@ -84,14 +102,13 @@ void collect_all_data(int ignitionState) {
     char batteryLevel[20];
     snprintf(batteryLevel,20,"%.2f",outputValue);
 
+    data_field_separator(',');
     data_append_string(batteryLevel);
   }
 
   // ignition state
   if(DATA_INCLUDE_IGNITION_STATE) {
-    if(DATA_INCLUDE_BATTERY_LEVEL) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
     if(ignitionState == -1) {
       data_append_char('2'); // backup source
     } else if(ignitionState == 0) {
@@ -112,18 +129,14 @@ void collect_all_data(int ignitionState) {
 
     snprintf(runningTimeString,32,"%ld",(unsigned long) currentRunningTime / 1000);
 
-    if(DATA_INCLUDE_IGNITION_STATE || DATA_INCLUDE_BATTERY_LEVEL) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
     data_append_string(runningTimeString);
   }
 
   addon_collect_data();
 
-#ifndef HTTP_USE_GET
   //end of data packet
   data_append_char('\n');
-#endif
 
   //terminate data_current
   data_current[data_index] = '\0';
@@ -138,36 +151,28 @@ void collect_all_data(int ignitionState) {
 void collect_all_data_raw(int ignitionState) {
   debug_print(F("collect_all_data_raw() started"));
 
-  gsm_get_time();
+  data_field_restart();
 
   if(SEND_RAW_INCLUDE_IMEI) {
     data_append_string(config.imei);
   }
 
   if(SEND_RAW_INCLUDE_KEY) {
-    if(data_index > 0) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
     data_append_string(config.key);
   }
 
   if(SEND_RAW_INCLUDE_TIMESTAMP) {
-    if(data_index >0) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
+    gsm_get_time();
     data_append_string(time_char);
   }
 
-  if(SEND_RAW_INCLUDE_KEY || SEND_RAW_INCLUDE_TIMESTAMP) {
-    data_append_char(',');
-  }
-
+  data_field_separator(',');
   collect_gps_data();
 
   if(DATA_INCLUDE_BATTERY_LEVEL) {
-    if(data_index >0) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
 
     // append battery level to data packet
     float sensorValue = analogRead(AIN_S_INLEVEL);
@@ -180,9 +185,7 @@ void collect_all_data_raw(int ignitionState) {
 
   // ignition state
   if(DATA_INCLUDE_IGNITION_STATE) {
-    if(data_index >0) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
     if(ignitionState == -1) {
       data_append_char('2'); // backup source
     } else if(ignitionState == 0) {
@@ -194,9 +197,7 @@ void collect_all_data_raw(int ignitionState) {
 
   // engine running time
   if(DATA_INCLUDE_ENGINE_RUNNING_TIME) {
-    if(data_index >0) {
-      data_append_char(',');
-    }
+    data_field_separator(',');
 
     unsigned long currentRunningTime = engineRunningTime;
     char runningTimeString[32];
@@ -209,6 +210,9 @@ void collect_all_data_raw(int ignitionState) {
 
     data_append_string(runningTimeString);
   }
+
+  //end of data packet
+  data_append_char('\n');
 
   //terminate data_current
   data_current[data_index] = '\0';
