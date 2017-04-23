@@ -247,7 +247,7 @@ void sms_cmd_run(char *cmd, char *phone) {
     debug_print(tmp);
     if(strcmp(tmp, "off") == 0) {
       config.alarm_on = 0;
-    } else {
+    } else if(strcmp(tmp, "on") == 0) {
       config.alarm_on = 1;
     }
     //updating alarm phone
@@ -299,25 +299,29 @@ void sms_cmd_run(char *cmd, char *phone) {
   if(strcmp(cmd, "tomtom") == 0) {
     debug_print(F("sms_cmd_run(): TomTom command detected"));
 
-    snprintf(msg,160,"tomtomhome://geo:lat=%s&long=%s",lat_current,lon_current);
+    snprintf(msg,sizeof(msg),"tomtomhome://geo:lat=%s&long=%s",lat_current,lon_current);
     sms_send_msg(msg, phone);
   }
   else
-  if(strcmp(cmd, "dataoff") == 0) {
-    debug_print(F("sms_cmd_run(): Data off command detected"));
-    sms_send_msg("Data OFF", phone);
-    SEND_DATA = 0;
-  }
-  else
-  if(strcmp(cmd, "dataon") == 0) {
-    debug_print(F("sms_cmd_run(): Data on command detected"));
-    sms_send_msg("Data ON", phone);
-    SEND_DATA = 1;
+  if(strcmp(cmd, "data") == 0) {
+    debug_print(F("sms_cmd_run(): Data command detected"));
+    debug_print(tmp);
+    if(strcmp(tmp, "off") == 0) {
+      SEND_DATA = 0;
+    } else if(strcmp(tmp, "on") == 0) {
+      SEND_DATA = 1;
+    }
+    //send SMS reply
+    if(SEND_DATA) {
+      sms_send_msg("Data ON", phone);
+    } else {
+      sms_send_msg("Data OFF", phone);
+    }
   }
   else
   if(strcmp(cmd, "getimei") == 0) {
     debug_print(F("sms_cmd_run(): Get IMEI command detected"));
-    snprintf(msg,160,"IMEI: %s",config.imei);
+    snprintf(msg,sizeof(msg),"IMEI: %s",config.imei);
     sms_send_msg(msg, phone);
   }
   else
@@ -355,3 +359,4 @@ void sms_send_msg(const char *cmd, const char *phone) {
 
   debug_print(F("sms_send_msg() completed"));
 }
+
