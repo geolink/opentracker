@@ -92,7 +92,7 @@ void collect_all_data(int ignitionState) {
   collect_gps_data();
   
 #if GSM_USE_QUECLOCATOR_TIMEOUT > 0
-  if (idx == data_index) // no GPS fix available, use QuecLocator if enabled
+  if (config.queclocator == 1 && idx == data_index) // no GPS fix available, use QuecLocator if enabled
   {
     if (gsm_get_queclocator())
     {

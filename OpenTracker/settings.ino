@@ -32,6 +32,7 @@ void settings_load() {
     config.interval_send = INTERVAL_SEND;
     config.powersave = POWERSAVE;
     config.alarm_on =  DEFAULT_ALARM_ON;
+    config.queclocator = QUECLOCATOR;
 
     strlcpy(config.key, KEY, sizeof(config.key));
     strlcpy(config.sms_key, SMS_KEY, sizeof(config.sms_key));
@@ -92,6 +93,18 @@ void settings_load() {
 
     debug_print(F("settings_load(): set config.powersave:"));
     debug_print(config.powersave);
+  }
+
+  //queclocator
+  debug_print(F("settings_load(): config.queclocator:"));
+  debug_print(config.queclocator);
+
+  if((config.queclocator != 1) && (config.queclocator != 0)) {
+    debug_print(F("settings_load(): queclocator not found, setting default"));
+    config.queclocator = QUECLOCATOR;
+
+    debug_print(F("settings_load(): set config.queclocator:"));
+    debug_print(config.queclocator);
   }
 
   tmp = config.key[0];

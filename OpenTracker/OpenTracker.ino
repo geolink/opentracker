@@ -71,6 +71,7 @@ struct settings {
   char imei[20];          //IMEI number
   byte alarm_on;
   char alarm_phone[20];   //alarm phone number
+  byte queclocator;       //flag to use QuecLocator fallback when GPS not available
 };
 
 settings config;

@@ -324,6 +324,27 @@ void sms_cmd_run(char *cmd, char *phone) {
     snprintf(msg,sizeof(msg),"IMEI: %s",config.imei);
     sms_send_msg(msg, phone);
   }
+#if GSM_USE_QUECLOCATOR_TIMEOUT > 0
+  else
+  if(strcmp(cmd, "queclocator") == 0) {
+    //setting alarm
+    debug_print(F("sms_cmd_run(): QuecLocator"));
+    debug_print(tmp);
+    if(strcmp(tmp, "off") == 0) {
+      config.queclocator = 0;
+      save_config = 1;
+   } else if(strcmp(tmp, "on") == 0) {
+      config.queclocator = 1;
+      save_config = 1;
+    }
+    //send SMS reply
+    if(config.queclocator) {
+      sms_send_msg("QuecLocator is ON", phone);
+    } else {
+      sms_send_msg("QuecLocator is OFF", phone);
+    }
+  }
+#endif
   else
     addon_sms_command(cmd, tmp, phone);
 
