@@ -85,14 +85,13 @@ void collect_gps_data() {
   unsigned long chars;
   unsigned short sentences, failed_checksum;
 
-  // drain receive buffer and sync with end of NMEA sentence
-  while (gps_port.available() && gps_port.read() != '\r'
-    && gps_port.available() && gps_port.read() != '\n') {
-    status_led();
-  }
+  long timer = millis();
+
+  // drain receive buffer (discard old data)
+  while (gps_port.available() && (signed long)(millis() - timer) < GPS_COLLECT_TIMEOUT * 1000)
+    gps_port.read();
 
   // looking for valid fix
-  long timer = millis();
   do {
     while (gps_port.available()) {
       char c = gps_port.read();
