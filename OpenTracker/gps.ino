@@ -114,9 +114,6 @@ void collect_gps_data() {
         float fc = gps.f_course(); // course in degrees
         float fkmph = gps.f_speed_kmph(); // speed in km/hr
 
-        // time in hhmmsscc, date in ddmmyy
-        gps.get_datetime(&date_gps, &time_gps, &fix_age);
-
         //retry to get fix in case no valid altitude or course supplied
         if(falt == TinyGPS::GPS_INVALID_F_ALTITUDE) {
           debug_print(F("Invalid altitude, retrying."));
@@ -130,8 +127,10 @@ void collect_gps_data() {
           debug_print(F("Invalid date, retrying."));
           continue;
         }
+        // time in hhmmsscc, date in ddmmyy
+        gps.get_datetime(&date_gps, &time_gps, &fix_age);
         if(fix_age == TinyGPS::GPS_INVALID_AGE || fix_age > GPS_COLLECT_TIMEOUT * 1000) {
-          debug_print(F("Invalid fix age, retrying."));
+          debug_print(F("Invalid date/time age, retrying."));
           continue;
         }
         //check if this fix is already received
@@ -139,10 +138,14 @@ void collect_gps_data() {
           debug_print(F("Warning: this fix date/time already logged, retrying"));
           continue;
         }
+        // get latitude and longitude
+        gps.f_get_position(&flat, &flon, &fix_age);
+        if(fix_age == TinyGPS::GPS_INVALID_AGE || fix_age > GPS_COLLECT_TIMEOUT * 1000) {
+          debug_print(F("Invalid fix age, retrying."));
+          continue;
+        }
 
         debug_print(F("Valid GPS fix received."));
-        gps.f_get_position(&flat, &flon, &fix_age);
-
         fix = 1;
 
         //update current time var - format 04/12/98,00:35:45+00
