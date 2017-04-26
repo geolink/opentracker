@@ -13,6 +13,7 @@
 #define DATA_LIMIT 2500       //current data limit, data collected before sending to remote server can not exceed this
 #define SMS_KEY "pass"        //default password for SMS auth
 #define SIM_PIN ""            //default SIM PIN (none)
+#define QUECLOCATOR 0         //default setting for QuecLocator fallback location provider
 
 #define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // 1=disable sms commands when the engine is running
 #define SMS_CHECK_INCLUDE_IMEI  0           // 0=check only password, 1=also check IMEI (format: #pass@imei,command=value)
@@ -24,7 +25,7 @@
 #define GSM_NTP_COMMAND_TIMEOUT 30          // max seconds to wait for NTP synchronization result
 
 #define GSM_MODEM_COMMAND_TIMEOUT 10
-#define GSM_SEND_FAILURES_REBOOT 30         // 0=disabled, increase to set the number of GSM data send failures that will trigger a reboot of the opentracker device
+#define GSM_SEND_FAILURES_REBOOT 15         // 0=disabled, increase to set the number of GSM data send failures that will trigger a reboot of the opentracker device
 #define GSM_REPLY_FAILURES_REBOOT 10        // 0=disabled, increase to set the number of GSM reply failures that will trigger a reboot of the opentracker device
 #define GSM_DISCONNECT_AFTER_SEND 0         // 0=keep modem data session active, only close TCP connection (default), 1=close data session after each send
 
