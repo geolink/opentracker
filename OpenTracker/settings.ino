@@ -95,6 +95,7 @@ void settings_load() {
     debug_print(config.powersave);
   }
 
+#if GSM_USE_QUECLOCATOR_TIMEOUT > 0
   //queclocator
   debug_print(F("settings_load(): config.queclocator:"));
   debug_print(config.queclocator);
@@ -106,6 +107,7 @@ void settings_load() {
     debug_print(F("settings_load(): set config.queclocator:"));
     debug_print(config.queclocator);
   }
+#endif
 
   tmp = config.key[0];
   if(tmp == 255) { //this check is not sufficient
