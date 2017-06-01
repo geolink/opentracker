@@ -32,7 +32,7 @@ int SEND_DATA = 1;
 long time_start, time_stop, time_diff;             //count execution time to trigger interval
 int interval_count = 0;         //current interval count (increased on each data collection and reset after sending)
 
-char data_current[DATA_LIMIT];  //data collected in one go, max 2500 chars
+char data_current[DATA_LIMIT+1];  //data collected in one go, max 2500 chars
 int data_index = 0;             //current data index (where last data record stopped)
 char time_char[24];             //time attached to every data line
 char modem_reply[200];          //data received from modem, max 200 chars
@@ -45,13 +45,12 @@ bool low_power = 0;             //flag for low power mode
 char lat_current[15];
 char lon_current[15];
 
-unsigned long last_time_gps, last_date_gps;
+unsigned long last_time_gps = -1, last_date_gps = 0, last_fix_gps = 0;
 
 int engineRunning = -1;
 unsigned long engineRunningTime = 0;
 unsigned long engine_start;
 
-TinyGPS gps;
 DueFlashStorage dueFlashStorage;
 
 int gsm_send_failures = 0;
@@ -103,9 +102,9 @@ void setup() {
   settings_load();
 
   //get current log index
-  #if STORAGE
-    storage_get_index();
-  #endif
+#if STORAGE
+  storage_get_index();
+#endif
 
   //GPS setup
   gps_setup();
@@ -117,8 +116,7 @@ void setup() {
   debug_gsm_terminal();
 #endif
 
-  //set to connect once started
-  interval_count = config.interval_send;
+  data_reset();
 
 #ifdef KNOWN_APN_LIST
   // auto scanning of apn details configuration
@@ -148,11 +146,6 @@ void loop() {
   //start counting time
   time_start = millis();
 
-  //debug
-  if(data_index >= DATA_LIMIT) {
-    data_index = 0;
-  }
-  
   status_led();
 
   debug_check_input();
@@ -217,13 +210,6 @@ void loop() {
     collect_data(IGNT_STAT);
     send_data();
 
-    #if STORAGE
-      //send available log files
-      storage_send_logs(1); // 0 = dump only, 1 = send data
-    #endif
-
-    //reset current data and counter
-    data_index = 0;
   } else {
     debug_print(F("Ignition is OFF!"));
     // Insert here only code that should be processed when Ignition is OFF
@@ -245,7 +231,7 @@ void loop() {
     debug_print(F("ms"));
   
     if(time_diff > 1000) {
-      if(config.powersave == 0 || time_diff < 6000) {
+      if(config.powersave == 0 || time_diff < 6000 || (millis() - last_fix_gps) > 2*config.interval) {
         // not enough time to use power saving, or feature disabled
         addon_delay(time_diff);
       } else {
@@ -296,7 +282,7 @@ void device_init() {
 // when DEBUG is defined >= 2 then serial monitor accepts test commands
 void debug_check_input() {
 #if DEBUG > 1
-#warning Do not use DEBUG=2 in production code!
+#warning "Do not use DEBUG=2 in production code!"
 
   if(!debug_enable)
     return;

@@ -81,7 +81,7 @@ void collect_gps_data() {
   char tmp[15];
 
   float flat, flon;
-  unsigned long fix_age, time_gps, date_gps, speed, course, alt;
+  unsigned long age_pos, age_time, time_gps, date_gps, speed, course, alt;
   unsigned long chars;
   unsigned short sentences, failed_checksum;
 
@@ -90,6 +90,9 @@ void collect_gps_data() {
   // drain receive buffer (discard old data)
   while (gps_port.available() && (signed long)(millis() - timer) < GPS_COLLECT_TIMEOUT * 1000)
     gps_port.read();
+
+  // use local variable to reset old data
+  TinyGPS gps;
 
   // looking for valid fix
   do {
@@ -109,28 +112,19 @@ void collect_gps_data() {
       if(gps.encode(c)) {
         // process new gps info here
 
-        //check if altitude acquired, otherwise continue
-        float falt = gps.f_altitude(); // +/- altitude in meters
-        float fc = gps.f_course(); // course in degrees
-        float fkmph = gps.f_speed_kmph(); // speed in km/hr
-
-        //retry to get fix in case no valid altitude or course supplied
-        if(falt == TinyGPS::GPS_INVALID_F_ALTITUDE) {
-          debug_print(F("Invalid altitude, retrying."));
-          continue;
-        }
-        if(fc == TinyGPS::GPS_INVALID_F_ANGLE) {
-          debug_print(F("Invalid course, retrying."));
-          continue;
-        }
-        if(date_gps == TinyGPS::GPS_INVALID_DATE) {
-          debug_print(F("Invalid date, retrying."));
-          continue;
-        }
         // time in hhmmsscc, date in ddmmyy
-        gps.get_datetime(&date_gps, &time_gps, &fix_age);
-        if(fix_age == TinyGPS::GPS_INVALID_AGE || fix_age > GPS_COLLECT_TIMEOUT * 1000) {
+        gps.get_datetime(&date_gps, &time_gps, &age_time);
+
+        // get latitude and longitude
+        gps.f_get_position(&flat, &flon, &age_pos);
+
+        // check if timestamp and position are current (not from previous attempts)
+        if(age_time == TinyGPS::GPS_INVALID_AGE || age_time > 1100) {
           debug_print(F("Invalid date/time age, retrying."));
+          continue;
+        }
+        if(age_pos == TinyGPS::GPS_INVALID_AGE || age_pos > 1100) {
+          debug_print(F("Invalid position age, retrying."));
           continue;
         }
         //check if this fix is already received
@@ -138,15 +132,51 @@ void collect_gps_data() {
           debug_print(F("Warning: this fix date/time already logged, retrying"));
           continue;
         }
-        // get latitude and longitude
-        gps.f_get_position(&flat, &flon, &fix_age);
-        if(fix_age == TinyGPS::GPS_INVALID_AGE || fix_age > GPS_COLLECT_TIMEOUT * 1000) {
-          debug_print(F("Invalid fix age, retrying."));
+
+#if DATA_INCLUDE_SPEED
+        float fkmph = gps.f_speed_kmph(); // speed in km/hr
+        
+        if(fkmph == TinyGPS::GPS_INVALID_F_SPEED) {
+          debug_print(F("Invalid speed, retrying."));
           continue;
         }
+#endif
+#if DATA_INCLUDE_ALTITUDE
+        float falt = gps.f_altitude(); // +/- altitude in meters
+        
+        if(falt == TinyGPS::GPS_INVALID_F_ALTITUDE) {
+          debug_print(F("Invalid altitude, retrying."));
+          continue;
+        }
+#endif
+#if DATA_INCLUDE_HEADING
+        float fc = gps.f_course(); // course in degrees
+        
+        if(fc == TinyGPS::GPS_INVALID_F_ANGLE) {
+          debug_print(F("Invalid course, retrying."));
+          continue;
+        }
+#endif
+#if DATA_INCLUDE_HDOP
+        long hdop = gps.hdop(); //hdop
+        
+        if(hdop == TinyGPS::GPS_INVALID_HDOP) {
+          debug_print(F("Invalid HDOP, retrying."));
+          continue;
+        }
+#endif    
+#if DATA_INCLUDE_SATELLITES
+        long sats = gps.satellites(); //satellites
+        
+        if(sats == TinyGPS::GPS_INVALID_SATELLITES) {
+          debug_print(F("Invalid satellites, retrying."));
+          continue;
+        }
+#endif      
 
         debug_print(F("Valid GPS fix received."));
         fix = 1;
+        last_fix_gps = millis();
 
         //update current time var - format 04/12/98,00:35:45+00
         // Add 1000000 to ensure the position of the digits
@@ -209,7 +239,7 @@ void collect_gps_data() {
           dtostrf(flon,1,6,tmp);
           data_append_string(tmp);
         }
-
+        
         if(DATA_INCLUDE_SPEED) {
           data_field_separator(',');
           dtostrf(fkmph,1,2,tmp);
@@ -230,14 +260,12 @@ void collect_gps_data() {
 
         if(DATA_INCLUDE_HDOP) {
           data_field_separator(',');
-          long hdop = gps.hdop(); //hdop
           ltoa(hdop, tmp, 10);
           data_append_string(tmp);
         }
 
         if(DATA_INCLUDE_SATELLITES) {
           data_field_separator(',');
-          long sats = gps.satellites(); //satellites
           ltoa(sats, tmp, 10);
           data_append_string(tmp);
         }
