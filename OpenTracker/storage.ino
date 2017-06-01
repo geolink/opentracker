@@ -94,7 +94,7 @@ void storage_send_logs(int really_send) {
       
       // read current block
       strlcpy(data_current, (char*)dueFlashStorage.readAddress(sent_position), sizeof(data_current));
-      int data_len = strlen(data_current) + 1;
+      int data_len = strlen(data_current) + 1; // include string terminator (zero)
 
       debug_print(F("Log data:"));
       debug_print(data_current);
