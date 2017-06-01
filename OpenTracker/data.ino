@@ -11,6 +11,12 @@ void data_append_string(const char *str) {
     data_current[data_index++] = str[i++];
 }
 
+void data_reset() {
+  // make sure there is always a string terminator
+  memset(data_current, 0, sizeof(data_current));
+  data_index = 0;
+}
+
 bool data_sep_flag = false;
 
 void data_field_separator(char c) {
@@ -206,10 +212,6 @@ void collect_all_data(int ignitionState) {
   //end of data packet
   data_append_char('\n');
 
-  //terminate data_current
-  data_current[data_index] = '\0';
-  data_index++;
-
   debug_print(F("collect_all_data() completed"));
 }
 
@@ -282,10 +284,6 @@ void collect_all_data_raw(int ignitionState) {
   //end of data packet
   data_append_char('\n');
 
-  //terminate data_current
-  data_current[data_index] = '\0';
-  data_index++;
-
   debug_print(F("collect_all_data_raw() completed"));
 }
 
@@ -293,21 +291,39 @@ void collect_all_data_raw(int ignitionState) {
  * This function send collected data using HTTP or TCP
  */
 void send_data() {
+  debug_print(F("send_data() started"));
+
   debug_print(F("Current:"));
   debug_print(data_current);
 
-  if(SEND_DATA) {
-    int i = gsm_send_data();
-    if(i != 1) {
-      //current data not sent, save to sd card
-      debug_print(F("Can not send data, saving to flash memory"));
-      
-      #if STORAGE
-        storage_save_current();   //in case this fails - data is lost
-      #endif
-      
+  interval_count++;
+  debug_print(F("Data accumulated:"));
+  debug_print(interval_count);
+  
+  // send accumulated data
+  if (interval_count >= config.interval_send) {
+    // if data send disabled, use storage
+    if (!SEND_DATA) {
+      debug_print(F("Data send is turned off."));
+#if STORAGE
+      storage_save_current();   //in case this fails - data is lost
+#endif
+    } else if (gsm_send_data() != 1) {
+      debug_print(F("Could not send data."));
+#if STORAGE
+      storage_save_current();   //in case this fails - data is lost
+#endif
     } else {
       debug_print(F("Data sent successfully."));
+#if STORAGE
+      //connection seems ok, send saved data history
+      storage_send_logs(1); // 0 = dump only, 1 = send data
+#endif
     }
+    
+    //reset current data and counter
+    data_reset();
+    interval_count -= config.interval_send;
   }
+  debug_print(F("send_data() completed"));
 }
