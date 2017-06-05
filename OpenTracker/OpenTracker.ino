@@ -138,6 +138,12 @@ void setup() {
   addon_setup();
 
   debug_print(F("setup() completed"));
+
+  // apply power saving option (USB disabled)
+  if (config.powersave == 1)
+    usb_console_disable();
+  else
+    usb_console_restore();
 }
 
 void loop() {
@@ -206,7 +212,6 @@ void loop() {
     }
 
     //collecting GPS data
-
     collect_data(IGNT_STAT);
     send_data();
 
@@ -230,29 +235,10 @@ void loop() {
     debug_print(time_diff);
     debug_print(F("ms"));
   
-    if(time_diff > 1000) {
-      if(config.powersave == 0 || time_diff < 6000 || (millis() - last_fix_gps) > 2*config.interval) {
-        // not enough time to use power saving, or feature disabled
-        addon_delay(time_diff);
-      } else {
-        // use low power mode
-        enter_low_power();
-        
-        // recalculate sleep time
-        time_stop = millis();
-        time_diff = time_stop-time_start;
-        time_diff = config.interval-time_diff;
-
-        addon_delay(time_diff);
-
-        exit_low_power();
-        
-        debug_print(F("Low power sleeping for:"));
-        debug_print(time_diff);
-        debug_print(F("ms"));
-      }
+    if(time_diff < 1000) {
+      addon_delay(1000); // minimal wait to let addon code execute
     } else {
-      debug_print(F("Error: negative sleep time."));
+      addon_delay(time_diff);
     }
   } else {
     addon_delay(1000); // minimal wait to let addon code execute

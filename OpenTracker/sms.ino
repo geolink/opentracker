@@ -346,6 +346,26 @@ void sms_cmd_run(char *cmd, char *phone) {
   }
 #endif
   else
+  if(strcmp(cmd, "powersave") == 0) {
+    debug_print(F("sms_cmd_run(): Powersave command detected"));
+    debug_print(tmp);
+    if(strcmp(tmp, "off") == 0) {
+      config.powersave = 0;
+      save_config = 1;
+    } else if(strcmp(tmp, "on") == 0) {
+      config.powersave = 1;
+      save_config = 1;
+    }
+    //send SMS reply
+    if (config.powersave == 1) {
+      sms_send_msg("Powersave ON", phone);
+      usb_console_restore();
+    } else {
+      sms_send_msg("Powersave OFF", phone);
+      usb_console_disable();
+    }
+  }
+  else
     addon_sms_command(cmd, tmp, phone);
 
   debug_print(F("sms_cmd_run() completed"));
