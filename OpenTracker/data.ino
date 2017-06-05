@@ -1,14 +1,16 @@
 //collect and send GPS data for sending
 
 void data_append_char(char c) {
-  if (data_index < sizeof(data_current) - 1)
+  if (data_index < sizeof(data_current) - 1) {
     data_current[data_index++] = c;
+    data_current[data_index] = 0;
+  }
 }
 
 void data_append_string(const char *str) {
-  int len = strlen(str);
-  for(int i=0; i<len && data_index < sizeof(data_current) - 1; )
-    data_current[data_index++] = str[i++];
+  while (*str != 0 && data_index < sizeof(data_current) - 1)
+    data_current[data_index++] = *str++;
+  data_current[data_index] = 0;
 }
 
 void data_reset() {
@@ -72,6 +74,17 @@ int url_encoded_strlcpy(char* dst, int maxlen, const char* src) {
   }
   *dst = '\0';
   return count;
+}
+
+// read and convert analog input voltage
+float analog_input_voltage(int pin, int range)
+{
+  float sensorValue = analogRead(pin);
+  if (range == HIGH)
+    sensorValue *= 242.0f * ANALOG_VREF / 1023.0f / 22.0f;
+  if (range == LOW)
+    sensorValue *= ANALOG_VREF / 1023.0f;
+  return sensorValue;
 }
 
 /**
@@ -169,14 +182,12 @@ void collect_all_data(int ignitionState) {
 
   data_field_restart();
 
+  // append battery level to data packet
   if(DATA_INCLUDE_BATTERY_LEVEL) {
-    // append battery level to data packet
-    float sensorValue = analogRead(AIN_S_INLEVEL);
-    float outputValue = sensorValue * (242.0f / 22.0f * ANALOG_VREF / 1024.0f);
-    char batteryLevel[20];
-    snprintf(batteryLevel,20,"%.2f",outputValue);
-
     data_field_separator(',');
+    float sensorValue = analog_input_voltage(AIN_S_INLEVEL, HIGH);
+    char batteryLevel[10];
+    dtostrf(sensorValue,2,2,batteryLevel);
     data_append_string(batteryLevel);
   }
 
@@ -238,18 +249,14 @@ void collect_all_data_raw(int ignitionState) {
     data_append_string(time_char);
   }
 
-  data_field_separator(',');
   collect_gps_data();
 
+  // append battery level to data packet
   if(DATA_INCLUDE_BATTERY_LEVEL) {
     data_field_separator(',');
-
-    // append battery level to data packet
-    float sensorValue = analogRead(AIN_S_INLEVEL);
-    float outputValue = sensorValue * (242.0f / 22.0f * ANALOG_VREF / 1024.0f);
-    char batteryLevel[20];
-    snprintf(batteryLevel,20,"%.2f",outputValue);
-
+    float sensorValue = analog_input_voltage(AIN_S_INLEVEL, HIGH);
+    char batteryLevel[10];
+    dtostrf(sensorValue,2,2,batteryLevel);
     data_append_string(batteryLevel);
   }
 
