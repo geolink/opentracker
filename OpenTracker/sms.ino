@@ -359,10 +359,10 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     if (config.powersave == 1) {
       sms_send_msg("Powersave ON", phone);
-      usb_console_restore();
+      usb_console_disable();
     } else {
       sms_send_msg("Powersave OFF", phone);
-      usb_console_disable();
+      usb_console_restore();
     }
   }
   else

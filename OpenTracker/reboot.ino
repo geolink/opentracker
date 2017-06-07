@@ -105,7 +105,8 @@ void exit_low_power() {
 
   cpu_full_speed();
   
-  usb_console_restore();
+  if (config.powersave == 0)
+    usb_console_restore();
   
   // enable serial ports
   gsm_open();
