@@ -197,7 +197,8 @@ void loop() {
         if(config.alarm_on == 1) {
           sms_send_msg("Ignition OFF", config.alarm_phone);
         }
-        // sending data before sleep with ignition mode OFF
+        // force sending last data
+        interval_count = config.interval_send;
         collect_data(IGNT_STAT);
         send_data();
       }
