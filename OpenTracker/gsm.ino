@@ -421,6 +421,26 @@ int gsm_disconnect() {
   int ret = 0;
   debug_print(F("gsm_disconnect() started"));
 #if GSM_DISCONNECT_AFTER_SEND
+  // option to close data session after each server connection
+  ret = gsm_deactivate();
+#else
+  //close connection, if previous attempts left it open
+  gsm_port.print(AT_CLOSE);
+  gsm_wait_for_reply(MODEM_UG96,0);
+
+  //ignore errors (will be taken care during connect)
+  ret = 1;
+#endif
+
+  debug_print(F("gsm_disconnect() completed"));
+  return ret;
+}
+
+int gsm_deactivate() {
+  // disable data session
+  int ret = 0;
+  debug_print(F("gsm_deactivate() started"));
+  
   //disconnect GSM
   gsm_port.print(AT_DEACTIVATE);
   gsm_wait_for_reply(MODEM_UG96,0);
@@ -435,16 +455,8 @@ int gsm_disconnect() {
 
   if(tmp!=NULL)
     ret = 1;
-#else
-  //close connection, if previous attempts left it open
-  gsm_port.print(AT_CLOSE);
-  gsm_wait_for_reply(MODEM_UG96,0);
-
-  //ignore errors (will be taken care during connect)
-  ret = 1;
-#endif
-
-  debug_print(F("gsm_disconnect() completed"));
+    
+  debug_print(F("gsm_deactivate() completed"));
   return ret;
 }
 
