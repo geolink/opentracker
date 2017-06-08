@@ -252,6 +252,10 @@ void loop() {
     // perform SMS check
     if (++sms_check_count >= SMS_CHECK_INTERVAL_ENGINE_RUNNING) {
       sms_check_count = 0;
+
+      // facilitate SMS exchange by turning off data session
+      gsm_deactivate();
+      
       sms_check();
     }
 #endif
