@@ -6,9 +6,9 @@
 #define ALWAYS_ON 0           //set to 1 to make the tracker log even with the ignition off
 
 //default settings (can be overwritten and stored in EEPRom)
-#define INTERVAL 10000        //how often to collect data (milli sec, 600000 - 10 mins)
-#define INTERVAL_SEND 1       //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
-#define POWERSAVE 0           //enable powersaving (turn off modem, gps on every loop)
+#define INTERVAL  5000        //how often to collect data (milli sec, 600000 - 10 mins)
+#define INTERVAL_SEND 4       //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
+#define POWERSAVE 1           //enable power saving mode with engine off (turn off modem data session, slow down CPU)
 #define KEY "cSQ88qShwC3"     //key for connection, will be sent with every data transmission - max 12 chars
 #define DATA_LIMIT 2500       //current data limit, data collected before sending to remote server can not exceed this
 #define SMS_KEY "pass"        //default password for SMS auth
@@ -19,7 +19,7 @@
 #define SMS_CHECK_INTERVAL_COUNT          6 // 0=disable SMS check with engine off, 1-N=check every N cycles of interval time
 #define SMS_CHECK_INTERVAL_ENGINE_RUNNING 2 // 0=disable SMS check with engine running, 1-N=check every N cycles of interval time
 
-#define LOCATE_COMMAND_FORMAT_IOS 1         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
+#define LOCATE_COMMAND_FORMAT_IOS 0         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
 
 #define GSM_USE_QUECLOCATOR_TIMEOUT 10      // 0=don't use QuecLocator, 1-300=timeout for server reply
 #define GSM_USE_NTP_SERVER "pool.ntp.org"   // use Network Time Protocol server for modem clock update (undefine to disable)
@@ -57,7 +57,7 @@
 // define this macro to accept only certain HTTP response codes (default is any)
 //#define PARSE_ACCEPTED_RESPONSE_CODES RESP_CODE(200)
 
-#define HTTP_USER_AGENT "OpenTracker 3.1"
+#define HTTP_USER_AGENT "OpenTracker 3.2"
 //#define HTTP_USE_GET                      // leave commented for POST, uncomment for GET request
 
 #define HTTP_PARAM_IMEI "imei"
