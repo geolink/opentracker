@@ -185,6 +185,10 @@ void loop() {
       if(config.alarm_on == 1) {
         sms_send_msg("Ignition ON", config.alarm_phone);
       }
+      
+      // restore full speed for serial communication
+      cpu_full_speed();
+      gsm_open();
     }
   } else {
     if(engineRunning != 1) {
@@ -200,6 +204,10 @@ void loop() {
         send_data();
       }
       engineRunning = 1;
+      // save power when engine is off
+      gsm_deactivate(); // ~20mA less
+      gsm_close();
+      cpu_slow_down(); // ~20mA less
     }
   }
 
@@ -251,7 +259,16 @@ void loop() {
     // perform SMS check
     if (++sms_check_count >= SMS_CHECK_INTERVAL_COUNT) {
       sms_check_count = 0;
+      
+      // restore full speed for serial communication
+      cpu_full_speed();
+      gsm_open();
+
       sms_check();
+      
+      // back to power saving
+      gsm_close();
+      cpu_slow_down();
     }
 #endif
   }
