@@ -190,15 +190,9 @@ void gsm_config() {
   //supply PIN code if needed
   gsm_set_pin();
 
-  // wait for modem ready (status 0)
-  unsigned long t = millis();
-  do {
-    int pas = gsm_get_modem_status();
-    if(pas==0 || pas==3 || pas==4) break;
-    status_delay(3000);
-  }
-  while (millis() - t < 60000);
-
+  // wait up to 1 minute
+  gsm_wait_modem_ready(60000);
+  
   //get GSM IMEI
   gsm_get_imei();
 
@@ -207,6 +201,17 @@ void gsm_config() {
 
   //set GSM APN
   gsm_set_apn();
+}
+
+void gsm_wait_modem_ready(int timeout) {
+  // wait for modem ready (attached to network)
+  unsigned long t = millis();
+  do {
+    int pas = gsm_get_modem_status();
+    if(pas==0 || pas==3 || pas==4) break;
+    status_delay(3000);
+  }
+  while (millis() - t < timeout);
 }
 
 bool gsm_clock_was_set = false;
