@@ -15,8 +15,9 @@
 #define SIM_PIN ""            //default SIM PIN (none)
 #define QUECLOCATOR 0         //default setting for QuecLocator fallback location provider
 
-#define SMS_DONT_CHECK_WITH_ENGINE_RUNNING 0 // 1=disable sms commands when the engine is running
 #define SMS_CHECK_INCLUDE_IMEI  0           // 0=check only password, 1=also check IMEI (format: #pass@imei,command=value)
+#define SMS_CHECK_INTERVAL_COUNT          6 // 0=disable SMS check with engine off, 1-N=check every N cycles of interval time
+#define SMS_CHECK_INTERVAL_ENGINE_RUNNING 2 // 0=disable SMS check with engine running, 1-N=check every N cycles of interval time
 
 #define LOCATE_COMMAND_FORMAT_IOS 1         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
 

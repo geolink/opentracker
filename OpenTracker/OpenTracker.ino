@@ -31,6 +31,7 @@ int SEND_DATA = 1;
 
 long time_start, time_stop, time_diff;             //count execution time to trigger interval
 int interval_count = 0;         //current interval count (increased on each data collection and reset after sending)
+int sms_check_count = 0;        //counter for SMS check (increased on each cycle and reset after check)
 
 char data_current[DATA_LIMIT+1];  //data collected in one go, max 2500 chars
 int data_index = 0;             //current data index (where last data record stopped)
@@ -116,6 +117,12 @@ void setup() {
   debug_gsm_terminal();
 #endif
 
+  // reply to Alarm SMS command
+  if(config.alarm_on) {
+    sms_send_msg("Alarm Activated", config.alarm_phone);
+  }
+
+  // make sure we start with empty data
   data_reset();
 
 #ifdef KNOWN_APN_LIST
@@ -127,17 +134,17 @@ void setup() {
 #endif
 
 #ifdef GSM_USE_NTP_SERVER
+  // attempt clock update (over data connection)
   gsm_ntp_update();
 #endif
-
-  if(config.alarm_on) {
-    sms_send_msg("Alarm Activated", config.alarm_phone);
-  }
 
   // setup addon board functionalities
   addon_setup();
 
   debug_print(F("setup() completed"));
+
+  // ensure SMS command check at power on or reset
+  sms_check();
 
   // apply power saving option (USB disabled)
   if (config.powersave == 1)
@@ -147,21 +154,6 @@ void setup() {
 }
 
 void loop() {
-  int IGNT_STAT;
-    
-  //start counting time
-  time_start = millis();
-
-  status_led();
-
-  debug_check_input();
-  
-  addon_loop();
-
-  if(!SMS_DONT_CHECK_WITH_ENGINE_RUNNING || engineRunning == 1) {
-    sms_check();
-  }
-  
   if(save_config == 1) {
     //config should be saved
     settings_save();
@@ -174,11 +166,16 @@ void loop() {
     power_reboot = 0;
   }
 
+  if (power_cutoff) {
+    kill_power();
+  }
+
   // Check if ignition is turned on
-  IGNT_STAT = digitalRead(PIN_S_DETECT);
+  int IGNT_STAT = digitalRead(PIN_S_DETECT);
   debug_print(F("Ignition status:"));
   debug_print(IGNT_STAT);
 
+  // detect transitions from engine on and off
   if(IGNT_STAT == 0) {
     if(engineRunning != 0) {
       // engine started
@@ -206,25 +203,6 @@ void loop() {
     }
   }
 
-  if(ALWAYS_ON || IGNT_STAT == 0) {
-    if(IGNT_STAT == 0) {
-      debug_print(F("Ignition is ON!"));
-      // Insert here only code that should be processed when Ignition is ON
-    }
-
-    //collecting GPS data
-    collect_data(IGNT_STAT);
-    send_data();
-
-  } else {
-    debug_print(F("Ignition is OFF!"));
-    // Insert here only code that should be processed when Ignition is OFF
-  }
-
-  if (power_cutoff) {
-    kill_power();
-  }
-
   if(!ENGINE_RUNNING_LOG_FAST_AS_POSSIBLE || IGNT_STAT != 0 || !SEND_DATA) {
     time_stop = millis();
   
@@ -244,6 +222,45 @@ void loop() {
   } else {
     addon_delay(1000); // minimal wait to let addon code execute
   }
+
+  //start counting time
+  time_start = millis();
+
+  if(ALWAYS_ON || IGNT_STAT == 0) {
+    if(IGNT_STAT == 0) {
+      debug_print(F("Ignition is ON!"));
+      // Insert here only code that should be processed when Ignition is ON
+    }
+
+    //collecting GPS data
+    collect_data(IGNT_STAT);
+    send_data();
+
+#if SMS_CHECK_INTERVAL_ENGINE_RUNNING > 0
+    // perform SMS check
+    if (++sms_check_count >= SMS_CHECK_INTERVAL_ENGINE_RUNNING) {
+      sms_check_count = 0;
+      sms_check();
+    }
+#endif
+  } else {
+    debug_print(F("Ignition is OFF!"));
+    // Insert here only code that should be processed when Ignition is OFF
+    
+#if SMS_CHECK_INTERVAL_COUNT > 0
+    // perform SMS check
+    if (++sms_check_count >= SMS_CHECK_INTERVAL_COUNT) {
+      sms_check_count = 0;
+      sms_check();
+    }
+#endif
+  }
+    
+  status_led();
+
+  debug_check_input();
+  
+  addon_loop();
 }
 
 void device_init() {
