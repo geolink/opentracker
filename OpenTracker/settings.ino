@@ -33,6 +33,7 @@ void settings_load() {
     config.powersave = POWERSAVE;
     config.alarm_on =  DEFAULT_ALARM_ON;
     config.queclocator = QUECLOCATOR;
+    config.debug = DEBUG ? 1 : 0;
 
     strlcpy(config.key, KEY, sizeof(config.key));
     strlcpy(config.sms_key, SMS_KEY, sizeof(config.sms_key));
@@ -93,6 +94,18 @@ void settings_load() {
 
     debug_print(F("settings_load(): set config.powersave:"));
     debug_print(config.powersave);
+  }
+
+  //powersave
+  debug_print(F("settings_load(): config.debug:"));
+  debug_print(config.debug);
+
+  if((config.debug != 1) && (config.debug != 0)) {
+    debug_print(F("settings_load(): debug not found, setting default"));
+    config.debug = DEBUG ? 1 : 0;
+
+    debug_print(F("settings_load(): set config.debug:"));
+    debug_print(config.debug);
   }
 
 #if GSM_USE_QUECLOCATOR_TIMEOUT > 0

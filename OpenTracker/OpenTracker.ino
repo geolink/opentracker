@@ -64,7 +64,6 @@ struct settings {
   char pwd[20];
   long interval;          //how often to collect data (milli sec, 600000 - 10 mins)
   int interval_send;      //how many times to collect data before sending (times), sending interval interval*interval_send
-  byte powersave;
   char key[12];           //key for connection, will be sent with every data transmission
   char sim_pin[5];        //PIN for SIM card
   char sms_key[12];       //password for SMS commands
@@ -72,6 +71,8 @@ struct settings {
   byte alarm_on;
   char alarm_phone[20];   //alarm phone number
   byte queclocator;       //flag to use QuecLocator fallback when GPS not available
+  byte debug;             //flag to enable/disable debug console (USB)
+  byte powersave;         //flag to enable/disable low power mode (with engine off)
 };
 
 settings config;
@@ -145,12 +146,12 @@ void setup() {
 
   // ensure SMS command check at power on or reset
   sms_check();
-
-  // apply power saving option (USB disabled)
-  if (config.powersave == 1)
-    usb_console_disable();
-  else
+  
+  // apply runtime debug option (USB console) after setup
+  if (config.debug == 1)
     usb_console_restore();
+  else
+    usb_console_disable();
 }
 
 void loop() {
@@ -185,10 +186,11 @@ void loop() {
       if(config.alarm_on == 1) {
         sms_send_msg("Ignition ON", config.alarm_phone);
       }
-      
-      // restore full speed for serial communication
-      cpu_full_speed();
-      gsm_open();
+      if(config.powersave == 1) {
+        // restore full speed for serial communication
+        cpu_full_speed();
+        gsm_open();
+      }
     }
   } else {
     if(engineRunning != 1) {
@@ -206,8 +208,10 @@ void loop() {
       engineRunning = 1;
       // save power when engine is off
       gsm_deactivate(); // ~20mA less
-      gsm_close();
-      cpu_slow_down(); // ~20mA less
+      if(config.powersave == 1) {
+        gsm_close();
+        cpu_slow_down(); // ~20mA less
+      }
     }
   }
 
@@ -260,15 +264,19 @@ void loop() {
     if (++sms_check_count >= SMS_CHECK_INTERVAL_COUNT) {
       sms_check_count = 0;
       
-      // restore full speed for serial communication
-      cpu_full_speed();
-      gsm_open();
-
+      if(config.powersave == 1) {
+        // restore full speed for serial communication
+        cpu_full_speed();
+        gsm_open();
+      }
+      
       sms_check();
       
-      // back to power saving
-      gsm_close();
-      cpu_slow_down();
+      if(config.powersave == 1) {
+        // back to power saving
+        gsm_close();
+        cpu_slow_down();
+      }
     }
 #endif
   }

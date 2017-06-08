@@ -345,6 +345,28 @@ void sms_cmd_run(char *cmd, char *phone) {
     }
   }
 #endif
+#if DEBUG
+  else
+  if(strcmp(cmd, "debug") == 0) {
+    debug_print(F("sms_cmd_run(): Debug command detected"));
+    debug_print(tmp);
+    if(strcmp(tmp, "off") == 0) {
+      config.debug = 0;
+      save_config = 1;
+    } else if(strcmp(tmp, "on") == 0) {
+      config.debug = 1;
+      save_config = 1;
+    }
+    //send SMS reply
+    if (config.debug == 1) {
+      usb_console_restore();
+      sms_send_msg("Debug ON", phone);
+    } else {
+      sms_send_msg("Debug OFF", phone);
+      usb_console_disable();
+    }
+  }
+#endif
   else
   if(strcmp(cmd, "powersave") == 0) {
     debug_print(F("sms_cmd_run(): Powersave command detected"));
@@ -359,10 +381,8 @@ void sms_cmd_run(char *cmd, char *phone) {
     //send SMS reply
     if (config.powersave == 1) {
       sms_send_msg("Powersave ON", phone);
-      usb_console_disable();
     } else {
       sms_send_msg("Powersave OFF", phone);
-      usb_console_restore();
     }
   }
   else

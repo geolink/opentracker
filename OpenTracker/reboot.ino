@@ -93,8 +93,6 @@ void enter_low_power() {
   gsm_standby();
   gsm_close();
 
-  usb_console_disable();
-
   cpu_slow_down();
   
   debug_print(F("enter_low_power() completed"));
@@ -104,9 +102,6 @@ void exit_low_power() {
   debug_print(F("exit_low_power() started"));
 
   cpu_full_speed();
-  
-  if (config.powersave == 0)
-    usb_console_restore();
   
   // enable serial ports
   gsm_open();
