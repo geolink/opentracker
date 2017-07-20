@@ -111,6 +111,10 @@ void setup() {
   //GPS setup
   gps_setup();
 
+#if DEBUG == 20
+  debug_gps_terminal();
+#endif
+
   //GSM setup
   gsm_setup();
 
@@ -341,6 +345,9 @@ void debug_check_input() {
     case '^':
       debug_gsm_terminal();
       break;
+    case '|':
+      debug_gps_terminal();
+      break;
     }
   }
 #endif
@@ -359,5 +366,20 @@ void debug_gsm_terminal()
       debug_port.write(c);
   }
   debug_port.print(F("Exited GSM terminal"));
+}
+
+void debug_gps_terminal()
+{
+  debug_port.print(F("Started GPS terminal"));
+  for(;;) {
+    int c = debug_port.read();
+    if (c == '|') break;
+    if (c > 0)
+      gps_port.write(c);
+    c = gps_port.read();
+    if (c > 0)
+      debug_port.write(c);
+  }
+  debug_port.print(F("Exited GPS terminal"));
 }
 
