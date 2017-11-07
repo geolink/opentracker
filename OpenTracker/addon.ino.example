@@ -36,6 +36,31 @@ void addon_sms_command(char *cmd, char *arg, const char *phone) {
   // Handle SMS commands not already handled by the main application
 }
 
+void addon_collect_data()
+{
+  // Append your own data to send to the server, for example additional sensors
+  
+  data_append_char('{');
+  data_field_restart();
+
+  // first sensor
+  data_field_separator(',');
+  data_append_string("my_sensor1:");
+      
+  char tmp[40];
+  unsigned int value = ...;
+  snprintf(tmp, sizeof(tmp), "%2.2f", value);
+  data_append_string(tmp);
+
+  // second sensor
+  data_field_separator(',');
+  data_append_string("my_sensor2:");
+      
+  ...
+
+  data_append_char('}');
+}
+
 void addon_event(int event) {
   // Handle event notifications
   switch (event) {
