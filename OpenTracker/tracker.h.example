@@ -8,6 +8,7 @@
 //default settings (can be overwritten and stored in EEPRom)
 #define INTERVAL  5000        //how often to collect data (milli sec, 600000 - 10 mins)
 #define INTERVAL_SEND 4       //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
+#define ENGINE_OFF_INTERVAL_COUNT 3600   //how often to send data when the ignition is off
 #define POWERSAVE 1           //enable power saving mode with engine off (turn off modem data session, slow down CPU)
 #define KEY "cSQ88qShwC3"     //key for connection, will be sent with every data transmission - max 12 chars
 #define DATA_LIMIT 2500       //current data limit, data collected before sending to remote server can not exceed this

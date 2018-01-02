@@ -297,7 +297,7 @@ void collect_all_data_raw(int ignitionState) {
 /**
  * This function send collected data using HTTP or TCP
  */
-void send_data() {
+void send_data(int force = 0) {
   debug_print(F("send_data() started"));
 
   debug_print(F("Current:"));
@@ -306,7 +306,11 @@ void send_data() {
   interval_count++;
   debug_print(F("Data accumulated:"));
   debug_print(interval_count);
-  
+ 
+  if (force) {
+    interval_count = config.interval_send;
+  }
+
   // send accumulated data
   if (interval_count >= config.interval_send) {
     // if data send disabled, use storage
