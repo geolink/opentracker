@@ -288,8 +288,10 @@ void sms_cmd_run(char *cmd, char *phone) {
   if(strcmp(cmd, "locate") == 0) {
     debug_print(F("sms_cmd_run(): Locate command detected"));
 
-    if(LOCATE_COMMAND_FORMAT_IOS) {
+    if(LOCATE_COMMAND_FORMAT_IOS == 1) {
       snprintf(msg,sizeof(msg),"comgooglemaps://?center=%s,%s",lat_current,lon_current);
+    } else if(LOCATE_COMMAND_FORMAT_IOS == 2) {
+      snprintf(msg,sizeof(msg),"maps:ll=%s,%s&q=car",lat_current,lon_current);
     } else {
       snprintf(msg,sizeof(msg),"https://maps.google.com/maps/place/%s,%s",lat_current,lon_current);
     }
