@@ -208,7 +208,7 @@ void loop() {
         // force sending last data
         interval_count = config.interval_send;
         collect_data(IGNT_STAT);
-        send_data();
+        send_data(0);
       }
       engineRunning = 1;
       // save power when engine is off

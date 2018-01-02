@@ -196,7 +196,7 @@ void collect_all_data(int ignitionState) {
     if (BATTERY_LOW_KILL_POWER > 0 && sensorValue < BATTERY_LOW_KILL_POWER) {
       if (strlen(BATTERY_LOW_SMS_NUMBER) >0) {
         char buf[100];
-        snprintf(&buf, sizeof(buf), "voltage dropped below %s - powering off", batteryLevel);
+        snprintf((char *)&buf, sizeof(buf), "voltage dropped below %s - powering off", batteryLevel);
         sms_send_msg(buf, BATTERY_LOW_SMS_NUMBER);
       }
 
@@ -310,7 +310,7 @@ void collect_all_data_raw(int ignitionState) {
 /**
  * This function send collected data using HTTP or TCP
  */
-void send_data(int force = 0) {
+void send_data(int force) {
   debug_print(F("send_data() started"));
 
   debug_print(F("Current:"));
