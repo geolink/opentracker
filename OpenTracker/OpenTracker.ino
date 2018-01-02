@@ -288,8 +288,10 @@ void loop() {
     }
 #endif
   }
-    
-  status_led();
+
+  if (ENABLE_STATUS_LED) {
+    status_led();
+  }
 
   debug_check_input();
   
