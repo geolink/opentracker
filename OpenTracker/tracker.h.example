@@ -8,6 +8,7 @@
 //default settings (can be overwritten and stored in EEPRom)
 #define INTERVAL  5000        //how often to collect data (milli sec, 600000 - 10 mins)
 #define INTERVAL_SEND 4       //how many times to collect data before sending (times), sending interval interval*interval_send (4 default)
+#define ENGINE_OFF_INTERVAL_COUNT 3600   //how often to send data when the ignition is off
 #define POWERSAVE 1           //enable power saving mode with engine off (turn off modem data session, slow down CPU)
 #define KEY "cSQ88qShwC3"     //key for connection, will be sent with every data transmission - max 12 chars
 #define DATA_LIMIT 2500       //current data limit, data collected before sending to remote server can not exceed this
@@ -19,7 +20,7 @@
 #define SMS_CHECK_INTERVAL_COUNT          6 // 0=disable SMS check with engine off, 1-N=check every N cycles of interval time
 #define SMS_CHECK_INTERVAL_ENGINE_RUNNING 2 // 0=disable SMS check with engine running, 1-N=check every N cycles of interval time
 
-#define LOCATE_COMMAND_FORMAT_IOS 0         // 1=google maps links will be sent as comgooglemaps://, 0=use format https://maps.google...
+#define LOCATE_COMMAND_FORMAT_IOS 0         // 0=use format https://maps.google... 1=google maps links will be sent as comgooglemaps://, 2=apple maps format
 
 #define GSM_USE_QUECLOCATOR_TIMEOUT 10      // 0=don't use QuecLocator, 1-300=timeout for server reply
 #define GSM_USE_NTP_SERVER "pool.ntp.org"   // use Network Time Protocol server for modem clock update (undefine to disable)
@@ -102,3 +103,7 @@
 #define KNOWN_APN_SCAN_MODE 1       // 0=check GPRS context only, 2=attempt only server connection, 1=use both in sequence
 #define KNOWN_APN_SCAN_USE_RESET 0  // 1=reset modem to change APN, 0=change APN without reset
 
+#define ENABLE_STATUS_LED 1
+
+#define BATTERY_LOW_KILL_POWER 0  // shutdown if the battery falls below this voltage, 0 = disabled
+#define BATTERY_LOW_SMS_NUMBER "" // send SMS to this number before shutting down (blank = disabled)

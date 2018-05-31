@@ -32,6 +32,7 @@ int SEND_DATA = 1;
 long time_start, time_stop, time_diff;             //count execution time to trigger interval
 int interval_count = 0;         //current interval count (increased on each data collection and reset after sending)
 int sms_check_count = 0;        //counter for SMS check (increased on each cycle and reset after check)
+int engine_off_send_count = 0;  //counter for sending data when the ignition is off
 
 char data_current[DATA_LIMIT+1];  //data collected in one go, max 2500 chars
 int data_index = 0;             //current data index (where last data record stopped)
@@ -207,7 +208,7 @@ void loop() {
         // force sending last data
         interval_count = config.interval_send;
         collect_data(IGNT_STAT);
-        send_data();
+        send_data(0);
       }
       engineRunning = 1;
       // save power when engine is off
@@ -242,7 +243,9 @@ void loop() {
   //start counting time
   time_start = millis();
 
-  if(ALWAYS_ON || IGNT_STAT == 0) {
+  if(ALWAYS_ON || IGNT_STAT == 0 || (ENGINE_OFF_INTERVAL_COUNT >0 && ++engine_off_send_count >= ENGINE_OFF_INTERVAL_COUNT)) {
+    engine_off_send_count = 0;
+
     if(IGNT_STAT == 0) {
       debug_print(F("Ignition is ON!"));
       // Insert here only code that should be processed when Ignition is ON
@@ -250,7 +253,7 @@ void loop() {
 
     //collecting GPS data
     collect_data(IGNT_STAT);
-    send_data();
+    send_data(IGNT_STAT);
 
 #if SMS_CHECK_INTERVAL_ENGINE_RUNNING > 0
     // perform SMS check
@@ -288,8 +291,10 @@ void loop() {
     }
 #endif
   }
-    
-  status_led();
+
+  if (ENABLE_STATUS_LED) {
+    status_led();
+  }
 
   debug_check_input();
   

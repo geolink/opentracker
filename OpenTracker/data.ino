@@ -183,12 +183,25 @@ void collect_all_data(int ignitionState) {
   data_field_restart();
 
   // append battery level to data packet
-  if(DATA_INCLUDE_BATTERY_LEVEL) {
-    data_field_separator(',');
+  if(DATA_INCLUDE_BATTERY_LEVEL || BATTERY_LOW_KILL_POWER > 0) {
     float sensorValue = analog_input_voltage(AIN_S_INLEVEL, HIGH);
     char batteryLevel[10];
     dtostrf(sensorValue,2,2,batteryLevel);
-    data_append_string(batteryLevel);
+
+    if (DATA_INCLUDE_BATTERY_LEVEL) {
+      data_field_separator(',');
+      data_append_string(batteryLevel);
+    }
+
+    if (BATTERY_LOW_KILL_POWER > 0 && sensorValue < BATTERY_LOW_KILL_POWER) {
+      if (strlen(BATTERY_LOW_SMS_NUMBER) >0) {
+        char buf[100];
+        snprintf((char *)&buf, sizeof(buf), "voltage dropped below %s - powering off", batteryLevel);
+        sms_send_msg(buf, BATTERY_LOW_SMS_NUMBER);
+      }
+
+      power_cutoff = 1;
+    }
   }
 
   // ignition state
@@ -297,7 +310,7 @@ void collect_all_data_raw(int ignitionState) {
 /**
  * This function send collected data using HTTP or TCP
  */
-void send_data() {
+void send_data(int force) {
   debug_print(F("send_data() started"));
 
   debug_print(F("Current:"));
@@ -306,7 +319,11 @@ void send_data() {
   interval_count++;
   debug_print(F("Data accumulated:"));
   debug_print(interval_count);
-  
+ 
+  if (force) {
+    interval_count = config.interval_send;
+  }
+
   // send accumulated data
   if (interval_count >= config.interval_send) {
     // if data send disabled, use storage
